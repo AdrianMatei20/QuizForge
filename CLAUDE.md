@@ -5,13 +5,36 @@ QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a t
 Readable code, tests and clearly reasoned design decisions matter more than feature count.
 
 ## Stack
-- api/: NestJS, TypeScript strict mode, TypeORM with migrations (never synchronize), PostgreSQL, Redis via ioredis, Jest and Supertest
-- web/: Angular (current stable), standalone components, signals for state, HttpClient, plain SCSS, no UI component library
+- api/: NestJS 12 (ESM), TypeScript strict mode, TypeORM with migrations (never synchronize), PostgreSQL, Redis via ioredis, Vitest and Supertest, oxlint and Prettier
+- web/: Angular (current stable), standalone components, signals for state, HttpClient, plain SCSS, no UI component library, Vitest, angular-eslint
 - docker-compose.yml at the repo root for local infrastructure
 - LLM provider: Anthropic, through its official Node SDK. Model IDs always come from config, never from code.
 
 ## Commands
-(Filled in during Phase 0. Keep this section accurate whenever scripts change.)
+Keep this section accurate whenever scripts change.
+
+Infrastructure (repo root):
+- `docker compose up -d`: start PostgreSQL and Redis (a fresh volume also creates the `quizforge_test` database)
+- `docker compose down`: stop them (add `-v` to delete the data volumes)
+
+api/ (run from `api/`; copy `.env.example` to `.env` first):
+- `npm run start:dev`: run the API on http://localhost:3000 in watch mode
+- `npm run build` / `npm run start:prod`: compile to `dist/` / run the compiled app
+- `npm test`: unit tests (`src/**/*.spec.ts`)
+- `npm run test:e2e`: e2e tests (`test/**/*.e2e-spec.ts`); needs docker compose running, reads `.env.test`
+- `npm run lint`: oxlint with type-aware rules
+- `npm run typecheck`: `tsc --noEmit` over src and test
+- `npm run format`: Prettier
+- `npm run migration:generate -- src/database/migrations/<Name>`: generate a migration from entity changes
+- `npm run migration:create -- src/database/migrations/<Name>`: create an empty migration
+- `npm run migration:run` / `npm run migration:revert` / `npm run migration:show`: apply, undo the last, list
+
+web/ (run from `web/`):
+- `npm start`: dev server on http://localhost:4200; proxies `/api` to the API
+- `npm test -- --watch=false`: unit tests, single run
+- `npm run lint`: angular-eslint (`ng lint`) over TypeScript and templates
+- `npm run build`: production build to `dist/web`
+- `npm run format`: Prettier
 
 ## Architecture rules
 - All LLM access goes through LlmModule in api/src/llm. No other module imports a provider SDK.
