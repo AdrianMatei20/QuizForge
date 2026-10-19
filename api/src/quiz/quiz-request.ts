@@ -1,7 +1,16 @@
 import type { LlmGenerateRequest } from '../llm/llm.service.js';
-import { type GeneratedQuiz, quizOutputSchema } from './quiz-output.schema.js';
-import type { QuizSettings } from './quiz.types.js';
-import { quizRules } from './rules.js';
+import {
+  type GeneratedQuiz,
+  quizOutputSchema,
+  type RegeneratedQuestion,
+  regeneratedQuestionSchema,
+} from './quiz-output.schema.js';
+import type { QuestionType, QuizSettings } from './quiz.types.js';
+import {
+  type OtherQuestion,
+  quizRules,
+  regeneratedQuestionRules,
+} from './rules.js';
 
 export const QUIZ_PROMPT = { id: 'quiz', version: 1 } as const;
 
@@ -44,5 +53,56 @@ export function buildQuizRequest(
     // A teacher asking again wants new questions, not a cached copy.
     cache: false,
     ...(correlationId === undefined ? {} : { correlationId }),
+  };
+}
+
+export const REGENERATE_PROMPT = { id: 'quiz-regenerate', version: 1 } as const;
+
+// One question plus any thinking the model does first.
+export const REGENERATE_MAX_TOKENS = 4_096;
+
+export interface RegenerateRequestInput {
+  lessonContent: string;
+  settings: QuizSettings;
+  model: string;
+  minQuoteWords: number;
+  /** The replaced question's type; the replacement keeps it. */
+  type: QuestionType;
+  replacedStem: string;
+  /** The quiz's other current questions, by position. */
+  others: readonly OtherQuestion[];
+  /** The quiz id, so regenerations count toward the quiz's cost. */
+  correlationId: string;
+}
+
+/**
+ * The LlmService request for one replacement question. The stems are passed
+ * as untrusted, delimited text: teachers may have edited them.
+ */
+export function buildRegenerateRequest(
+  input: RegenerateRequestInput,
+): LlmGenerateRequest<RegeneratedQuestion> {
+  const checks = regeneratedQuestionRules(input);
+  return {
+    feature: 'quiz-regeneration',
+    promptId: REGENERATE_PROMPT.id,
+    promptVersion: REGENERATE_PROMPT.version,
+    variables: {
+      type: input.type,
+      difficulty: input.settings.difficulty,
+      lesson: input.lessonContent,
+      replaced_question: input.replacedStem,
+      other_questions:
+        input.others.length === 0
+          ? '(none)'
+          : input.others.map((other) => `- ${other.stem}`).join('\n'),
+    },
+    schema: regeneratedQuestionSchema,
+    rules: (data) => checks(data.question),
+    model: input.model,
+    maxTokens: REGENERATE_MAX_TOKENS,
+    // "Regenerate" must always produce a new question.
+    cache: false,
+    correlationId: input.correlationId,
   };
 }

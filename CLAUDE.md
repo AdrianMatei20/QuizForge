@@ -23,9 +23,11 @@ api/ (run from `api/`; copy `.env.example` to `.env` first):
 - `npm test`: unit tests (`src/**/*.spec.ts`); the Nest logger is silenced, set `DEBUG=1` to see it
 - `npm run test:e2e`: e2e tests (`test/**/*.e2e-spec.ts`); needs docker compose running, reads `.env.test`, migrates the test database first
 - `LLM_LIVE_TESTS=1 npm run test:live`: live tests against the real provider (`test/**/*.live-spec.ts`, costs money): a smoke test, and one quiz per sample lesson with a printed report. Reads `LLM_API_KEY` and `LLM_MODEL` from the environment, then `.env.live.local` (see `.env.live.example`), then `.env`; skipped without the flag. Add a path (e.g. `test/quiz.live-spec.ts`) to run one file
-- `npm run lint`: oxlint with type-aware rules
-- `npm run typecheck`: `tsc --noEmit` over src and test
+- `npm run lint`: oxlint with type-aware rules (src, test, scripts)
+- `npm run typecheck`: `tsc --noEmit` over src, test and scripts
 - `npm run format`: Prettier
+- `npm run openapi:export`: build, then write `postman/openapi.json` and regenerate `postman/QuizForge.generated.postman_collection.json` from it. Run after changing any endpoint, DTO or documented error; `src/docs/openapi.spec.ts` fails until you do
+- `npm run postman:happy-path`: run `postman/QuizForge.happy-path.postman_collection.json` with newman against a running API (`postman/local.postman_environment.json`, http://localhost:3000; override with `-- --env-var baseUrl=...`)
 - `npm run migration:generate -- src/database/migrations/<Name>`: generate a migration from entity changes
 - `npm run migration:create -- src/database/migrations/<Name>`: create an empty migration
 - `npm run migration:run` / `npm run migration:revert` / `npm run migration:show`: apply, undo the last, list

@@ -58,5 +58,14 @@ export const quizOutputSchema = z.strictObject({
   questions: z.array(generatedQuestionSchema),
 });
 
+/**
+ * What the quiz-regenerate prompt must return: one question. Wrapped in an
+ * object because structured outputs need an object at the root.
+ */
+export const regeneratedQuestionSchema = z.strictObject({
+  question: generatedQuestionSchema,
+});
+
 export type GeneratedQuestion = z.infer<typeof generatedQuestionSchema>;
+export type RegeneratedQuestion = z.infer<typeof regeneratedQuestionSchema>;
 export type GeneratedQuiz = z.infer<typeof quizOutputSchema>;

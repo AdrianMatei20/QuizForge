@@ -22,8 +22,10 @@ import { Question } from '../src/quiz/question.entity.js';
 import { QuizGenerationFailedError } from '../src/quiz/quiz-generation-failed.error.js';
 import { Quiz } from '../src/quiz/quiz.entity.js';
 import { QuizService } from '../src/quiz/quiz.service.js';
+import { QUIZ_RANDOM } from '../src/quiz/shuffle.js';
 import type { QuizSettings } from '../src/quiz/quiz.types.js';
 import { loadSampleLesson } from './support/lessons.js';
+import { seededRandom, TEST_SEED } from './support/random.js';
 
 /**
  * QuizService against the real database and the whole app wiring; only the
@@ -48,7 +50,10 @@ describe('QuizService (integration)', () => {
   beforeAll(async () => {
     moduleRef = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(QUIZ_RANDOM)
+      .useValue(seededRandom(TEST_SEED))
+      .compile();
     await moduleRef.init();
     quizService = moduleRef.get(QuizService);
     lessons = moduleRef.get(LessonsService);
@@ -98,11 +103,44 @@ describe('QuizService (integration)', () => {
     expect(quiz.questions?.map((q) => q.original)).toEqual(fixture.questions);
     expect(quiz.questions?.[2]).toMatchObject({
       type: 'multiple_choice',
-      options: ['0', '1', 'n', 'n minus 1'],
-      correctIndex: 1,
+      promptId: 'quiz',
+      promptVersion: 1,
+      model: 'fake-model',
       editedAt: null,
       deletedAt: null,
     });
+  });
+
+  it('shuffles multiple-choice options before saving, keeping the correct answer and the original order', async () => {
+    const lesson = await createRecursionLesson();
+    fake.respondWithFixture('recursion');
+
+    const quiz = await quizService.generate(lesson.id, settings);
+
+    const multipleChoice = (quiz.questions ?? []).filter(
+      (q) => q.type === 'multiple_choice',
+    );
+    for (const question of multipleChoice) {
+      const { original } = question;
+      expect(question.options[question.correctIndex]).toBe(
+        original.options[original.correctIndex],
+      );
+      expect([...question.options].sort()).toEqual(
+        [...original.options].sort(),
+      );
+    }
+    // With the test seed, at least one question's order really changes.
+    expect(
+      multipleChoice.some(
+        (q) => JSON.stringify(q.options) !== JSON.stringify(q.original.options),
+      ),
+    ).toBe(true);
+    // True/false keeps its fixed order.
+    for (const question of quiz.questions ?? []) {
+      if (question.type === 'true_false') {
+        expect(question.options).toEqual(['True', 'False']);
+      }
+    }
   });
 
   it('repairs a fabricated sourceQuote, naming the question in the repair prompt', async () => {

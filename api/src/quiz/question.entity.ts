@@ -63,6 +63,19 @@ export class Question {
   @Column({ type: 'varchar', length: 20 })
   status: QuestionStatus;
 
+  /**
+   * Which prompt and model wrote this question. Usually the quiz's own, but a
+   * regenerated question comes from the quiz-regenerate prompt.
+   */
+  @Column({ name: 'prompt_id', type: 'varchar', length: 100 })
+  promptId: string;
+
+  @Column({ name: 'prompt_version', type: 'integer' })
+  promptVersion: number;
+
+  @Column({ type: 'varchar', length: 100 })
+  model: string;
+
   /** The question exactly as the model generated it, kept when a teacher edits it. */
   @Column({ type: 'jsonb' })
   original: GeneratedQuestion;

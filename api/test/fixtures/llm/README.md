@@ -12,3 +12,11 @@ is copied from that lesson, which `src/quiz/sample-fixtures.spec.ts` checks.
   generates successfully. Other lessons fail the source-quote rule (a known limitation of the fake).
 - `fabricated-quote.txt` is `recursion.txt` with question 2's `sourceQuote` replaced by a sentence that is not
   in the lesson, to exercise the repair call.
+
+## quiz-regenerate
+
+Replacements for question 1 of the recursion fixture, which `src/quiz/sample-fixtures.spec.ts` checks against the
+regenerate rules.
+
+- `default.txt` is a new multiple-choice question about the call stack, with a quote from the recursion lesson.
+- `repeated-stem.txt` repeats question 4's stem, to exercise the repair call for the "stem is new" rule.

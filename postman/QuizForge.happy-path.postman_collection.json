@@ -1,0 +1,257 @@
+{
+  "info": {
+    "name": "QuizForge happy path",
+    "description": "Runs the review flow end to end, in order: create a lesson, generate a quiz, approve a question, regenerate another, publish.\n\nEach request saves the ids the next one needs into collection variables, and its test script checks the status code. Uses the recursion sample lesson, so it also works with LLM_PROVIDER=fake (no API key, no cost).\n\nHand-maintained. The generated collection (QuizForge.generated.postman_collection.json) covers every endpoint and is rebuilt by `npm run openapi:export`.\n\nRun it with `npm run postman:happy-path` from api/, with the API running.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "lessonId",
+      "value": ""
+    },
+    {
+      "key": "quizId",
+      "value": ""
+    },
+    {
+      "key": "approveQuestionId",
+      "value": ""
+    },
+    {
+      "key": "regenerateQuestionId",
+      "value": ""
+    },
+    {
+      "key": "replacementQuestionId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Create lesson",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "",
+              "const lesson = pm.response.json();",
+              "pm.collectionVariables.set('lessonId', lesson.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Recursion\",\n  \"content\": \"A recursive function is a function that calls itself to solve a smaller version of the same problem. Every recursive function needs a base case, which is a condition where the function returns a result without calling itself. Without a base case, the function would call itself forever.\\n\\nEach recursive call must move closer to the base case. For example, a function that computes the factorial of n returns 1 when n is 0, and otherwise returns n multiplied by the factorial of n minus 1.\\n\\nWhen a function calls itself, the computer stores each unfinished call on the call stack. If the recursion goes too deep, the call stack runs out of space and the program fails with a stack overflow error.\\n\\nMany recursive solutions can also be written with a loop. A loop is often faster and uses less memory, but recursion can make code for problems like walking a tree much easier to read.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/lessons",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "lessons"
+          ]
+        }
+      }
+    },
+    {
+      "name": "2. Generate quiz",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "",
+              "const quiz = pm.response.json();",
+              "pm.test('the quiz is a draft with 5 questions', () => {",
+              "  pm.expect(quiz.status).to.equal('draft');",
+              "  pm.expect(quiz.questions).to.have.lengthOf(5);",
+              "});",
+              "",
+              "pm.collectionVariables.set('quizId', quiz.id);",
+              "const [first, ...others] = quiz.questions;",
+              "pm.collectionVariables.set('approveQuestionId', first.id);",
+              "// Prefer a multiple-choice question: the fake provider's replacement",
+              "// is multiple choice, and a replacement must keep the type.",
+              "const toRegenerate =",
+              "  others.find((question) => question.type === 'multiple_choice') ?? others[0];",
+              "pm.collectionVariables.set('regenerateQuestionId', toRegenerate.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"count\": 5,\n  \"difficulty\": \"medium\",\n  \"types\": [\n    \"multiple_choice\",\n    \"true_false\"\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/lessons/{{lessonId}}/quizzes",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "lessons",
+            "{{lessonId}}",
+            "quizzes"
+          ]
+        }
+      }
+    },
+    {
+      "name": "3. Approve a question",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "",
+              "pm.test('the question is approved', () => {",
+              "  pm.expect(pm.response.json().status).to.equal('approved');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"approved\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/questions/{{approveQuestionId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "questions",
+            "{{approveQuestionId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "4. Regenerate a question",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "",
+              "const replacement = pm.response.json();",
+              "pm.test('the replacement is a new draft question', () => {",
+              "  pm.expect(replacement.id).to.not.equal(pm.collectionVariables.get('regenerateQuestionId'));",
+              "  pm.expect(replacement.status).to.equal('draft');",
+              "});",
+              "pm.collectionVariables.set('replacementQuestionId', replacement.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/questions/{{regenerateQuestionId}}/regenerate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "questions",
+            "{{regenerateQuestionId}}",
+            "regenerate"
+          ]
+        }
+      }
+    },
+    {
+      "name": "5. Publish",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "",
+              "const quiz = pm.response.json();",
+              "pm.test('the published quiz has only the approved question', () => {",
+              "  pm.expect(quiz.status).to.equal('published');",
+              "  pm.expect(quiz.questions.map((question) => question.id)).to.deep.equal([",
+              "    pm.collectionVariables.get('approveQuestionId'),",
+              "  ]);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/quizzes/{{quizId}}/publish",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "quizzes",
+            "{{quizId}}",
+            "publish"
+          ]
+        }
+      }
+    }
+  ]
+}

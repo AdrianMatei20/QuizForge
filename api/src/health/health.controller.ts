@@ -14,10 +14,14 @@ import {
   PROBLEM_TYPES,
   ProblemException,
 } from '../common/problem-details/problem-details.js';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiProblems } from '../docs/api-problems.js';
+import { ProblemDetailsDto } from '../docs/problem-details.dto.js';
 import { RedisHealthIndicator } from './redis.health.js';
 
 const CHECK_TIMEOUT_MS = 1500;
 
+@ApiTags('health')
 @Controller('health')
 export class HealthController {
   constructor(
@@ -27,7 +31,31 @@ export class HealthController {
   ) {}
 
   @Get()
-  @HealthCheck()
+  @ApiOperation({
+    summary: 'Health check',
+    description:
+      'Pings PostgreSQL and Redis. 503 problem details, with per-dependency results in `checks`, when one is down.',
+  })
+  @ApiOkResponse({
+    description: 'Every dependency is up.',
+    schema: {
+      type: 'object',
+      example: {
+        status: 'ok',
+        info: { postgres: { status: 'up' }, redis: { status: 'up' } },
+        error: {},
+        details: { postgres: { status: 'up' }, redis: { status: 'up' } },
+      },
+    },
+  })
+  @ApiProblems({
+    status: 503,
+    description:
+      'A dependency is down. Problem details with per-dependency results in `checks`.',
+    schema: ProblemDetailsDto,
+  })
+  // Terminus would document its own 503 body; this endpoint returns problem details instead.
+  @HealthCheck({ swaggerDocumentation: false })
   async check(): Promise<HealthCheckResult> {
     try {
       return await this.health.check([

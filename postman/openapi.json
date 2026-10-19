@@ -1,0 +1,1653 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "description": "Pings PostgreSQL and Redis. 503 problem details, with per-dependency results in `checks`, when one is down.",
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Every dependency is up.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "example": {
+                    "status": "ok",
+                    "info": {
+                      "postgres": {
+                        "status": "up"
+                      },
+                      "redis": {
+                        "status": "up"
+                      }
+                    },
+                    "error": {},
+                    "details": {
+                      "postgres": {
+                        "status": "up"
+                      },
+                      "redis": {
+                        "status": "up"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A dependency is down. Problem details with per-dependency results in `checks`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Health check",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/lessons": {
+      "post": {
+        "description": "Stores the lesson text that quizzes are generated from.",
+        "operationId": "LessonsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLessonDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Lesson content is over 20,000 characters (urn:quizforge:problem:lesson-too-large, with `maxLength`), or the JSON body is over 256 KB.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a lesson",
+        "tags": [
+          "lessons"
+        ]
+      }
+    },
+    "/api/lessons/{id}": {
+      "get": {
+        "operationId": "LessonsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Lesson id",
+            "schema": {
+              "format": "uuid",
+              "example": "6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Read a lesson",
+        "tags": [
+          "lessons"
+        ]
+      }
+    },
+    "/api/lessons/{lessonId}/quizzes": {
+      "post": {
+        "description": "Synchronous: responds once the LLM has written the questions and they passed the schema and rule checks (with up to one repair call). Multiple-choice options are shuffled before saving. If generation fails, the quiz is kept with status \"failed\" and a failureReason, and the error response includes its `quizId`.",
+        "operationId": "QuizzesController_generate",
+        "parameters": [
+          {
+            "name": "lessonId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "example": "6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateQuizDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The draft quiz.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The model refused the request (urn:quizforge:problem:llm-refused). The failed quiz is identified by `quizId`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizGenerationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Today's AI budget (LLM_DAILY_BUDGET_USD) is used up; the provider was not called (urn:quizforge:problem:llm-budget-exceeded). The failed quiz is identified by `quizId`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizGenerationProblemDetailsDto"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before trying again.",
+                "schema": {
+                  "type": "integer",
+                  "example": 30
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error after the quiz was created (failureReason internal_error). Includes `quizId`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizGenerationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The model output was still invalid after one repair call (llm-invalid-output, with `errors`), was cut off by the token limit (llm-output-truncated), or the provider failed (llm-upstream-error). The failed quiz is identified by `quizId`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizGenerationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The provider kept rate limiting after every retry (urn:quizforge:problem:llm-rate-limited). The failed quiz is identified by `quizId`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizGenerationProblemDetailsDto"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before trying again.",
+                "schema": {
+                  "type": "integer",
+                  "example": 30
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Every attempt timed out (urn:quizforge:problem:llm-timeout). The failed quiz is identified by `quizId`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizGenerationProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Generate a quiz from a lesson",
+        "tags": [
+          "quizzes"
+        ]
+      },
+      "get": {
+        "description": "Newest first, without questions. Failed quizzes included.",
+        "operationId": "QuizzesController_listForLesson",
+        "parameters": [
+          {
+            "name": "lessonId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "example": "6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "How many quizzes to return, newest first.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuizSummaryResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List a lesson's quizzes",
+        "tags": [
+          "quizzes"
+        ]
+      }
+    },
+    "/api/quizzes/{id}": {
+      "get": {
+        "description": "Current questions in position order. A published quiz shows only its approved questions.",
+        "operationId": "QuizzesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Quiz id",
+            "schema": {
+              "format": "uuid",
+              "example": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Read a quiz with its questions",
+        "tags": [
+          "quizzes"
+        ]
+      }
+    },
+    "/api/quizzes/{id}/publish": {
+      "post": {
+        "description": "Needs a draft quiz with at least one approved question. The published quiz consists of its approved questions; after this, nothing about it can change.",
+        "operationId": "QuizzesController_publish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Quiz id",
+            "schema": {
+              "format": "uuid",
+              "example": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The published quiz, with only its approved questions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already published (quiz-published), or not a draft, e.g. a failed quiz (quiz-not-in-review, with `quizStatus`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No question is approved yet (urn:quizforge:problem:no-approved-questions).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Publish a quiz",
+        "tags": [
+          "quizzes"
+        ]
+      }
+    },
+    "/api/quizzes/{id}/review-stats": {
+      "get": {
+        "description": "Counts by status, regenerated questions, and the edit, reject and miss rates. A rate with nothing to divide by is null.",
+        "operationId": "QuizzesController_reviewStats",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Quiz id",
+            "schema": {
+              "format": "uuid",
+              "example": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewStatsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Review statistics of a quiz",
+        "tags": [
+          "quizzes"
+        ]
+      }
+    },
+    "/api/quizzes/{id}/cost": {
+      "get": {
+        "description": "Summed over every LLM call made for the quiz: generation, regenerations and failed calls.",
+        "operationId": "QuizzesController_cost",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Quiz id",
+            "schema": {
+              "format": "uuid",
+              "example": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizCostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "LLM usage and cost of a quiz",
+        "tags": [
+          "quizzes"
+        ]
+      }
+    },
+    "/api/questions/{id}": {
+      "patch": {
+        "description": "Send any of the fields; the rest stay as they are. Changed content must still be a valid question of its type and pass the quiz rules, except the sourceQuote rules, which stop applying once a human edits a question. editedAt is set only when the content actually changes.",
+        "operationId": "QuestionsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Question id",
+            "schema": {
+              "format": "uuid",
+              "example": "c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateQuestionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The quiz is published (quiz-published), or the status change is not allowed, e.g. approved to rejected (invalid-status-transition, with `from` and `to`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Edit a question or change its status",
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/api/questions/{id}/regenerate": {
+      "post": {
+        "description": "Generates one question of the same type that repeats none of the quiz questions, at the same position, as a draft. The old question is soft-deleted.",
+        "operationId": "QuestionsController_regenerate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Question id",
+            "schema": {
+              "format": "uuid",
+              "example": "c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The replacement question.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The quiz is published (quiz-published), or another request replaced the question first (question-already-replaced).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The model refused the request (urn:quizforge:problem:llm-refused). The question is left unchanged.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LlmProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Today's AI budget (LLM_DAILY_BUDGET_USD) is used up; the provider was not called (urn:quizforge:problem:llm-budget-exceeded). The question is left unchanged.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LlmProblemDetailsDto"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before trying again.",
+                "schema": {
+                  "type": "integer",
+                  "example": 30
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The model output was still invalid after one repair call (llm-invalid-output, with `errors`), was cut off by the token limit (llm-output-truncated), or the provider failed (llm-upstream-error). The question is left unchanged.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LlmProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The provider kept rate limiting after every retry (urn:quizforge:problem:llm-rate-limited). The question is left unchanged.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LlmProblemDetailsDto"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before trying again.",
+                "schema": {
+                  "type": "integer",
+                  "example": 30
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Every attempt timed out (urn:quizforge:problem:llm-timeout). The question is left unchanged.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LlmProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Replace a question with a newly generated one",
+        "tags": [
+          "questions"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "QuizForge API",
+    "description": "Turns a lesson into a reviewed quiz: an LLM drafts the questions, a teacher edits, approves, rejects or regenerates them, then publishes the quiz.\n\nEvery error is an RFC 9457 problem details response (`application/problem+json`).",
+    "version": "0.0.1",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "ProblemDetailsDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "A URI identifying the problem type. \"about:blank\" means the HTTP status says it all.",
+            "example": "urn:quizforge:problem:quiz-published"
+          },
+          "title": {
+            "type": "string",
+            "description": "Short summary of the problem type.",
+            "example": "Quiz is published"
+          },
+          "status": {
+            "type": "number",
+            "description": "The HTTP status code.",
+            "example": 409
+          },
+          "detail": {
+            "type": "string",
+            "description": "What went wrong this time. Never contains prompts, lesson text or model output.",
+            "example": "A published quiz and its questions can no longer be changed."
+          },
+          "instance": {
+            "type": "string",
+            "description": "The request path that produced the problem.",
+            "example": "/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail",
+          "instance"
+        ]
+      },
+      "ProblemFieldErrorDto": {
+        "type": "object",
+        "properties": {
+          "pointer": {
+            "type": "string",
+            "description": "JSON Pointer to the offending field. Absent when the rule is about the whole document.",
+            "example": "#/options"
+          },
+          "detail": {
+            "type": "string",
+            "description": "What is wrong with it.",
+            "example": "question 2: options 1 and 2 are identical"
+          }
+        },
+        "required": [
+          "detail"
+        ]
+      },
+      "ValidationProblemDetailsDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "A URI identifying the problem type. \"about:blank\" means the HTTP status says it all.",
+            "example": "urn:quizforge:problem:quiz-published"
+          },
+          "title": {
+            "type": "string",
+            "description": "Short summary of the problem type.",
+            "example": "Quiz is published"
+          },
+          "status": {
+            "type": "number",
+            "description": "The HTTP status code.",
+            "example": 409
+          },
+          "detail": {
+            "type": "string",
+            "description": "What went wrong this time. Never contains prompts, lesson text or model output.",
+            "example": "A published quiz and its questions can no longer be changed."
+          },
+          "instance": {
+            "type": "string",
+            "description": "The request path that produced the problem.",
+            "example": "/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10"
+          },
+          "errors": {
+            "description": "One entry per broken constraint or rule.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProblemFieldErrorDto"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail",
+          "instance",
+          "errors"
+        ]
+      },
+      "QuizGenerationProblemDetailsDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "A URI identifying the problem type. \"about:blank\" means the HTTP status says it all.",
+            "example": "urn:quizforge:problem:quiz-published"
+          },
+          "title": {
+            "type": "string",
+            "description": "Short summary of the problem type.",
+            "example": "Quiz is published"
+          },
+          "status": {
+            "type": "number",
+            "description": "The HTTP status code.",
+            "example": 409
+          },
+          "detail": {
+            "type": "string",
+            "description": "What went wrong this time. Never contains prompts, lesson text or model output.",
+            "example": "A published quiz and its questions can no longer be changed."
+          },
+          "instance": {
+            "type": "string",
+            "description": "The request path that produced the problem.",
+            "example": "/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10"
+          },
+          "quizId": {
+            "type": "string",
+            "description": "The quiz that failed. It is stored with status \"failed\" and a failureReason, so it can be looked up.",
+            "format": "uuid",
+            "example": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10"
+          },
+          "errors": {
+            "description": "Present when the model output failed validation (502).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProblemFieldErrorDto"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail",
+          "instance",
+          "quizId"
+        ]
+      },
+      "LlmProblemDetailsDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "A URI identifying the problem type. \"about:blank\" means the HTTP status says it all.",
+            "example": "urn:quizforge:problem:quiz-published"
+          },
+          "title": {
+            "type": "string",
+            "description": "Short summary of the problem type.",
+            "example": "Quiz is published"
+          },
+          "status": {
+            "type": "number",
+            "description": "The HTTP status code.",
+            "example": 409
+          },
+          "detail": {
+            "type": "string",
+            "description": "What went wrong this time. Never contains prompts, lesson text or model output.",
+            "example": "A published quiz and its questions can no longer be changed."
+          },
+          "instance": {
+            "type": "string",
+            "description": "The request path that produced the problem.",
+            "example": "/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10"
+          },
+          "errors": {
+            "description": "Present when the model output failed validation (502).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProblemFieldErrorDto"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail",
+          "instance"
+        ]
+      },
+      "CreateLessonDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "example": "Recursion"
+          },
+          "content": {
+            "type": "string",
+            "description": "The lesson text, 200 to 20000 characters after trimming (400 if shorter, 413 if longer). Treated as data, never as instructions to the model.",
+            "minLength": 200,
+            "maxLength": 20000,
+            "example": "A recursive function is a function that calls itself to solve a smaller version of the same problem. Every recursive function needs a base case, which is a condition where the function returns a result without calling itself. Without a base case, the function would call itself forever."
+          }
+        },
+        "required": [
+          "title",
+          "content"
+        ]
+      },
+      "LessonResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c"
+          },
+          "title": {
+            "type": "string",
+            "example": "Recursion"
+          },
+          "content": {
+            "type": "string",
+            "description": "The lesson text, trimmed.",
+            "example": "A recursive function is a function that calls itself to solve a smaller version of the same problem."
+          },
+          "contentHash": {
+            "type": "string",
+            "description": "sha256 of the content, hex.",
+            "example": "3f0a6c1e9b2d4f5a8c7e6d5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-19T15:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "content",
+          "contentHash",
+          "createdAt"
+        ]
+      },
+      "GenerateQuizDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "How many questions to generate.",
+            "minimum": 3,
+            "maximum": 10,
+            "example": 5
+          },
+          "difficulty": {
+            "type": "string",
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "description": "easy: recall of stated facts; medium: understanding or applying an idea; hard: combining several parts of the lesson.",
+            "example": "medium"
+          },
+          "types": {
+            "type": "array",
+            "uniqueItems": true,
+            "minItems": 1,
+            "description": "Question types the quiz may use.",
+            "example": [
+              "multiple_choice",
+              "true_false"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "multiple_choice",
+                "true_false"
+              ]
+            }
+          }
+        },
+        "required": [
+          "count",
+          "difficulty",
+          "types"
+        ]
+      },
+      "QuizSettingsResponse": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "minimum": 3,
+            "maximum": 10,
+            "example": 5
+          },
+          "difficulty": {
+            "type": "string",
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "example": "medium"
+          },
+          "types": {
+            "type": "array",
+            "example": [
+              "multiple_choice",
+              "true_false"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "multiple_choice",
+                "true_false"
+              ]
+            }
+          }
+        },
+        "required": [
+          "count",
+          "difficulty",
+          "types"
+        ]
+      },
+      "QuestionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6"
+          },
+          "position": {
+            "type": "number",
+            "description": "1-based order within the quiz.",
+            "example": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "multiple_choice",
+              "true_false"
+            ],
+            "example": "multiple_choice"
+          },
+          "stem": {
+            "type": "string",
+            "example": "What is the base case of a recursive function?"
+          },
+          "options": {
+            "description": "Multiple choice: 4 options, shuffled when the question was generated. True/false: [\"True\", \"False\"].",
+            "example": [
+              "The first call made to the function",
+              "A condition where the function returns a result without calling itself",
+              "The deepest call on the call stack",
+              "A loop that replaces the recursion"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "correctIndex": {
+            "type": "number",
+            "description": "Zero-based index into options.",
+            "example": 1
+          },
+          "explanation": {
+            "type": "string",
+            "example": "The lesson defines the base case as the condition where the function returns without calling itself."
+          },
+          "sourceQuote": {
+            "type": "string",
+            "description": "The sentence of the lesson that supports the answer.",
+            "example": "a base case, which is a condition where the function returns a result without calling itself"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "approved",
+              "rejected"
+            ],
+            "example": "draft"
+          },
+          "editedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-19T15:00:00.000Z",
+            "nullable": true,
+            "description": "When a teacher last changed the content; null if never."
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "type",
+          "stem",
+          "options",
+          "correctIndex",
+          "explanation",
+          "sourceQuote",
+          "status",
+          "editedAt"
+        ]
+      },
+      "QuizResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "generating",
+              "draft",
+              "published",
+              "failed"
+            ],
+            "example": "draft"
+          },
+          "failureReason": {
+            "type": "string",
+            "enum": [
+              "invalid_output",
+              "refusal",
+              "truncated",
+              "budget_exceeded",
+              "timeout",
+              "rate_limited",
+              "provider_error",
+              "cancelled",
+              "internal_error"
+            ],
+            "nullable": true,
+            "description": "Why the quiz failed; null unless status is \"failed\".",
+            "example": null
+          },
+          "settings": {
+            "$ref": "#/components/schemas/QuizSettingsResponse"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-19T15:00:00.000Z"
+          },
+          "lessonId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c"
+          },
+          "promptId": {
+            "type": "string",
+            "example": "quiz"
+          },
+          "promptVersion": {
+            "type": "number",
+            "example": 1
+          },
+          "model": {
+            "type": "string",
+            "example": "claude-haiku-5-5"
+          },
+          "questions": {
+            "description": "Current questions in order. Once published, only the approved ones.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuestionResponse"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "failureReason",
+          "settings",
+          "createdAt",
+          "lessonId",
+          "promptId",
+          "promptVersion",
+          "model",
+          "questions"
+        ]
+      },
+      "QuizSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "generating",
+              "draft",
+              "published",
+              "failed"
+            ],
+            "example": "draft"
+          },
+          "failureReason": {
+            "type": "string",
+            "enum": [
+              "invalid_output",
+              "refusal",
+              "truncated",
+              "budget_exceeded",
+              "timeout",
+              "rate_limited",
+              "provider_error",
+              "cancelled",
+              "internal_error"
+            ],
+            "nullable": true,
+            "description": "Why the quiz failed; null unless status is \"failed\".",
+            "example": null
+          },
+          "settings": {
+            "$ref": "#/components/schemas/QuizSettingsResponse"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-19T15:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "failureReason",
+          "settings",
+          "createdAt"
+        ]
+      },
+      "QuestionStatusCountsResponse": {
+        "type": "object",
+        "properties": {
+          "draft": {
+            "type": "number",
+            "example": 2
+          },
+          "approved": {
+            "type": "number",
+            "example": 2
+          },
+          "rejected": {
+            "type": "number",
+            "example": 1
+          }
+        },
+        "required": [
+          "draft",
+          "approved",
+          "rejected"
+        ]
+      },
+      "ReviewStatsResponse": {
+        "type": "object",
+        "properties": {
+          "quizId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10"
+          },
+          "total": {
+            "type": "number",
+            "description": "Current (not replaced) questions.",
+            "example": 5
+          },
+          "byStatus": {
+            "$ref": "#/components/schemas/QuestionStatusCountsResponse"
+          },
+          "regenerated": {
+            "type": "number",
+            "description": "Questions replaced through regenerate.",
+            "example": 1
+          },
+          "editRate": {
+            "type": "number",
+            "nullable": true,
+            "description": "Approved questions whose content differs from the model original, divided by approved questions. Reordering options is not an edit. Null with no approved questions.",
+            "example": 0.5
+          },
+          "rejectRate": {
+            "type": "number",
+            "nullable": true,
+            "description": "rejected / (approved + rejected); drafts are undecided. Null when nothing is decided.",
+            "example": 0.333
+          },
+          "missRate": {
+            "type": "number",
+            "nullable": true,
+            "description": "(rejected + regenerated) / (approved + rejected + regenerated): how often the model question was not good enough.",
+            "example": 0.5
+          }
+        },
+        "required": [
+          "quizId",
+          "total",
+          "byStatus",
+          "regenerated",
+          "editRate",
+          "rejectRate",
+          "missRate"
+        ]
+      },
+      "QuizCostResponse": {
+        "type": "object",
+        "properties": {
+          "quizId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10"
+          },
+          "calls": {
+            "type": "number",
+            "description": "LLM calls (one per generation or regeneration request).",
+            "example": 2
+          },
+          "attempts": {
+            "type": "number",
+            "description": "Provider requests, retries and repair calls included.",
+            "example": 3
+          },
+          "inputTokens": {
+            "type": "number",
+            "example": 3702
+          },
+          "outputTokens": {
+            "type": "number",
+            "example": 2050
+          },
+          "totalTokens": {
+            "type": "number",
+            "example": 5752
+          },
+          "costUsd": {
+            "type": "string",
+            "description": "USD as a decimal string with 6 places, never a float.",
+            "example": "0.001395"
+          }
+        },
+        "required": [
+          "quizId",
+          "calls",
+          "attempts",
+          "inputTokens",
+          "outputTokens",
+          "totalTokens",
+          "costUsd"
+        ]
+      },
+      "UpdateQuestionDto": {
+        "type": "object",
+        "properties": {
+          "stem": {
+            "type": "string",
+            "maxLength": 1000,
+            "example": "What makes a recursive function stop?"
+          },
+          "options": {
+            "description": "Multiple choice: exactly 4 distinct options, no \"all/none of the above\". True/false: must stay [\"True\", \"False\"].",
+            "maxItems": 4,
+            "example": [
+              "It reaches the base case",
+              "It runs out of memory",
+              "It is called with n = 1",
+              "It returns twice"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "correctIndex": {
+            "type": "number",
+            "description": "Zero-based index into options.",
+            "minimum": 0,
+            "example": 0
+          },
+          "explanation": {
+            "type": "string",
+            "maxLength": 2000,
+            "example": "The function stops calling itself once it reaches the base case."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "approved",
+              "rejected"
+            ],
+            "description": "draft -> approved or rejected; approved or rejected -> draft. Anything else is a 409; the current status is a no-op.",
+            "example": "approved"
+          }
+        }
+      }
+    }
+  }
+}

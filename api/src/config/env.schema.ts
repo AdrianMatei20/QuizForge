@@ -14,6 +14,8 @@ export const baseEnvSchema = z.object({
     .enum(['development', 'test', 'production'])
     .default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+  // Swagger UI at /docs and the spec at /docs-json. "true"/"false" (also 1/0, yes/no).
+  API_DOCS_ENABLED: z.stringbool().default(true),
   DATABASE_URL: z.url({
     protocol: /^postgres(ql)?$/,
     error: 'must be a postgres:// URL',

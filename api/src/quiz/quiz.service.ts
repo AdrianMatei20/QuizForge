@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import type { DataSource, Repository } from 'typeorm';
@@ -12,6 +12,7 @@ import { QuizGenerationFailedError } from './quiz-generation-failed.error.js';
 import { buildQuizRequest, QUIZ_PROMPT } from './quiz-request.js';
 import { Quiz } from './quiz.entity.js';
 import type { QuizFailureReason, QuizSettings } from './quiz.types.js';
+import { QUIZ_RANDOM, type Random, shuffleOptions } from './shuffle.js';
 
 @Injectable()
 export class QuizService {
@@ -23,6 +24,7 @@ export class QuizService {
     private readonly lessons: LessonsService,
     private readonly llm: LlmService,
     private readonly config: ConfigService<Env, true>,
+    @Inject(QUIZ_RANDOM) private readonly random: Random,
   ) {}
 
   /**
@@ -30,7 +32,9 @@ export class QuizService {
    * 1. save the quiz as "generating" (so a crash mid-call leaves a trace);
    * 2. generate through LlmService (schema + rules + one repair), with the
    *    quiz id as correlation id so its llm_calls rows can be found;
-   * 3. in one transaction, insert the questions and mark the quiz "draft".
+   * 3. shuffle each multiple-choice question's options, so the answer's
+   *    position carries no signal (`original` keeps the model's order);
+   * 4. in one transaction, insert the questions and mark the quiz "draft".
    * Any failure marks the quiz "failed" with a failure_reason and throws
    * QuizGenerationFailedError: the original error (as `cause`) plus the
    * quiz id, so the client can find the failed quiz.
@@ -75,11 +79,13 @@ export class QuizService {
             position: index + 1,
             type: question.type,
             stem: question.stem,
-            options: [...question.options],
-            correctIndex: question.correctIndex,
+            ...shuffleOptions(question, this.random),
             explanation: question.explanation,
             sourceQuote: question.sourceQuote,
             status: 'draft' as const,
+            promptId: QUIZ_PROMPT.id,
+            promptVersion: result.promptVersion,
+            model: result.model,
             original: question,
           })),
         );
@@ -99,7 +105,11 @@ export class QuizService {
     return this.findById(quiz.id);
   }
 
-  /** The quiz with its questions (soft-deleted ones excluded), in order. */
+  /**
+   * The quiz with its questions (soft-deleted ones excluded), in order. Once
+   * published, a quiz consists of its approved questions only; the others
+   * stay in the database for the review stats.
+   */
   async findById(id: string): Promise<Quiz> {
     const quiz = await this.quizzes.findOne({
       where: { id },
@@ -108,6 +118,11 @@ export class QuizService {
     });
     if (!quiz) {
       throw new NotFoundException(`Quiz ${id} was not found`);
+    }
+    if (quiz.status === 'published') {
+      quiz.questions = (quiz.questions ?? []).filter(
+        (question) => question.status === 'approved',
+      );
     }
     return quiz;
   }

@@ -1,11 +1,16 @@
-import type { GeneratedQuiz } from './quiz-output.schema.js';
-import type { QuizSettings } from './quiz.types.js';
+import type { GeneratedQuestion, GeneratedQuiz } from './quiz-output.schema.js';
+import type { QuestionType, QuizSettings } from './quiz.types.js';
 
 /**
  * Quality checks zod cannot express. Each rule is a pure function returning
  * one message per violation, naming the question by its 1-based number.
  * Messages go into the repair prompt and can reach clients in a 502, so they
  * describe the problem without quoting the model's text.
+ *
+ * Most rules look at one question at a time. Those are written as
+ * QuestionChecks that take a label ("question 3"), so the same check serves
+ * three uses: a whole generated quiz, a teacher's edit of one question, and
+ * one regenerated question (see the rule lists at the end).
  */
 export interface QuizRuleContext {
   lessonContent: string;
@@ -17,6 +22,24 @@ export interface QuizRuleContext {
 export type QuizRule = (
   quiz: GeneratedQuiz,
   context: QuizRuleContext,
+) => string[];
+
+/** The fields a question check reads; a teacher's edit has the same shape. */
+export type CheckedQuestion = Pick<
+  GeneratedQuestion,
+  'type' | 'stem' | 'options' | 'correctIndex' | 'sourceQuote'
+>;
+
+export type QuestionCheck = (
+  question: CheckedQuestion,
+  label: string,
+  context: QuizRuleContext,
+) => string[];
+
+/** A question check that needs no lesson or settings, only the question itself. */
+export type StandaloneCheck = (
+  question: CheckedQuestion,
+  label: string,
 ) => string[];
 
 const CATCH_ALL_OPTIONS = new Set(['all of the above', 'none of the above']);
@@ -61,44 +84,96 @@ export function countQuoteWords(quote: string): number {
     .filter((token) => /[\p{L}\p{N}]/u.test(token)).length;
 }
 
-export const optionsAreDistinct: QuizRule = (quiz) =>
-  quiz.questions.flatMap((question, q) => {
-    const seen = new Map<string, number>();
-    const violations: string[] = [];
-    question.options.forEach((option, o) => {
-      const key = normalizeText(option);
-      const first = seen.get(key);
-      if (first === undefined) {
-        seen.set(key, o);
-      } else {
-        violations.push(
-          `question ${number(q)}: options ${number(first)} and ${number(o)} are identical`,
-        );
-      }
-    });
-    return violations;
+// Question checks.
+
+export const checkOptionsDistinct: StandaloneCheck = (question, label) => {
+  const seen = new Map<string, number>();
+  const violations: string[] = [];
+  question.options.forEach((option, o) => {
+    const key = normalizeText(option);
+    const first = seen.get(key);
+    if (first === undefined) {
+      seen.set(key, o);
+    } else {
+      violations.push(
+        `${label}: options ${number(first)} and ${number(o)} are identical`,
+      );
+    }
   });
+  return violations;
+};
 
-export const correctIndexInRange: QuizRule = (quiz) =>
-  quiz.questions.flatMap((question, q) =>
-    question.correctIndex >= 0 &&
-    question.correctIndex < question.options.length
-      ? []
-      : [
-          `question ${number(q)}: correctIndex ${question.correctIndex} is out of range (must be 0 to ${question.options.length - 1})`,
-        ],
+export const checkCorrectIndexInRange: StandaloneCheck = (question, label) =>
+  question.correctIndex >= 0 && question.correctIndex < question.options.length
+    ? []
+    : [
+        `${label}: correctIndex ${question.correctIndex} is out of range (must be 0 to ${question.options.length - 1})`,
+      ];
+
+export const checkNoCatchAllOptions: StandaloneCheck = (question, label) =>
+  question.options.flatMap((option, o) =>
+    CATCH_ALL_OPTIONS.has(normalizeStem(option))
+      ? [
+          `${label}: option ${number(o)} is "all of the above" or "none of the above", which is not allowed`,
+        ]
+      : [],
   );
 
-export const noCatchAllOptions: QuizRule = (quiz) =>
-  quiz.questions.flatMap((question, q) =>
-    question.options.flatMap((option, o) =>
-      CATCH_ALL_OPTIONS.has(normalizeStem(option))
-        ? [
-            `question ${number(q)}: option ${number(o)} is "all of the above" or "none of the above", which is not allowed`,
-          ]
-        : [],
-    ),
-  );
+export const checkSourceQuoteInLesson: QuestionCheck = (
+  question,
+  label,
+  { lessonContent },
+) =>
+  normalizeForQuote(lessonContent).includes(
+    unwrapQuote(normalizeForQuote(question.sourceQuote)),
+  )
+    ? []
+    : [`${label}: sourceQuote does not appear in the lesson`];
+
+export const checkSourceQuoteLength: QuestionCheck = (
+  question,
+  label,
+  { minQuoteWords },
+) => {
+  const words = countQuoteWords(question.sourceQuote);
+  return words >= minQuoteWords
+    ? []
+    : [
+        `${label}: sourceQuote has ${words} ${words === 1 ? 'word' : 'words'}; at least ${minQuoteWords} are required`,
+      ];
+};
+
+export const checkTypeRequested: QuestionCheck = (
+  question,
+  label,
+  { settings },
+) =>
+  settings.types.includes(question.type)
+    ? []
+    : [
+        `${label}: type "${question.type}" was not requested (allowed: ${settings.types.join(', ')})`,
+      ];
+
+/** Runs a question check on every question of a quiz, labelled by number. */
+function forEachQuestion(check: QuestionCheck): QuizRule {
+  return (quiz, context) =>
+    quiz.questions.flatMap((question, q) =>
+      check(question, `question ${number(q)}`, context),
+    );
+}
+
+// Quiz rules: what initial generation checks.
+
+export const optionsAreDistinct = forEachQuestion(checkOptionsDistinct);
+export const correctIndexInRange = forEachQuestion(checkCorrectIndexInRange);
+export const noCatchAllOptions = forEachQuestion(checkNoCatchAllOptions);
+export const sourceQuotesAppearInLesson = forEachQuestion(
+  checkSourceQuoteInLesson,
+);
+export const sourceQuotesAreLongEnough = forEachQuestion(
+  checkSourceQuoteLength,
+);
+export const typesAreRequested = forEachQuestion(checkTypeRequested);
 
 export const stemsAreUnique: QuizRule = (quiz) => {
   const seen = new Map<string, number>();
@@ -115,41 +190,10 @@ export const stemsAreUnique: QuizRule = (quiz) => {
   });
 };
 
-export const sourceQuotesAppearInLesson: QuizRule = (
-  quiz,
-  { lessonContent },
-) => {
-  const lesson = normalizeForQuote(lessonContent);
-  return quiz.questions.flatMap((question, q) =>
-    lesson.includes(unwrapQuote(normalizeForQuote(question.sourceQuote)))
-      ? []
-      : [`question ${number(q)}: sourceQuote does not appear in the lesson`],
-  );
-};
-
-export const sourceQuotesAreLongEnough: QuizRule = (quiz, { minQuoteWords }) =>
-  quiz.questions.flatMap((question, q) => {
-    const words = countQuoteWords(question.sourceQuote);
-    return words >= minQuoteWords
-      ? []
-      : [
-          `question ${number(q)}: sourceQuote has ${words} ${words === 1 ? 'word' : 'words'}; at least ${minQuoteWords} are required`,
-        ];
-  });
-
 export const questionCountMatches: QuizRule = (quiz, { settings }) =>
   quiz.questions.length === settings.count
     ? []
     : [`expected ${settings.count} questions, got ${quiz.questions.length}`];
-
-export const typesAreRequested: QuizRule = (quiz, { settings }) =>
-  quiz.questions.flatMap((question, q) =>
-    settings.types.includes(question.type)
-      ? []
-      : [
-          `question ${number(q)}: type "${question.type}" was not requested (allowed: ${settings.types.join(', ')})`,
-        ],
-  );
 
 export const QUIZ_RULES: readonly QuizRule[] = [
   questionCountMatches,
@@ -167,4 +211,95 @@ export function quizRules(
   context: QuizRuleContext,
 ): (quiz: GeneratedQuiz) => string[] {
   return (quiz) => QUIZ_RULES.flatMap((rule) => rule(quiz, context));
+}
+
+/** Another question of the same quiz, for the "stem is new" checks. */
+export interface OtherQuestion {
+  position: number;
+  stem: string;
+}
+
+function stemMatches(
+  stem: string,
+  others: readonly OtherQuestion[],
+): OtherQuestion | undefined {
+  const key = normalizeStem(stem);
+  return others.find((other) => normalizeStem(other.stem) === key);
+}
+
+/**
+ * A teacher's edit of one question. No sourceQuote rules: once a human has
+ * edited a question, it no longer has to quote the lesson. No count or type
+ * rules either, since an edit cannot change them.
+ */
+export const EDIT_CHECKS: readonly StandaloneCheck[] = [
+  checkOptionsDistinct,
+  checkCorrectIndexInRange,
+  checkNoCatchAllOptions,
+];
+
+export function editedQuestionViolations(
+  question: CheckedQuestion,
+  position: number,
+  others: readonly OtherQuestion[],
+): string[] {
+  const label = `question ${position}`;
+  const duplicate = stemMatches(question.stem, others);
+  return [
+    ...EDIT_CHECKS.flatMap((check) => check(question, label)),
+    ...(duplicate === undefined
+      ? []
+      : [`${label}: stem is the same as question ${duplicate.position}`]),
+  ];
+}
+
+/**
+ * One regenerated question: every per-question rule, the replaced question's
+ * type, and a stem that is new compared with the replaced question and every
+ * other question. Labelled "question" because the model wrote only one.
+ */
+export const REGENERATE_CHECKS: readonly QuestionCheck[] = [
+  checkTypeRequested,
+  checkOptionsDistinct,
+  checkCorrectIndexInRange,
+  checkNoCatchAllOptions,
+  checkSourceQuoteLength,
+  checkSourceQuoteInLesson,
+];
+
+export interface RegenerateRuleInput {
+  lessonContent: string;
+  settings: QuizSettings;
+  minQuoteWords: number;
+  /** The replacement must keep this type. */
+  type: QuestionType;
+  replacedStem: string;
+  others: readonly OtherQuestion[];
+}
+
+export function regeneratedQuestionRules(
+  input: RegenerateRuleInput,
+): (question: CheckedQuestion) => string[] {
+  const context: QuizRuleContext = {
+    lessonContent: input.lessonContent,
+    settings: { ...input.settings, types: [input.type] },
+    minQuoteWords: input.minQuoteWords,
+  };
+  return (question) => {
+    const label = 'question';
+    const repeatsReplaced =
+      normalizeStem(question.stem) === normalizeStem(input.replacedStem);
+    const duplicate = stemMatches(question.stem, input.others);
+    return [
+      ...REGENERATE_CHECKS.flatMap((check) => check(question, label, context)),
+      ...(repeatsReplaced
+        ? [`${label}: stem is the same as the question it replaces`]
+        : []),
+      ...(duplicate === undefined
+        ? []
+        : [
+            `${label}: stem is the same as question ${duplicate.position}, which is already in the quiz`,
+          ]),
+    ];
+  };
 }

@@ -2,13 +2,14 @@
 
 QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a teacher approves, edits, rejects or regenerates them, and an eval harness measures prompt quality.
 
-> Status: Phase 2 (lessons and synchronous quiz generation). The API can store a lesson and generate a draft quiz from it; there is no web UI for it yet.
+> Status: Phase 3 (review actions and publishing). Through the API, a teacher can generate a draft quiz from a lesson, edit, approve, reject or regenerate its questions, and publish it; there is no web UI for it yet.
 
 ## Roadmap
 
 - [x] Phase 0: Scaffold (NestJS API, Angular app, PostgreSQL and Redis via Docker Compose, config validation, problem-details errors, health check)
 - [x] Phase 1: LLM foundation (LlmModule, prompt registry, daily budget, Redis cache, retries with backoff, output validation and repair, per-call cost tracking)
 - [x] Phase 2: Lessons and synchronous quiz generation (lessons, quizzes and questions tables, quiz prompt v1, rule checks, sample lessons)
+- [x] Phase 3: Review actions and publishing (edit, approve/reject, regenerate one question, publish, review stats, shuffled answer options)
 
 ## Repository layout
 
@@ -24,6 +25,7 @@ QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a t
 | `web/`               | Angular app (standalone components, signals)                       |
 | `docker-compose.yml` | Local PostgreSQL and Redis                                         |
 | `docker/`            | Container init scripts (creates the `quizforge_test` database)     |
+| `postman/`           | OpenAPI spec, Postman collections and the local environment        |
 
 ## Prerequisites
 
@@ -71,7 +73,7 @@ Error: Invalid environment configuration:
 
 ## API
 
-All feature routes are under `/api`.
+All feature routes are under `/api`. Interactive docs (Swagger UI) are at http://localhost:3000/docs, and the OpenAPI spec at `/docs-json`; set `API_DOCS_ENABLED=false` to turn both off.
 
 | Method and path                 | What it does                                                                  |
 | ------------------------------- | ----------------------------------------------------------------------------- |
@@ -80,7 +82,11 @@ All feature routes are under `/api`.
 | `POST /api/lessons/:id/quizzes` | `{ count: 3-10, difficulty: easy \| medium \| hard, types: [multiple_choice, true_false] }`. Generates the quiz synchronously and returns it with its draft questions |
 | `GET /api/lessons/:id/quizzes`  | The lesson's quizzes, newest first, without questions: `{ id, status, failureReason, settings, createdAt }`. `?limit=` from 1 to 100 (default 20) |
 | `GET /api/quizzes/:id`          | Read a quiz with its questions, in order. A failed quiz has a `failureReason` |
-| `GET /api/quizzes/:id/cost`     | `{ quizId, calls, attempts, inputTokens, outputTokens, totalTokens, costUsd }` summed over every LLM call made for the quiz, failed ones included |
+| `GET /api/quizzes/:id/cost`     | `{ quizId, calls, attempts, inputTokens, outputTokens, totalTokens, costUsd }` summed over every LLM call made for the quiz (regenerations and failed calls included) |
+| `PATCH /api/questions/:id`      | `{ stem?, options?, correctIndex?, explanation?, status? }`. Edits content and/or changes the status; returns the question |
+| `POST /api/questions/:id/regenerate` | Generates one replacement question of the same type at the same position (201); the old one is soft-deleted |
+| `POST /api/quizzes/:id/publish` | Publishes a draft quiz with at least one approved question; returns it with only the approved questions |
+| `GET /api/quizzes/:id/review-stats` | `{ quizId, total, byStatus, regenerated, editRate, rejectRate, missRate }` |
 
 Generated questions must pass the zod output schema and the rule checks in `api/src/quiz/rules.ts`:
 - distinct options;
@@ -94,7 +100,52 @@ If a quiz still fails after the one repair call, it is saved with status `failed
 
 When generation fails, the error response includes a `quizId` member, so the failed quiz can be looked up. Errors that happen before a quiz exists (unknown lesson, invalid settings) have none. A failed quiz records why in `failure_reason`, as an error code and never model output (a database constraint requires a reason exactly when the status is `failed`): `invalid_output`, `refusal`, `truncated`, `budget_exceeded`, `timeout`, `rate_limited`, `provider_error`, `cancelled` or `internal_error`. Every `llm_calls` row made for a quiz carries the quiz id in `correlation_id`, which is what the cost endpoint sums.
 
+Before saving, each multiple-choice question's options are shuffled and `correctIndex` updated, so the answer's position carries no signal. `original` keeps the model's raw output in its own order, so position bias can be measured later.
+
+### Reviewing a quiz
+
+- **Status:** a question goes from `draft` to `approved` or `rejected`, and back to `draft`. Anything else (e.g. `approved` to `rejected`) is a 409. Setting the status a question already has is a no-op.
+- **Edits:** the edited question must still be valid for its type (4 distinct options, or exactly `True`/`False`) and pass the rules above, except the `sourceQuote` rules, which stop applying once a human has edited a question. A failing edit returns 400 with every violation in `errors`. `editedAt` is set only when the content actually changes. An approved question stays approved after an edit.
+- **Regenerate:** uses `api/prompts/quiz-regenerate/v1.md`, with the lesson, the replaced question's stem and the other questions' stems (all delimited as data), and is never cached. The replacement must quote the lesson and must not repeat any of those stems. It comes in as a `draft` with its own `original`.
+- **Publish:** only a `draft` quiz with at least one approved question (422 otherwise). Nothing is deleted: a published quiz consists of its approved questions, and its questions can no longer be edited, regenerated or re-published (409).
+- **Review stats:**
+  - `editRate` is approved questions whose content differs from `original`, divided by approved questions. Reordering options, or changing only case or whitespace, is not an edit; changing the correct answer is.
+  - `rejectRate` is rejected ÷ (approved + rejected). Drafts are undecided.
+  - `missRate` is (rejected + regenerated) ÷ (approved + rejected + regenerated): how often the model's question was not good enough, whichever way the teacher discarded it.
+  - A rate with nothing to divide by is `null`.
+
+Each question records the prompt and model that wrote it (`prompt_id`, `prompt_version`, `model`), because a regenerated question comes from a different prompt than the rest of its quiz.
+
 With `LLM_PROVIDER=fake`, only the sample lesson in `api/fixtures/lessons/recursion.md` generates successfully, because the fake always answers with the recursion questions.
+
+## API docs and Postman
+
+`postman/` holds:
+
+| File | What it is |
+| ---- | ---------- |
+| `openapi.json` | The OpenAPI spec, exported from the code |
+| `QuizForge.generated.postman_collection.json` | Every endpoint, generated from the spec. Never edit it by hand |
+| `QuizForge.happy-path.postman_collection.json` | Hand-maintained: create a lesson, generate a quiz, approve a question, regenerate another, publish. Each request saves the ids the next one needs and checks its status code |
+| `local.postman_environment.json` | `baseUrl` (http://localhost:3000) only; no secrets |
+
+Every endpoint documents its success response and its errors as problem details (`application/problem+json`).
+
+After changing an endpoint, DTO or documented error, regenerate the spec and the generated collection from `api/`:
+
+```bash
+npm run openapi:export
+```
+
+It reads the code without starting anything (no database, Redis or API key needed), and the output only changes when the API does. A unit test fails while `postman/openapi.json` is out of date.
+
+To run the happy path with the API running (it works with `LLM_PROVIDER=fake`):
+
+```bash
+cd api
+npm run postman:happy-path
+# or, with only the collection files: npx newman run postman/QuizForge.happy-path.postman_collection.json -e postman/local.postman_environment.json
+```
 
 ## LLM pipeline
 

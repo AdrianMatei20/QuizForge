@@ -85,6 +85,16 @@ describe('validateEnv', () => {
     ).toContain('LLM_RETRY_BASE_DELAY_MS');
   });
 
+  it('enables the API docs by default and parses true/false strings', () => {
+    expect(validateEnv(validEnv).API_DOCS_ENABLED).toBe(true);
+    expect(
+      validateEnv({ ...validEnv, API_DOCS_ENABLED: 'false' }).API_DOCS_ENABLED,
+    ).toBe(false);
+    expect(
+      errorMessageFor({ ...validEnv, API_DOCS_ENABLED: 'maybe' }),
+    ).toContain('API_DOCS_ENABLED');
+  });
+
   it('rejects a timeout that is not a positive integer', () => {
     expect(errorMessageFor({ ...validEnv, LLM_TIMEOUT_MS: '0' })).toContain(
       'LLM_TIMEOUT_MS',

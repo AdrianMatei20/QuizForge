@@ -1,0 +1,15 @@
+{
+  "question": {
+    "type": "multiple_choice",
+    "stem": "What happens when recursion goes too deep?",
+    "options": [
+      "The program fails with a stack overflow error",
+      "The function becomes a loop",
+      "The base case is skipped",
+      "The computer stores the calls on disk"
+    ],
+    "correctIndex": 0,
+    "explanation": "When the call stack runs out of space, the program fails with a stack overflow error.",
+    "sourceQuote": "the call stack runs out of space and the program fails with a stack overflow error"
+  }
+}

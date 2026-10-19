@@ -11,6 +11,14 @@ function escapePointerSegment(segment: string): string {
   return segment.replaceAll('~', '~0').replaceAll('/', '~1');
 }
 
+/** RFC 6901 pointer such as "#/questions/0/text" ("#" is the whole document). */
+export function jsonPointer(path: readonly PropertyKey[]): string {
+  return [
+    '#',
+    ...path.map((segment) => escapePointerSegment(String(segment))),
+  ].join('/');
+}
+
 /**
  * Flattens class-validator's nested error tree into one entry per broken
  * constraint, each located by a JSON Pointer such as "#/questions/0/text".

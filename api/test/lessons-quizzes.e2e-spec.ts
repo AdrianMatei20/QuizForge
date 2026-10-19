@@ -12,7 +12,9 @@ import {
   LLM_SERVICE_OPTIONS,
   type LlmServiceOptions,
 } from '../src/llm/llm.service.js';
+import { QUIZ_RANDOM } from '../src/quiz/shuffle.js';
 import { loadSampleLesson } from './support/lessons.js';
+import { seededRandom, TEST_SEED } from './support/random.js';
 
 /** The HTTP API end to end, through the real pipe, filter and database. */
 describe('Lessons and quizzes (e2e)', () => {
@@ -32,7 +34,9 @@ describe('Lessons and quizzes (e2e)', () => {
     ) => builder,
   ): Promise<NestExpressApplication> {
     const moduleRef = await customize(
-      Test.createTestingModule({ imports: [AppModule] }),
+      Test.createTestingModule({ imports: [AppModule] })
+        .overrideProvider(QUIZ_RANDOM)
+        .useValue(seededRandom(TEST_SEED)),
     ).compile();
     const created = moduleRef.createNestApplication<NestExpressApplication>({
       logger: false,
@@ -238,12 +242,20 @@ describe('Lessons and quizzes (e2e)', () => {
         position: 1,
         type: 'multiple_choice',
         stem: 'What is the base case of a recursive function?',
-        correctIndex: 0,
+        correctIndex: expect.any(Number),
         sourceQuote: expect.any(String),
         explanation: expect.any(String),
         editedAt: null,
       });
+      const first = body.questions[0] as {
+        options: string[];
+        correctIndex: number;
+      };
+      expect(first.options[first.correctIndex]).toBe(
+        'A condition where the function returns a result without calling itself',
+      );
       expect(body.questions[0]).not.toHaveProperty('original');
+      expect(body.questions[0]).not.toHaveProperty('promptId');
     });
 
     it.each([

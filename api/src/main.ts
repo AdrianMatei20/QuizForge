@@ -7,10 +7,12 @@ import type { Env } from './config/env.schema.js';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  configureApp(app);
+  const config: ConfigService<Env, true> = app.get(ConfigService);
+  configureApp(app, {
+    apiDocs: config.get('API_DOCS_ENABLED', { infer: true }),
+  });
   app.enableShutdownHooks();
 
-  const config: ConfigService<Env, true> = app.get(ConfigService);
   await app.listen(config.get('PORT', { infer: true }));
 }
 await bootstrap();

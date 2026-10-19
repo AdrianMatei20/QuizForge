@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import { jsonPointer } from '../common/problem-details/validation-problem.js';
 import type { LlmViolation } from './llm.errors.js';
 
 export type ParseOutcome<T> =
@@ -43,7 +44,7 @@ export function parseModelOutput<T>(
     return {
       ok: false,
       violations: result.error.issues.map((issue) => ({
-        pointer: toJsonPointer(issue.path),
+        pointer: jsonPointer(issue.path),
         // zod's message for unknown keys quotes the key names, which come from
         // the model's output, so it is replaced with one that does not.
         message:
@@ -54,12 +55,4 @@ export function parseModelOutput<T>(
     };
   }
   return { ok: true, data: result.data, json };
-}
-
-/** RFC 6901 pointer such as "#/questions/0/text" ("#" is the whole document). */
-function toJsonPointer(path: readonly PropertyKey[]): string {
-  const segments = path.map((segment) =>
-    String(segment).replaceAll('~', '~0').replaceAll('/', '~1'),
-  );
-  return ['#', ...segments].join('/');
 }

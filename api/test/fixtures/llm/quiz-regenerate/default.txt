@@ -1,0 +1,15 @@
+{
+  "question": {
+    "type": "multiple_choice",
+    "stem": "Where does the computer store each unfinished recursive call?",
+    "options": [
+      "On the call stack",
+      "In the base case",
+      "In a loop counter",
+      "On the hard disk"
+    ],
+    "correctIndex": 0,
+    "explanation": "The lesson says the computer stores each unfinished call on the call stack.",
+    "sourceQuote": "the computer stores each unfinished call on the call stack"
+  }
+}

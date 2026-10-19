@@ -3,6 +3,7 @@ import type { QuizSettings } from './quiz.types.js';
 import {
   correctIndexInRange,
   countQuoteWords,
+  editedQuestionViolations,
   noCatchAllOptions,
   normalizeForQuote,
   normalizeStem,
@@ -11,6 +12,7 @@ import {
   questionCountMatches,
   quizRules,
   type QuizRuleContext,
+  regeneratedQuestionRules,
   sourceQuotesAppearInLesson,
   sourceQuotesAreLongEnough,
   stemsAreUnique,
@@ -331,6 +333,84 @@ describe('quizRules', () => {
       'question 2: stem is the same as question 1',
       'question 2: sourceQuote has 1 word; at least 5 are required',
       'question 2: sourceQuote does not appear in the lesson',
+    ]);
+  });
+});
+
+describe('editedQuestionViolations', () => {
+  const others = [
+    { position: 1, stem: 'Plants use sunlight.' },
+    { position: 3, stem: 'Where does oxygen go?' },
+  ];
+
+  it('passes a valid edit', () => {
+    expect(editedQuestionViolations(mc(), 2, others)).toEqual([]);
+  });
+
+  it('does not require the sourceQuote once a human has edited the question', () => {
+    const edited = mc({ sourceQuote: 'not in the lesson' });
+
+    expect(editedQuestionViolations(edited, 2, others)).toEqual([]);
+  });
+
+  it('labels violations with the question position and checks stems against the other questions', () => {
+    const edited = mc({
+      stem: '  where does OXYGEN go ',
+      options: ['Oxygen', 'oxygen', 'None of the above', 'Argon'],
+      correctIndex: 4,
+    });
+
+    expect(editedQuestionViolations(edited, 2, others)).toEqual([
+      'question 2: options 1 and 2 are identical',
+      'question 2: correctIndex 4 is out of range (must be 0 to 3)',
+      'question 2: option 3 is "all of the above" or "none of the above", which is not allowed',
+      'question 2: stem is the same as question 3',
+    ]);
+  });
+});
+
+describe('regeneratedQuestionRules', () => {
+  const rules = regeneratedQuestionRules({
+    lessonContent: LESSON,
+    settings: {
+      count: 3,
+      difficulty: 'medium',
+      types: ['multiple_choice', 'true_false'],
+    },
+    minQuoteWords: 5,
+    type: 'multiple_choice',
+    replacedStem: 'What do plants release?',
+    others: [{ position: 2, stem: 'Plants use sunlight.' }],
+  });
+
+  it('passes a new, valid question of the same type', () => {
+    expect(rules(mc({ stem: 'What do plants make food by?' }))).toEqual([]);
+  });
+
+  it('rejects a stem that repeats the replaced question', () => {
+    expect(rules(mc({ stem: 'what do plants release' }))).toEqual([
+      'question: stem is the same as the question it replaces',
+    ]);
+  });
+
+  it('rejects a stem that repeats another question in the quiz', () => {
+    expect(rules(mc({ stem: 'Plants use sunlight' }))).toEqual([
+      'question: stem is the same as question 2, which is already in the quiz',
+    ]);
+  });
+
+  it("requires the replaced question's type, even if the quiz allows both", () => {
+    expect(rules(tf({ stem: 'Plants make food by photosynthesis.' }))).toEqual([
+      'question: type "true_false" was not requested (allowed: multiple_choice)',
+    ]);
+  });
+
+  it('still applies the sourceQuote rules to model output', () => {
+    expect(
+      rules(mc({ stem: 'A new question?', sourceQuote: 'Plants sleep' })),
+    ).toEqual([
+      'question: sourceQuote has 2 words; at least 5 are required',
+      'question: sourceQuote does not appear in the lesson',
     ]);
   });
 });
