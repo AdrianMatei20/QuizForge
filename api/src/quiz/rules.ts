@@ -36,11 +36,27 @@ export type QuestionCheck = (
   context: QuizRuleContext,
 ) => string[];
 
+/**
+ * One problem with one question. `field` locates it inside the question as a
+ * JSON Pointer (e.g. "/options/3"), so a teacher's edit can show it next to
+ * the right input.
+ */
+export interface QuestionViolation {
+  detail: string;
+  field?: string;
+}
+
 /** A question check that needs no lesson or settings, only the question itself. */
 export type StandaloneCheck = (
   question: CheckedQuestion,
   label: string,
-) => string[];
+) => QuestionViolation[];
+
+/** Generation and regeneration only need the messages (for the repair prompt). */
+const messagesOf =
+  (check: StandaloneCheck): QuestionCheck =>
+  (question, label) =>
+    check(question, label).map((violation) => violation.detail);
 
 const CATCH_ALL_OPTIONS = new Set(['all of the above', 'none of the above']);
 
@@ -86,18 +102,20 @@ export function countQuoteWords(quote: string): number {
 
 // Question checks.
 
+/** Points at the repeated option, not the first one: that is the one to change. */
 export const checkOptionsDistinct: StandaloneCheck = (question, label) => {
   const seen = new Map<string, number>();
-  const violations: string[] = [];
+  const violations: QuestionViolation[] = [];
   question.options.forEach((option, o) => {
     const key = normalizeText(option);
     const first = seen.get(key);
     if (first === undefined) {
       seen.set(key, o);
     } else {
-      violations.push(
-        `${label}: options ${number(first)} and ${number(o)} are identical`,
-      );
+      violations.push({
+        detail: `${label}: options ${number(first)} and ${number(o)} are identical`,
+        field: `/options/${o}`,
+      });
     }
   });
   return violations;
@@ -107,14 +125,20 @@ export const checkCorrectIndexInRange: StandaloneCheck = (question, label) =>
   question.correctIndex >= 0 && question.correctIndex < question.options.length
     ? []
     : [
-        `${label}: correctIndex ${question.correctIndex} is out of range (must be 0 to ${question.options.length - 1})`,
+        {
+          detail: `${label}: correctIndex ${question.correctIndex} is out of range (must be 0 to ${question.options.length - 1})`,
+          field: '/correctIndex',
+        },
       ];
 
 export const checkNoCatchAllOptions: StandaloneCheck = (question, label) =>
   question.options.flatMap((option, o) =>
     CATCH_ALL_OPTIONS.has(normalizeStem(option))
       ? [
-          `${label}: option ${number(o)} is "all of the above" or "none of the above", which is not allowed`,
+          {
+            detail: `${label}: option ${number(o)} is "all of the above" or "none of the above", which is not allowed`,
+            field: `/options/${o}`,
+          },
         ]
       : [],
   );
@@ -164,9 +188,15 @@ function forEachQuestion(check: QuestionCheck): QuizRule {
 
 // Quiz rules: what initial generation checks.
 
-export const optionsAreDistinct = forEachQuestion(checkOptionsDistinct);
-export const correctIndexInRange = forEachQuestion(checkCorrectIndexInRange);
-export const noCatchAllOptions = forEachQuestion(checkNoCatchAllOptions);
+export const optionsAreDistinct = forEachQuestion(
+  messagesOf(checkOptionsDistinct),
+);
+export const correctIndexInRange = forEachQuestion(
+  messagesOf(checkCorrectIndexInRange),
+);
+export const noCatchAllOptions = forEachQuestion(
+  messagesOf(checkNoCatchAllOptions),
+);
 export const sourceQuotesAppearInLesson = forEachQuestion(
   checkSourceQuoteInLesson,
 );
@@ -242,14 +272,19 @@ export function editedQuestionViolations(
   question: CheckedQuestion,
   position: number,
   others: readonly OtherQuestion[],
-): string[] {
+): QuestionViolation[] {
   const label = `question ${position}`;
   const duplicate = stemMatches(question.stem, others);
   return [
     ...EDIT_CHECKS.flatMap((check) => check(question, label)),
     ...(duplicate === undefined
       ? []
-      : [`${label}: stem is the same as question ${duplicate.position}`]),
+      : [
+          {
+            detail: `${label}: stem is the same as question ${duplicate.position}`,
+            field: '/stem',
+          },
+        ]),
   ];
 }
 
@@ -260,9 +295,9 @@ export function editedQuestionViolations(
  */
 export const REGENERATE_CHECKS: readonly QuestionCheck[] = [
   checkTypeRequested,
-  checkOptionsDistinct,
-  checkCorrectIndexInRange,
-  checkNoCatchAllOptions,
+  messagesOf(checkOptionsDistinct),
+  messagesOf(checkCorrectIndexInRange),
+  messagesOf(checkNoCatchAllOptions),
   checkSourceQuoteLength,
   checkSourceQuoteInLesson,
 ];

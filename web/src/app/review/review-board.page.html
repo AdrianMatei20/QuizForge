@@ -1,0 +1,56 @@
+<h1>Review quiz</h1>
+
+<!-- Results of review actions, for screen readers. -->
+<p class="visually-hidden" aria-live="polite">{{ store.announcement() }}</p>
+
+@if (store.loading() && !store.quiz()) {
+  <p role="status"><span class="spinner" aria-hidden="true"></span> Loading the quiz…</p>
+}
+
+<app-error-message [error]="store.loadError()" />
+
+@if (store.quiz(); as quiz) {
+  @switch (quiz.status) {
+    @case ('draft') {
+      <app-review-header
+        [counts]="store.counts()"
+        [editRate]="store.editRate()"
+        [canPublish]="store.canPublish()"
+        [publishing]="store.publishing()"
+        [publishError]="store.publishError()"
+        (publish)="publish()"
+      />
+      <ol class="question-list">
+        @for (question of store.questions(); track question.position) {
+          @let card = store.card(question.position);
+          <li>
+            <app-question-card
+              [question]="question"
+              [busy]="card.busy"
+              [error]="card.error"
+              [retryable]="card.retry !== undefined"
+              [fieldErrors]="card.fieldErrors ?? []"
+              [editing]="store.editing() === question.position"
+              [otherStems]="otherStems(question.position)"
+              (statusChange)="store.setStatus(question.position, $event)"
+              (editStart)="store.startEdit(question.position)"
+              (editCancel)="store.cancelEdit()"
+              (save)="save(question.position, $event)"
+              (regenerate)="store.regenerate(question.position)"
+              (retry)="retry(question.position)"
+            />
+          </li>
+        }
+      </ol>
+    }
+    @case ('failed') {
+      <div class="notice" role="alert">
+        <p>This quiz could not be generated because {{ failureText() }}.</p>
+        <a routerLink="/lessons/new">Write a new lesson</a>
+      </div>
+    }
+    @case ('generating') {
+      <p class="notice" role="status">This quiz is still being generated. Reload in a moment.</p>
+    }
+  }
+}

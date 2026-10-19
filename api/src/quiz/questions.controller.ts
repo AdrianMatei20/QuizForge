@@ -1,11 +1,5 @@
-import {
-  Body,
-  Controller,
-  Param,
-  ParseUUIDPipe,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Param, Patch, Post } from '@nestjs/common';
+import { parseUuidParam } from '../common/problem-details/validation-problem.js';
 import {
   ApiCreatedResponse,
   ApiOkResponse,
@@ -44,7 +38,7 @@ export class QuestionsController {
   @ApiOkResponse({ type: QuestionResponse })
   @ApiProblems(PROBLEMS.validation, PROBLEMS.notFound, PROBLEMS.editConflict)
   async update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', parseUuidParam('id')) id: string,
     @Body() body: UpdateQuestionDto,
   ): Promise<QuestionResponse> {
     return toQuestionResponse(await this.review.updateQuestion(id, body));
@@ -73,7 +67,7 @@ export class QuestionsController {
     PROBLEMS.regeneration.timeout,
   )
   async regenerate(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', parseUuidParam('id')) id: string,
   ): Promise<QuestionResponse> {
     return toQuestionResponse(await this.review.regenerateQuestion(id));
   }

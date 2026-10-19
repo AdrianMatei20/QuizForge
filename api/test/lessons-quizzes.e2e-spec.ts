@@ -204,7 +204,12 @@ describe('Lessons and quizzes (e2e)', () => {
         .get('/api/lessons/00000000-0000-4000-8000-000000000000')
         .expect(404)
         .expect('Content-Type', /application\/problem\+json/);
-      await http().get('/api/lessons/not-a-uuid').expect(400);
+      const malformed = await http().get('/api/lessons/not-a-uuid').expect(400);
+      expect(malformed.body).toMatchObject({
+        type: 'urn:quizforge:problem:validation-error',
+        errors: [{ parameter: 'id', detail: 'id must be a UUID' }],
+      });
+      expect(malformed.body).not.toHaveProperty(['errors', 0, 'pointer']);
     });
   });
 
@@ -434,11 +439,15 @@ describe('Lessons and quizzes (e2e)', () => {
         const response = await http()
           .get(`/api/lessons/${lessonId}/quizzes?limit=${limit}`)
           .expect(400);
-        expect(response.body).toMatchObject({
-          errors: expect.arrayContaining([
-            expect.objectContaining({ pointer: '#/limit' }),
-          ]),
-        });
+        const { errors } = response.body as {
+          errors: { parameter?: string; pointer?: string }[];
+        };
+        // A query parameter is named, never given a body-style pointer.
+        expect(errors.length).toBeGreaterThan(0);
+        for (const error of errors) {
+          expect(error.parameter).toBe('limit');
+          expect(error).not.toHaveProperty('pointer');
+        }
       },
     );
 

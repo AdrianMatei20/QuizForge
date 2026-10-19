@@ -45,13 +45,21 @@ export class ProblemDetailsDto {
 export class ProblemFieldErrorDto {
   @ApiPropertyOptional({
     description:
-      'JSON Pointer to the offending field. Absent when the rule is about the whole document.',
-    example: '#/options',
+      'JSON Pointer to the offending request body field, e.g. "#/options/3".',
+    example: '#/options/3',
   })
   pointer?: string;
 
+  @ApiPropertyOptional({
+    description:
+      'Name of the offending query or path parameter, e.g. "limit" or "id".',
+    example: 'limit',
+  })
+  parameter?: string;
+
   @ApiProperty({
-    description: 'What is wrong with it.',
+    description:
+      'What is wrong. When neither pointer nor parameter is set, it is about the request as a whole.',
     example: 'question 2: options 1 and 2 are identical',
   })
   detail!: string;

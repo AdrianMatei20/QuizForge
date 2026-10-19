@@ -61,7 +61,7 @@ export const PROBLEMS = {
   validation: {
     status: 400,
     description:
-      'Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.',
+      'Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.',
     schema: ValidationProblemDetailsDto,
   },
   notFound: {

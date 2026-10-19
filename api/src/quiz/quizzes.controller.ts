@@ -5,10 +5,10 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseUUIDPipe,
   Post,
   Query,
 } from '@nestjs/common';
+import { parseUuidParam } from '../common/problem-details/validation-problem.js';
 import {
   ApiCreatedResponse,
   ApiOkResponse,
@@ -76,7 +76,7 @@ export class QuizzesController {
     PROBLEMS.generation.timeout,
   )
   async generate(
-    @Param('lessonId', ParseUUIDPipe) lessonId: string,
+    @Param('lessonId', parseUuidParam('lessonId')) lessonId: string,
     @Body() body: GenerateQuizDto,
   ): Promise<QuizResponse> {
     return toQuizResponse(await this.quizzes.generate(lessonId, body));
@@ -92,7 +92,7 @@ export class QuizzesController {
   @ApiOkResponse({ type: [QuizSummaryResponse] })
   @ApiProblems(PROBLEMS.validation, PROBLEMS.notFound)
   async listForLesson(
-    @Param('lessonId', ParseUUIDPipe) lessonId: string,
+    @Param('lessonId', parseUuidParam('lessonId')) lessonId: string,
     @Query() query: ListQuizzesQueryDto,
   ): Promise<QuizSummaryResponse[]> {
     const quizzes = await this.quizzes.listForLesson(
@@ -111,7 +111,9 @@ export class QuizzesController {
   @QUIZ_ID
   @ApiOkResponse({ type: QuizResponse })
   @ApiProblems(PROBLEMS.validation, PROBLEMS.notFound)
-  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<QuizResponse> {
+  async findOne(
+    @Param('id', parseUuidParam('id')) id: string,
+  ): Promise<QuizResponse> {
     return toQuizResponse(await this.quizzes.findById(id));
   }
 
@@ -134,7 +136,9 @@ export class QuizzesController {
     PROBLEMS.publishConflict,
     PROBLEMS.noApprovedQuestions,
   )
-  async publish(@Param('id', ParseUUIDPipe) id: string): Promise<QuizResponse> {
+  async publish(
+    @Param('id', parseUuidParam('id')) id: string,
+  ): Promise<QuizResponse> {
     await this.review.publish(id);
     return toQuizResponse(await this.quizzes.findById(id));
   }
@@ -149,7 +153,7 @@ export class QuizzesController {
   @ApiOkResponse({ type: ReviewStatsResponse })
   @ApiProblems(PROBLEMS.validation, PROBLEMS.notFound)
   async reviewStats(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', parseUuidParam('id')) id: string,
   ): Promise<ReviewStatsResponse> {
     return { quizId: id, ...(await this.review.reviewStats(id)) };
   }
@@ -165,7 +169,7 @@ export class QuizzesController {
   @ApiOkResponse({ type: QuizCostResponse })
   @ApiProblems(PROBLEMS.validation, PROBLEMS.notFound)
   async cost(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', parseUuidParam('id')) id: string,
   ): Promise<QuizCostResponse> {
     return toQuizCostResponse(id, await this.quizzes.getCost(id));
   }

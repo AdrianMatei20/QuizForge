@@ -1,17 +1,49 @@
 .app-header {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #ddd;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+
+  nav a {
+    color: var(--color-text);
+    text-decoration: none;
+
+    &.active {
+      text-decoration: underline;
+      text-underline-offset: 0.3em;
+    }
+  }
 }
 
 .brand {
-  font-weight: 700;
   font-size: 1.25rem;
-  color: inherit;
+  font-weight: 700;
+  color: var(--color-text);
   text-decoration: none;
 }
 
 .app-main {
   max-width: 60rem;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: var(--space-5);
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--space-2);
+  top: -3rem;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  z-index: 10;
+
+  &:focus {
+    top: var(--space-2);
+  }
 }

@@ -4,10 +4,12 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { ValidationError } from 'class-validator';
+import { IsInt, Max, ValidationError } from 'class-validator';
 import { toProblemDetails } from './problem-details.filter.js';
 import { PROBLEM_TYPES, ProblemException } from './problem-details.js';
 import {
+  parseUuidParam,
+  ProblemValidationPipe,
   toProblemFieldErrors,
   validationProblem,
 } from './validation-problem.js';
@@ -64,6 +66,84 @@ describe('toProblemFieldErrors', () => {
   it('returns an empty list when there are no errors', () => {
     expect(toProblemFieldErrors([])).toEqual([]);
   });
+
+  it('names query and path parameters instead of giving them body pointers', () => {
+    const errors = toProblemFieldErrors(
+      [validationError('limit', { max: 'limit must not be greater than 100' })],
+      'parameter',
+    );
+
+    expect(errors).toEqual([
+      { parameter: 'limit', detail: 'limit must not be greater than 100' },
+    ]);
+  });
+});
+
+describe('ProblemValidationPipe', () => {
+  class LimitQuery {
+    @IsInt()
+    @Max(100)
+    limit!: number;
+  }
+  const pipe = new ProblemValidationPipe({ transform: true });
+
+  const problemFor = async (type: 'body' | 'query' | 'param') => {
+    try {
+      await pipe.transform({ limit: 500 }, { type, metatype: LimitQuery });
+    } catch (error) {
+      return (error as ProblemException).problem;
+    }
+    throw new Error('expected the pipe to throw');
+  };
+
+  it('locates body errors with a JSON Pointer', async () => {
+    expect((await problemFor('body')).errors).toEqual([
+      { pointer: '#/limit', detail: 'limit must not be greater than 100' },
+    ]);
+  });
+
+  it.each(['query', 'param'] as const)(
+    'locates %s errors by parameter name, without a pointer',
+    async (type) => {
+      const problem = await problemFor(type);
+
+      expect(problem).toMatchObject({
+        type: PROBLEM_TYPES.validation,
+        status: 400,
+      });
+      expect(problem.errors).toEqual([
+        { parameter: 'limit', detail: 'limit must not be greater than 100' },
+      ]);
+    },
+  );
+
+  it('passes valid values through', async () => {
+    await expect(
+      pipe.transform({ limit: 5 }, { type: 'query', metatype: LimitQuery }),
+    ).resolves.toEqual({ limit: 5 });
+  });
+});
+
+describe('parseUuidParam', () => {
+  it('rejects a malformed id with a validation problem naming the parameter', async () => {
+    let thrown: unknown;
+    try {
+      await parseUuidParam('lessonId').transform('not-a-uuid', {
+        type: 'param',
+        data: 'lessonId',
+      });
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect((thrown as ProblemException).problem).toEqual({
+      type: PROBLEM_TYPES.validation,
+      title: 'Validation failed',
+      status: 400,
+      detail: 'The request contains invalid fields.',
+      errors: [{ parameter: 'lessonId', detail: 'lessonId must be a UUID' }],
+    });
+  });
 });
 
 describe('toProblemDetails', () => {
@@ -71,7 +151,11 @@ describe('toProblemDetails', () => {
 
   it('uses a ProblemException as-is and adds the instance', () => {
     const problem = toProblemDetails(
-      validationProblem([validationError('title', { isString: 'bad title' })]),
+      validationProblem(
+        toProblemFieldErrors([
+          validationError('title', { isString: 'bad title' }),
+        ]),
+      ),
       instance,
     );
 

@@ -1,0 +1,119 @@
+<form
+  class="edit-form"
+  novalidate
+  (submit)="submit($event)"
+  (input)="dismissServerErrors()"
+  [attr.aria-label]="'Edit question ' + question().position"
+>
+  @if (generalErrors().length > 0) {
+    <ul class="general-errors" role="alert">
+      @for (error of generalErrors(); track $index) {
+        <li>{{ error.detail }}</li>
+      }
+    </ul>
+  }
+
+  @let stemMessages = messages(editForm.stem, '#/stem');
+  <div class="field">
+    <label [for]="idPrefix() + '-stem'">Question</label>
+    <textarea
+      #stemInput
+      rows="2"
+      [id]="idPrefix() + '-stem'"
+      [formField]="editForm.stem"
+      [attr.aria-invalid]="stemMessages.length > 0"
+      [attr.aria-describedby]="stemMessages.length > 0 ? idPrefix() + '-stem-errors' : null"
+    ></textarea>
+    @if (stemMessages.length > 0) {
+      <ul class="field-errors" [id]="idPrefix() + '-stem-errors'">
+        @for (message of stemMessages; track $index) {
+          <li>{{ message }}</li>
+        }
+      </ul>
+    }
+  </div>
+
+  <fieldset class="field options">
+    <legend>Options <span class="hint">(select the correct answer)</span></legend>
+    @if (isTrueFalse()) {
+      <p class="hint">True/false options are fixed; you can change which one is correct.</p>
+    }
+    @for (option of model().options; track $index; let i = $index) {
+      @let optionMessages = messages(optionField(i), '#/options/' + i);
+      <div class="option-row">
+        <input
+          type="radio"
+          [id]="idPrefix() + '-correct-' + i"
+          [name]="idPrefix() + '-correct'"
+          [checked]="model().correctIndex === i"
+          (change)="setCorrect(i)"
+          [attr.aria-label]="'Option ' + letter(i) + ' is the correct answer'"
+        />
+        @if (isTrueFalse()) {
+          <label class="fixed-option" [for]="idPrefix() + '-correct-' + i">{{ option }}</label>
+        } @else {
+          <div class="option-input">
+            <label class="visually-hidden" [for]="idPrefix() + '-option-' + i">
+              Option {{ letter(i) }}
+            </label>
+            <span class="option-letter" aria-hidden="true">{{ letter(i) }}</span>
+            <input
+              type="text"
+              [id]="idPrefix() + '-option-' + i"
+              [formField]="optionField(i)"
+              [attr.aria-invalid]="optionMessages.length > 0"
+              [attr.aria-describedby]="
+                optionMessages.length > 0 ? idPrefix() + '-option-' + i + '-errors' : null
+              "
+            />
+          </div>
+        }
+      </div>
+      @if (optionMessages.length > 0) {
+        <ul class="field-errors" [id]="idPrefix() + '-option-' + i + '-errors'">
+          @for (message of optionMessages; track $index) {
+            <li>Option {{ letter(i) }}: {{ message }}</li>
+          }
+        </ul>
+      }
+    }
+    @let correctMessages = messages(editForm.correctIndex, '#/correctIndex');
+    @if (correctMessages.length > 0) {
+      <ul class="field-errors">
+        @for (message of correctMessages; track $index) {
+          <li>{{ message }}</li>
+        }
+      </ul>
+    }
+  </fieldset>
+
+  @let explanationMessages = messages(editForm.explanation, '#/explanation');
+  <div class="field">
+    <label [for]="idPrefix() + '-explanation'">Explanation</label>
+    <textarea
+      rows="3"
+      [id]="idPrefix() + '-explanation'"
+      [formField]="editForm.explanation"
+      [attr.aria-invalid]="explanationMessages.length > 0"
+      [attr.aria-describedby]="
+        explanationMessages.length > 0 ? idPrefix() + '-explanation-errors' : null
+      "
+    ></textarea>
+    @if (explanationMessages.length > 0) {
+      <ul class="field-errors" [id]="idPrefix() + '-explanation-errors'">
+        @for (message of explanationMessages; track $index) {
+          <li>{{ message }}</li>
+        }
+      </ul>
+    }
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="button primary" [disabled]="saving()">
+      {{ saving() ? 'Saving…' : 'Save' }}
+    </button>
+    <button type="button" class="button secondary" [disabled]="saving()" (click)="cancelled.emit()">
+      Cancel
+    </button>
+  </div>
+</form>

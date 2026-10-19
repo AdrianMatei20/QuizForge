@@ -3,6 +3,7 @@ import { EXAMPLE_IDS } from '../docs/problem-details.dto.js';
 import type { LlmUsageTotals } from '../llm/llm-call.store.js';
 import type { Question } from './question.entity.js';
 import type { Quiz } from './quiz.entity.js';
+import { contentDiffers } from './review-stats.js';
 import {
   DIFFICULTIES,
   type Difficulty,
@@ -80,6 +81,14 @@ export class QuestionResponse {
     description: 'When a teacher last changed the content; null if never.',
   })
   editedAt!: string | null;
+
+  @ApiProperty({
+    description:
+      "Whether the content now differs from the AI's version: stem, explanation, the set of options or the correct answer. " +
+      'Reordering options, or changing only case or whitespace, does not count. The edit rate uses the same rule.',
+    example: false,
+  })
+  isEdited!: boolean;
 }
 
 export class QuizSettingsResponse {
@@ -230,7 +239,8 @@ export class QuizCostResponse {
 
 /**
  * Explicit mapping keeps the API shape independent of the table layout.
- * `original` and the per-question prompt and model stay internal.
+ * `original` and the per-question prompt and model stay internal; clients get
+ * `isEdited` instead of the original itself.
  */
 export function toQuizResponse(quiz: Quiz): QuizResponse {
   return {
@@ -284,5 +294,6 @@ export function toQuestionResponse(question: Question): QuestionResponse {
     sourceQuote: question.sourceQuote,
     status: question.status,
     editedAt: question.editedAt?.toISOString() ?? null,
+    isEdited: contentDiffers(question),
   };
 }

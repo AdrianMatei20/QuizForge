@@ -2,7 +2,7 @@
 
 QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a teacher approves, edits, rejects or regenerates them, and an eval harness measures prompt quality.
 
-> Status: Phase 3 (review actions and publishing). Through the API, a teacher can generate a draft quiz from a lesson, edit, approve, reject or regenerate its questions, and publish it; there is no web UI for it yet.
+> Status: Phase 4 (Angular lesson editor and review board). In the browser, a teacher can write a lesson, generate a quiz, review every question (approve, reject, edit, regenerate) and publish it.
 
 ## Roadmap
 
@@ -10,6 +10,7 @@ QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a t
 - [x] Phase 1: LLM foundation (LlmModule, prompt registry, daily budget, Redis cache, retries with backoff, output validation and repair, per-call cost tracking)
 - [x] Phase 2: Lessons and synchronous quiz generation (lessons, quizzes and questions tables, quiz prompt v1, rule checks, sample lessons)
 - [x] Phase 3: Review actions and publishing (edit, approve/reject, regenerate one question, publish, review stats, shuffled answer options)
+- [x] Phase 4: Angular lesson editor and review board (lesson form, review board with optimistic status changes and inline editing, published view, typed API client, problem-details error handling)
 
 ## Repository layout
 
@@ -22,7 +23,8 @@ QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a t
 | `api/src/lessons/`   | Lessons: create and read                                           |
 | `api/src/quiz/`      | Quizzes: generation, output schema, rule checks                    |
 | `api/fixtures/`      | Sample lessons (recursion, binary search, HTTP caching)            |
-| `web/`               | Angular app (standalone components, signals)                       |
+| `web/`               | Angular app (standalone components, signals, Signal Forms)         |
+| `web/src/app/core/`  | Typed API client (types generated from the OpenAPI spec), errors   |
 | `docker-compose.yml` | Local PostgreSQL and Redis                                         |
 | `docker/`            | Container init scripts (creates the `quizforge_test` database)     |
 | `postman/`           | OpenAPI spec, Postman collections and the local environment        |
@@ -59,6 +61,16 @@ curl http://localhost:4200/api/x       # proxied to the API: a 404 problem-detai
 ```
 
 `GET /health` returns 503 (as problem details, with a `checks` member) when a dependency is down.
+
+### Try it in the browser
+
+With the API on `LLM_PROVIDER=fake` (the default in `.env.example`), open http://localhost:4200:
+
+1. **New lesson:** paste the text of `api/fixtures/lessons/recursion.md` (everything below its `# Recursion` title line; the fake provider only answers for this lesson), give it a title, keep the default settings, and press **Generate quiz**.
+2. **Review board:** each question has **Approve**, **Reject**, **Edit** and **Regenerate**. Pressing Approve or Reject again moves a question back to draft. Edit opens an inline form that checks the same rules as the API. Regenerate replaces one question.
+3. **Publish quiz** becomes available once a question is approved. It opens the read-only published view.
+
+Everything works from the keyboard: fields are labelled, focus is always visible, and status changes are announced to screen readers.
 
 ## Configuration
 
@@ -105,7 +117,8 @@ Before saving, each multiple-choice question's options are shuffled and `correct
 ### Reviewing a quiz
 
 - **Status:** a question goes from `draft` to `approved` or `rejected`, and back to `draft`. Anything else (e.g. `approved` to `rejected`) is a 409. Setting the status a question already has is a no-op.
-- **Edits:** the edited question must still be valid for its type (4 distinct options, or exactly `True`/`False`) and pass the rules above, except the `sourceQuote` rules, which stop applying once a human has edited a question. A failing edit returns 400 with every violation in `errors`. `editedAt` is set only when the content actually changes. An approved question stays approved after an edit.
+- **Edits:** the edited question must still be valid for its type (4 distinct options, or exactly `True`/`False`) and pass the rules above, except the `sourceQuote` rules, which stop applying once a human has edited a question. A failing edit returns 400 with every violation in `errors`, each pointing at the field to fix (e.g. `#/options/3` for a repeated option, `#/stem` for a duplicate stem). `editedAt` is set only when the content actually changes. An approved question stays approved after an edit.
+- **`isEdited`:** each question in a response says whether its content now differs from the AI's version, by the same rule as the edit rate (reordering options or changing only case or whitespace does not count). The AI's original itself stays internal.
 - **Regenerate:** uses `api/prompts/quiz-regenerate/v1.md`, with the lesson, the replaced question's stem and the other questions' stems (all delimited as data), and is never cached. The replacement must quote the lesson and must not repeat any of those stems. It comes in as a `draft` with its own `original`.
 - **Publish:** only a `draft` quiz with at least one approved question (422 otherwise). Nothing is deleted: a published quiz consists of its approved questions, and its questions can no longer be edited, regenerated or re-published (409).
 - **Review stats:**
@@ -186,11 +199,28 @@ $env:LLM_LIVE_TESTS='1'; npm run test:live               # PowerShell
 
 Without `LLM_LIVE_TESTS=1` it is skipped.
 
+## Web app
+
+`web/` is an Angular app (standalone components, signals for state, Signal Forms, plain SCSS):
+
+| Route | What it is |
+| ----- | ---------- |
+| `/lessons/new` | Lesson editor with live character counters at the API's limits, and the quiz settings |
+| `/quizzes/:id/review` | Review board: one card per question, counts and edit rate in the header, Publish |
+| `/quizzes/:id/published` | The published quiz, read-only |
+
+- **API client:** `LessonsApi`, `QuizzesApi` and `QuestionsApi` use types generated from `postman/openapi.json`. After an API change, run `npm run openapi:export` in `api/`, then `npm run api:types` in `web/`.
+- **State:** the review board's state lives in signals in `QuizReviewStore`. Approve and reject are optimistic: the card changes at once and rolls back with an error if the API refuses.
+- **Errors:** an HTTP interceptor turns every error response into a typed `AppError`, and the UI shows a sentence a teacher can act on, never raw JSON. Unusable model output (502) offers Try again; a used-up daily budget (429) says so.
+- **Model output is always text.** `npm run lint` fails on `[innerHTML]` or `[outerHTML]` bindings and on any `bypassSecurityTrust*` call.
+
 ## Errors
 
 Every API error is an [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem details response
 (`Content-Type: application/problem+json`). Validation errors carry an `errors` array of
-`{ pointer, detail }` entries, where `pointer` is a JSON Pointer into the request body.
+`{ pointer, detail }` entries for request body fields, where `pointer` is a JSON Pointer such as
+`#/options/3`, and `{ parameter, detail }` entries for query and path parameters, e.g.
+`{ "parameter": "limit", ... }` or `{ "parameter": "id", "detail": "id must be a UUID" }`.
 
 LLM failures map to these statuses:
 

@@ -2,10 +2,12 @@ import { HttpException } from '@nestjs/common';
 
 /**
  * One entry per broken rule. `pointer` is a JSON Pointer to the offending
- * field; it is absent when the rule is about the document as a whole.
+ * body field; `parameter` names an offending query or path parameter. Both
+ * are absent when the rule is about the request as a whole.
  */
 export interface ProblemFieldError {
   pointer?: string;
+  parameter?: string;
   detail: string;
 }
 

@@ -1,7 +1,6 @@
-import { ValidationPipe } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { ProblemDetailsFilter } from './common/problem-details/problem-details.filter.js';
-import { validationProblem } from './common/problem-details/validation-problem.js';
+import { ProblemValidationPipe } from './common/problem-details/validation-problem.js';
 import { setupApiDocs } from './docs/openapi.js';
 
 /**
@@ -28,11 +27,10 @@ export function configureApp(
   // Feature routes live under /api; /health and /docs stay at the root.
   app.setGlobalPrefix('api', { exclude: ['health'] });
   app.useGlobalPipes(
-    new ValidationPipe({
+    new ProblemValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
-      exceptionFactory: validationProblem,
     }),
   );
   app.useGlobalFilters(new ProblemDetailsFilter());

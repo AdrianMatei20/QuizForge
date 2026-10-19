@@ -109,7 +109,42 @@ describe('Review actions (e2e)', () => {
         options: question.options,
         status: 'draft',
         editedAt: expect.any(String),
+        isEdited: true,
       });
+    });
+
+    it('reports isEdited only when the content differs from the AI version', async () => {
+      const quiz = await createDraftQuiz();
+      const question = at(quiz, 1);
+      expect(question.isEdited).toBe(false);
+
+      // Reordering the options (keeping the same correct answer) is not an edit,
+      // although editedAt records that the question was touched.
+      const reversed = [...question.options].reverse();
+      const reordered = await patch(question.id, {
+        options: reversed,
+        correctIndex: reversed.indexOf(
+          question.options[question.correctIndex] ?? '',
+        ),
+      }).expect(200);
+      expect(reordered.body).toMatchObject({
+        isEdited: false,
+        editedAt: expect.any(String),
+      });
+
+      // Changing back to the original stem after an edit is not an edit either.
+      await patch(question.id, { stem: 'Something else?' }).expect(200);
+      const restored = await patch(question.id, { stem: question.stem }).expect(
+        200,
+      );
+      expect((restored.body as QuestionResponse).isEdited).toBe(false);
+
+      // Marking a different option as correct is.
+      const otherAnswer = (question.correctIndex + 1) % question.options.length;
+      const changed = await patch(question.id, {
+        correctIndex: otherAnswer,
+      }).expect(200);
+      expect((changed.body as QuestionResponse).isEdited).toBe(true);
     });
 
     it('does not set editedAt when the content does not actually change', async () => {
@@ -192,13 +227,21 @@ describe('Review actions (e2e)', () => {
       });
 
       expectProblem(response, 400, 'urn:quizforge:problem:validation-error');
+      // Each violation points at the field to fix, so the UI can show it there.
       expect((response.body as { errors: unknown[] }).errors).toEqual([
-        { detail: 'question 1: options 1 and 2 are identical' },
         {
+          pointer: '#/options/1',
+          detail: 'question 1: options 1 and 2 are identical',
+        },
+        {
+          pointer: '#/options/2',
           detail:
             'question 1: option 3 is "all of the above" or "none of the above", which is not allowed',
         },
-        { detail: 'question 1: stem is the same as question 4' },
+        {
+          pointer: '#/stem',
+          detail: 'question 1: stem is the same as question 4',
+        },
       ]);
       const saved = await questions.findOneByOrFail({ id: question.id });
       expect(saved.stem).toBe(question.stem);

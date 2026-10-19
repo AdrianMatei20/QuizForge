@@ -91,7 +91,7 @@
             }
           },
           "400": {
-            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -155,7 +155,7 @@
             }
           },
           "400": {
-            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -229,7 +229,7 @@
             }
           },
           "400": {
-            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -375,7 +375,7 @@
             }
           },
           "400": {
-            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -440,7 +440,7 @@
             }
           },
           "400": {
-            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -505,7 +505,7 @@
             }
           },
           "400": {
-            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -590,7 +590,7 @@
             }
           },
           "400": {
-            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -655,7 +655,7 @@
             }
           },
           "400": {
-            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -730,7 +730,7 @@
             }
           },
           "400": {
-            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -805,7 +805,7 @@
             }
           },
           "400": {
-            "description": "Invalid request: a body field, query parameter or path id (must be a UUID). `errors` lists every problem.",
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -977,12 +977,17 @@
         "properties": {
           "pointer": {
             "type": "string",
-            "description": "JSON Pointer to the offending field. Absent when the rule is about the whole document.",
-            "example": "#/options"
+            "description": "JSON Pointer to the offending request body field, e.g. \"#/options/3\".",
+            "example": "#/options/3"
+          },
+          "parameter": {
+            "type": "string",
+            "description": "Name of the offending query or path parameter, e.g. \"limit\" or \"id\".",
+            "example": "limit"
           },
           "detail": {
             "type": "string",
-            "description": "What is wrong with it.",
+            "description": "What is wrong. When neither pointer nor parameter is set, it is about the request as a whole.",
             "example": "question 2: options 1 and 2 are identical"
           }
         },
@@ -1337,6 +1342,11 @@
             "example": "2026-10-19T15:00:00.000Z",
             "nullable": true,
             "description": "When a teacher last changed the content; null if never."
+          },
+          "isEdited": {
+            "type": "boolean",
+            "description": "Whether the content now differs from the AI's version: stem, explanation, the set of options or the correct answer. Reordering options, or changing only case or whitespace, does not count. The edit rate uses the same rule.",
+            "example": false
           }
         },
         "required": [
@@ -1349,7 +1359,8 @@
           "explanation",
           "sourceQuote",
           "status",
-          "editedAt"
+          "editedAt",
+          "isEdited"
         ]
       },
       "QuizResponse": {

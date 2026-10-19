@@ -35,9 +35,10 @@ api/ (run from `api/`; copy `.env.example` to `.env` first):
 web/ (run from `web/`):
 - `npm start`: dev server on http://localhost:4200; proxies `/api` to the API
 - `npm test -- --watch=false`: unit tests, single run
-- `npm run lint`: angular-eslint (`ng lint`) over TypeScript and templates
+- `npm run lint`: angular-eslint (`ng lint`) over TypeScript and templates; also fails on `[innerHTML]`/`[outerHTML]` bindings and `bypassSecurityTrust*` calls
 - `npm run build`: production build to `dist/web`
 - `npm run format`: Prettier
+- `npm run api:types`: regenerate `src/app/core/api/openapi.generated.ts` from `../postman/openapi.json` (run after `npm run openapi:export` in api/; commit the result)
 
 ## Architecture rules
 - All LLM access goes through LlmModule in api/src/llm. No other module imports a provider SDK.

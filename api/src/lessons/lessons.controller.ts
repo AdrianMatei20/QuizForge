@@ -1,11 +1,5 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { parseUuidParam } from '../common/problem-details/validation-problem.js';
 import {
   ApiCreatedResponse,
   ApiOkResponse,
@@ -81,7 +75,7 @@ export class LessonsController {
   @ApiOkResponse({ type: LessonResponse })
   @ApiProblems(PROBLEMS.validation, PROBLEMS.notFound)
   async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', parseUuidParam('id')) id: string,
   ): Promise<LessonResponse> {
     return toLessonResponse(await this.lessons.findById(id));
   }

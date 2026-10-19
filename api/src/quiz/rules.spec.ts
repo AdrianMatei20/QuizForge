@@ -361,10 +361,23 @@ describe('editedQuestionViolations', () => {
     });
 
     expect(editedQuestionViolations(edited, 2, others)).toEqual([
-      'question 2: options 1 and 2 are identical',
-      'question 2: correctIndex 4 is out of range (must be 0 to 3)',
-      'question 2: option 3 is "all of the above" or "none of the above", which is not allowed',
-      'question 2: stem is the same as question 3',
+      {
+        detail: 'question 2: options 1 and 2 are identical',
+        field: '/options/1',
+      },
+      {
+        detail: 'question 2: correctIndex 4 is out of range (must be 0 to 3)',
+        field: '/correctIndex',
+      },
+      {
+        detail:
+          'question 2: option 3 is "all of the above" or "none of the above", which is not allowed',
+        field: '/options/2',
+      },
+      {
+        detail: 'question 2: stem is the same as question 3',
+        field: '/stem',
+      },
     ]);
   });
 });

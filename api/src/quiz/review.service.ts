@@ -266,7 +266,10 @@ function assertValidEdit(
         { ...content, type: question.type, sourceQuote: question.sourceQuote },
         question.position,
         others,
-      ).map((detail) => ({ detail }))
+      ).map(({ detail, field }) =>
+        // A field inside the question is the same field in the request body.
+        field === undefined ? { detail } : { pointer: `#${field}`, detail },
+      )
     : parsed.error.issues.map((issue) => ({
         pointer: jsonPointer(issue.path),
         detail: issue.message,

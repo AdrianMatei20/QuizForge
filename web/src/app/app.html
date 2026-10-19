@@ -1,7 +1,14 @@
+<a class="skip-link" href="#main">Skip to content</a>
+
 <header class="app-header">
   <a routerLink="/" class="brand">QuizForge</a>
+  <nav aria-label="Main">
+    <a routerLink="/lessons/new" routerLinkActive="active" ariaCurrentWhenActive="page"
+      >New lesson</a
+    >
+  </nav>
 </header>
 
-<main class="app-main">
+<main id="main" class="app-main" tabindex="-1">
   <router-outlet />
 </main>

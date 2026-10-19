@@ -1,0 +1,79 @@
+<article
+  class="card"
+  [class]="'status-' + status()"
+  [attr.aria-labelledby]="headingId()"
+  [attr.aria-busy]="isBusy()"
+>
+  <header class="card-header">
+    <h2 class="card-title" [id]="headingId()">Question {{ question().position }}</h2>
+    <span class="badge" [class]="'badge-' + status()">{{ statusLabel() }}</span>
+    @if (question().isEdited) {
+      <span class="badge badge-edited" title="Changed from the AI's version">Edited</span>
+    }
+    <span class="type">{{ typeLabel() }}</span>
+  </header>
+
+  @if (busy() === 'regenerating') {
+    <p class="busy-note" role="status">
+      <span class="spinner" aria-hidden="true"></span> Writing a new question…
+    </p>
+  }
+
+  @if (editing()) {
+    <app-question-edit-form
+      [question]="question()"
+      [otherStems]="otherStems()"
+      [fieldErrors]="fieldErrors()"
+      [saving]="busy() === 'saving'"
+      (save)="save.emit($event)"
+      (cancelled)="editCancel.emit()"
+    />
+  } @else {
+    <app-question-content [class.dimmed]="busy() === 'regenerating'" [question]="question()" />
+  }
+
+  <app-error-message [error]="error()" [retryable]="retryable()" (retry)="retry.emit()" />
+
+  @if (!editing()) {
+    <div class="actions" role="group" [attr.aria-label]="'Review question ' + question().position">
+      <button
+        type="button"
+        class="button approve"
+        [attr.aria-pressed]="status() === 'approved'"
+        [disabled]="isBusy() || status() === 'rejected'"
+        (click)="toggle('approved')"
+      >
+        {{ status() === 'approved' ? 'Approved' : 'Approve' }}
+      </button>
+      <button
+        type="button"
+        class="button reject"
+        [attr.aria-pressed]="status() === 'rejected'"
+        [disabled]="isBusy() || status() === 'approved'"
+        (click)="toggle('rejected')"
+      >
+        {{ status() === 'rejected' ? 'Rejected' : 'Reject' }}
+      </button>
+      <button
+        #editButton
+        type="button"
+        class="button secondary"
+        [disabled]="isBusy()"
+        (click)="editStart.emit()"
+      >
+        Edit
+      </button>
+      <button
+        type="button"
+        class="button secondary"
+        [disabled]="isBusy()"
+        (click)="regenerate.emit()"
+      >
+        {{ busy() === 'regenerating' ? 'Regenerating…' : 'Regenerate' }}
+      </button>
+    </div>
+    @if (status() !== 'draft') {
+      <p class="hint">Press "{{ statusLabel() }}" again to move it back to draft.</p>
+    }
+  }
+</article>
