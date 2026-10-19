@@ -105,6 +105,24 @@ describe('validateEnv', () => {
     ).toContain('QUIZ_GENERATION_TIMEOUT_MS');
   });
 
+  it('defaults the generate throttle to 10 per minute and leaves tracing off', () => {
+    const env = validateEnv(validEnv);
+
+    expect(env.THROTTLE_GENERATE_LIMIT).toBe(10);
+    expect(env.THROTTLE_GENERATE_TTL_MS).toBe(60_000);
+    expect(env.OTEL_EXPORTER_OTLP_ENDPOINT).toBeUndefined();
+    expect(
+      validateEnv({ ...validEnv, OTEL_EXPORTER_OTLP_ENDPOINT: '' })
+        .OTEL_EXPORTER_OTLP_ENDPOINT,
+    ).toBeUndefined();
+    expect(
+      errorMessageFor({
+        ...validEnv,
+        OTEL_EXPORTER_OTLP_ENDPOINT: 'localhost:4318',
+      }),
+    ).toContain('OTEL_EXPORTER_OTLP_ENDPOINT');
+  });
+
   it('rejects a timeout that is not a positive integer', () => {
     expect(errorMessageFor({ ...validEnv, LLM_TIMEOUT_MS: '0' })).toContain(
       'LLM_TIMEOUT_MS',

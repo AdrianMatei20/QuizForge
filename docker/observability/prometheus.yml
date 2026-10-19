@@ -1,0 +1,10 @@
+# Scrapes the QuizForge API's /metrics. The API runs on the host, not in Compose.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: quizforge-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:3000"]

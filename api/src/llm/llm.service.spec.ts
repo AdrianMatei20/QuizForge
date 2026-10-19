@@ -826,6 +826,7 @@ describe('LlmService.generate', () => {
         attempts: 1,
         errorCode: null,
         correlationId: null,
+        usageEstimated: false,
         createdAt: new Date('2026-10-18T23:59:59.999Z'),
       });
 

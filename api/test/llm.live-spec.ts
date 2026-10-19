@@ -5,6 +5,7 @@ import { LlmService } from '../src/llm/llm.service.js';
 import { parseUsd } from '../src/llm/money.js';
 import { LlmPricing, loadPricingFile } from '../src/llm/pricing.js';
 import { PROMPTS_DIR, PromptRegistry } from '../src/llm/prompt-registry.js';
+import { LlmMetrics } from '../src/metrics/llm-metrics.js';
 import { DEFAULT_BACKOFF } from '../src/llm/retry.js';
 import {
   InMemoryLlmCache,
@@ -43,6 +44,7 @@ describe.skipIf(!live)('LLM live smoke test', () => {
         random: Math.random,
         sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
       },
+      new LlmMetrics(),
     );
 
     const result = await service.generate({

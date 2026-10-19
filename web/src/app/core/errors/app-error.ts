@@ -9,6 +9,7 @@ export type AppErrorKind =
   | 'too-large'
   | 'refused'
   | 'budget-exceeded'
+  | 'too-many-requests'
   | 'rate-limited'
   | 'invalid-output'
   | 'provider-error'
@@ -25,6 +26,8 @@ const KIND_BY_TYPE: Readonly<Record<string, AppErrorKind>> = {
   [`${PREFIX}lesson-too-large`]: 'too-large',
   [`${PREFIX}llm-refused`]: 'refused',
   [`${PREFIX}llm-budget-exceeded`]: 'budget-exceeded',
+  // Our own rate limit on generate/regenerate (not the AI provider's).
+  [`${PREFIX}too-many-requests`]: 'too-many-requests',
   [`${PREFIX}llm-rate-limited`]: 'rate-limited',
   // Both mean the model's answer could not be used; asking again may work.
   [`${PREFIX}llm-invalid-output`]: 'invalid-output',

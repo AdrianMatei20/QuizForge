@@ -134,6 +134,7 @@ describe('FakeLlmClient', () => {
     const events = await collect(client.stream(request));
 
     expect(events).toEqual([
+      { type: 'start', inputTokens: 3 },
       { type: 'text', text: 'abcde' },
       { type: 'text', text: 'fghij' },
       { type: 'text', text: 'kl' },

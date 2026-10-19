@@ -70,6 +70,15 @@ export class LlmCall {
   errorCode: string | null;
 
   /**
+   * True when the tokens (and so the cost) are an estimate: a stream that
+   * ended without the provider's final usage (timeout, shutdown, early stop).
+   * Input tokens then come from the stream's start event when the provider
+   * sent one; output tokens are estimated from the text received.
+   */
+  @Column({ name: 'usage_estimated', type: 'boolean', default: false })
+  usageEstimated: boolean;
+
+  /**
    * Groups the calls made for one piece of work, e.g. a quiz id. Opaque to
    * LlmModule: it never knows what the id refers to. Indexed for the
    * per-correlation usage query.

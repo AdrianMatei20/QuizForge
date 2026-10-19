@@ -54,6 +54,17 @@ export const baseEnvSchema = z.object({
     .int()
     .min(1_000)
     .default(300_000),
+  // Rate limit for the LLM-backed endpoints (generate, regenerate): this many requests per window, per client IP.
+  THROTTLE_GENERATE_LIMIT: z.coerce.number().int().min(1).default(10),
+  THROTTLE_GENERATE_TTL_MS: z.coerce.number().int().min(1_000).default(60_000),
+  // Tracing: on when set (e.g. http://localhost:4318). Read by src/telemetry.ts before the app starts.
+  OTEL_EXPORTER_OTLP_ENDPOINT: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z
+      .url({ protocol: /^https?$/, error: 'must be an http(s):// URL' })
+      .optional(),
+  ),
+  OTEL_SERVICE_NAME: z.string().min(1).default('quizforge-api'),
 });
 
 export const envSchema = baseEnvSchema.refine(

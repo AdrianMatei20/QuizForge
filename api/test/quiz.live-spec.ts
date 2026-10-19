@@ -11,6 +11,7 @@ import { LlmService } from '../src/llm/llm.service.js';
 import { parseModelOutput } from '../src/llm/output-parser.js';
 import { LlmPricing, loadPricingFile } from '../src/llm/pricing.js';
 import { PROMPTS_DIR, PromptRegistry } from '../src/llm/prompt-registry.js';
+import { LlmMetrics } from '../src/metrics/llm-metrics.js';
 import { DEFAULT_BACKOFF } from '../src/llm/retry.js';
 import { buildQuizRequest } from '../src/quiz/quiz-request.js';
 import type { QuizSettings } from '../src/quiz/quiz.types.js';
@@ -78,6 +79,7 @@ describe.skipIf(!live)('quiz generation, live', () => {
           random: Math.random,
           sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
         },
+        new LlmMetrics(),
       );
       const lesson = loadSampleLesson(name);
       const request = buildQuizRequest({

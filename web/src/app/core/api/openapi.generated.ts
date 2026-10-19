@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Prometheus metrics
+         * @description LLM metrics (llm_requests_total, llm_latency_seconds, llm_tokens_total, llm_cost_usd_total) and default Node.js process metrics, in the Prometheus text format. Unauthenticated: see the README known limitations.
+         */
+        get: operations["MetricsController_scrape"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -231,6 +251,26 @@ export interface paths {
          * @description Generates one question of the same type that repeats none of the quiz questions, at the same position, as a draft. The old question is soft-deleted.
          */
         post: operations["QuestionsController_regenerate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * LLM usage and cost
+         * @description Totals and a per-day, per-feature breakdown from llm_calls: calls, input and output tokens, cost, cache-hit rate, error rate, calls per status, and the estimated part (streams that never received the provider usage). Days are UTC.
+         */
+        get: operations["UsageController_report"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -718,6 +758,112 @@ export interface components {
              */
             status?: "draft" | "approved" | "rejected";
         };
+        UsageStatusCounts: {
+            /** @example 40 */
+            ok: number;
+            /** @example 1 */
+            invalid_output: number;
+            /** @example 0 */
+            error: number;
+            /** @example 0 */
+            budget_exceeded: number;
+            /** @example 0 */
+            refused: number;
+            /** @example 1 */
+            truncated: number;
+        };
+        EstimatedUsageResponse: {
+            /** @example 1 */
+            calls: number;
+            /** @example 1874 */
+            inputTokens: number;
+            /** @example 230 */
+            outputTokens: number;
+            /** @example 0.000302 */
+            costUsd: string;
+        };
+        UsageBucketResponse: {
+            /**
+             * @description LLM calls (llm_calls rows).
+             * @example 42
+             */
+            calls: number;
+            /** @example 78000 */
+            inputTokens: number;
+            /** @example 61000 */
+            outputTokens: number;
+            /**
+             * @description USD, a decimal string summed exactly. Includes estimated rows.
+             * @example 0.038300
+             */
+            costUsd: string;
+            /**
+             * @description Cache hits / calls. Null when there are no calls.
+             * @example 0.1
+             */
+            cacheHitRate: number | null;
+            /**
+             * @description Calls whose status is not "ok" (invalid output, errors, budget, refusals, truncation) / calls. Null when there are no calls.
+             * @example 0.05
+             */
+            errorRate: number | null;
+            /** @description Calls per status. */
+            byStatus: components["schemas"]["UsageStatusCounts"];
+            /** @description The part of these figures that is estimated: streams that ended without the provider reporting usage (timeout, shutdown). */
+            estimated: components["schemas"]["EstimatedUsageResponse"];
+        };
+        UsageDayResponse: {
+            /**
+             * @description LLM calls (llm_calls rows).
+             * @example 42
+             */
+            calls: number;
+            /** @example 78000 */
+            inputTokens: number;
+            /** @example 61000 */
+            outputTokens: number;
+            /**
+             * @description USD, a decimal string summed exactly. Includes estimated rows.
+             * @example 0.038300
+             */
+            costUsd: string;
+            /**
+             * @description Cache hits / calls. Null when there are no calls.
+             * @example 0.1
+             */
+            cacheHitRate: number | null;
+            /**
+             * @description Calls whose status is not "ok" (invalid output, errors, budget, refusals, truncation) / calls. Null when there are no calls.
+             * @example 0.05
+             */
+            errorRate: number | null;
+            /** @description Calls per status. */
+            byStatus: components["schemas"]["UsageStatusCounts"];
+            /** @description The part of these figures that is estimated: streams that ended without the provider reporting usage (timeout, shutdown). */
+            estimated: components["schemas"]["EstimatedUsageResponse"];
+            /**
+             * @description UTC day.
+             * @example 2026-10-19
+             */
+            date: string;
+            /** @example quiz-generation-stream */
+            feature: string;
+        };
+        UsageReportResponse: {
+            /**
+             * @description First UTC day (inclusive).
+             * @example 2026-10-13
+             */
+            from: string;
+            /**
+             * @description Last UTC day (inclusive).
+             * @example 2026-10-19
+             */
+            to: string;
+            totals: components["schemas"]["UsageBucketResponse"];
+            /** @description One entry per day and feature that had calls, by day then feature. */
+            days: components["schemas"]["UsageDayResponse"][];
+        };
     };
     responses: never;
     parameters: never;
@@ -727,6 +873,35 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    MetricsController_scrape: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Prometheus text exposition format. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Unexpected error. The details are logged, never returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
     HealthController_check: {
         parameters: {
             query?: never;
@@ -975,7 +1150,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["QuizGenerationProblemDetailsDto"];
                 };
             };
-            /** @description Today's AI budget (LLM_DAILY_BUDGET_USD) is used up; the provider was not called (urn:quizforge:problem:llm-budget-exceeded). The failed quiz is identified by `quizId`. */
+            /** @description Too many generation requests from this client (urn:quizforge:problem:too-many-requests; THROTTLE_GENERATE_LIMIT per THROTTLE_GENERATE_TTL_MS), or today's AI budget (LLM_DAILY_BUDGET_USD) is used up and the provider was not called (urn:quizforge:problem:llm-budget-exceeded). The failed quiz is identified by `quizId`. */
             429: {
                 headers: {
                     /** @description Seconds to wait before trying again. */
@@ -983,7 +1158,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["QuizGenerationProblemDetailsDto"];
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
             /** @description Unexpected error after the quiz was created (failureReason internal_error). Includes `quizId`. */
@@ -1401,7 +1576,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["LlmProblemDetailsDto"];
                 };
             };
-            /** @description Today's AI budget (LLM_DAILY_BUDGET_USD) is used up; the provider was not called (urn:quizforge:problem:llm-budget-exceeded). The question is left unchanged. */
+            /** @description Too many generation requests from this client (urn:quizforge:problem:too-many-requests; THROTTLE_GENERATE_LIMIT per THROTTLE_GENERATE_TTL_MS), or today's AI budget (LLM_DAILY_BUDGET_USD) is used up and the provider was not called (urn:quizforge:problem:llm-budget-exceeded). The question is left unchanged. */
             429: {
                 headers: {
                     /** @description Seconds to wait before trying again. */
@@ -1409,7 +1584,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["LlmProblemDetailsDto"];
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
             /** @description Unexpected error. The details are logged, never returned. */
@@ -1448,6 +1623,48 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["LlmProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    UsageController_report: {
+        parameters: {
+            query?: {
+                /** @description First UTC day, YYYY-MM-DD. Default: 6 days before `to`. */
+                from?: string;
+                /** @description Last UTC day, YYYY-MM-DD. Default: today. At most 366 days in all. */
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageReportResponse"];
+                };
+            };
+            /** @description Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. The details are logged, never returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
         };

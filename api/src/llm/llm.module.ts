@@ -83,6 +83,7 @@ export function llmServiceOptionsFromConfig(
     },
     LlmService,
   ],
-  exports: [LlmService],
+  // CLOCK too, so /usage and the budget guard agree on what "today" is.
+  exports: [LlmService, CLOCK],
 })
 export class LlmModule {}

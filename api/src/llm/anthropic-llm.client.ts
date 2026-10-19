@@ -76,7 +76,12 @@ export class AnthropicLlmClient implements LlmClient {
         requestOptions(request),
       );
       for await (const event of stream) {
-        if (
+        if (event.type === 'message_start') {
+          yield {
+            type: 'start',
+            inputTokens: event.message.usage.input_tokens,
+          };
+        } else if (
           event.type === 'content_block_delta' &&
           event.delta.type === 'text_delta'
         ) {

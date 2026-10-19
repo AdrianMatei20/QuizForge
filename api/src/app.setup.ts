@@ -1,6 +1,7 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { ProblemDetailsFilter } from './common/problem-details/problem-details.filter.js';
 import { ProblemValidationPipe } from './common/problem-details/validation-problem.js';
+import { TracingInterceptor } from './common/tracing/tracing.interceptor.js';
 import { setupApiDocs } from './docs/openapi.js';
 
 /**
@@ -25,7 +26,7 @@ export function configureApp(
 ): void {
   app.useBodyParser('json', { limit: JSON_BODY_LIMIT });
   // Feature routes live under /api; /health and /docs stay at the root.
-  app.setGlobalPrefix('api', { exclude: ['health'] });
+  app.setGlobalPrefix('api', { exclude: ['health', 'metrics'] });
   app.useGlobalPipes(
     new ProblemValidationPipe({
       whitelist: true,
@@ -34,6 +35,8 @@ export function configureApp(
     }),
   );
   app.useGlobalFilters(new ProblemDetailsFilter());
+  // A span per handler when tracing is on; a no-op otherwise.
+  app.useGlobalInterceptors(new TracingInterceptor());
   // After the global prefix, so the documented paths include /api.
   if (apiDocs) {
     setupApiDocs(app);

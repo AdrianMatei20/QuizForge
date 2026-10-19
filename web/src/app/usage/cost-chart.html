@@ -1,0 +1,130 @@
+<figure class="cost-chart">
+  <figcaption>
+    <h2 class="chart-title">Daily cost by feature</h2>
+  </figcaption>
+
+  @if (data().series.length > 0) {
+    <ul class="legend" aria-label="Features">
+      @for (series of data().series; track series.key) {
+        <li>
+          <span class="swatch" [style.background]="series.color" aria-hidden="true"></span>
+          {{ series.label }}
+        </li>
+      }
+    </ul>
+  }
+
+  <div class="plot" (mouseleave)="hovered.set(null)">
+    <svg
+      [attr.viewBox]="'0 0 ' + width + ' ' + height"
+      role="img"
+      [attr.aria-label]="summary()"
+      preserveAspectRatio="xMidYMid meet"
+    >
+      <!-- Recessive grid and y axis labels. -->
+      @for (tick of data().ticks; track tick) {
+        <line
+          class="grid"
+          [attr.x1]="margin.left"
+          [attr.x2]="margin.left + plotWidth"
+          [attr.y1]="y(tick)"
+          [attr.y2]="y(tick)"
+        />
+        <text
+          class="axis-label"
+          [attr.x]="margin.left - 8"
+          [attr.y]="y(tick)"
+          text-anchor="end"
+          dominant-baseline="middle"
+        >
+          {{ formatUsd(tick) }}
+        </text>
+      }
+
+      @for (column of columns(); track column.day.date; let i = $index) {
+        <g [class.dimmed]="hovered() !== null && hovered() !== i">
+          @for (segment of column.segments; track segment.key) {
+            <path [attr.d]="segment.path" [style.fill]="segment.color" />
+          }
+        </g>
+        @if (column.label) {
+          <text
+            class="axis-label"
+            [attr.x]="column.x + column.width / 2"
+            [attr.y]="height - 8"
+            text-anchor="middle"
+          >
+            {{ column.label }}
+          </text>
+        }
+        <!-- Hit target: the whole day column, taller and wider than the bar. -->
+        <rect
+          class="hit"
+          [attr.x]="column.x - 4"
+          [attr.y]="margin.top"
+          [attr.width]="column.width + 8"
+          [attr.height]="height - margin.top - margin.bottom"
+          (mouseenter)="hovered.set(i)"
+        />
+      }
+    </svg>
+
+    @if (hovered() !== null) {
+      @let column = columns()[hovered()!];
+      @if (column) {
+        <div class="tooltip" [style.left.%]="tooltipLeft(column)" aria-hidden="true">
+          <strong>{{ formatDay(column.day.date) }}</strong>
+          <span class="tooltip-total">{{ formatUsd(column.day.total) }}</span>
+          @for (series of data().series; track series.key) {
+            @if (column.day.values[series.key]) {
+              <span class="tooltip-row">
+                <span class="swatch" [style.background]="series.color"></span>
+                {{ series.label }}: {{ formatUsd(column.day.values[series.key] ?? 0) }}
+              </span>
+            }
+          }
+        </div>
+      }
+    }
+  </div>
+
+  <button
+    type="button"
+    class="button secondary table-toggle"
+    [attr.aria-expanded]="showTable()"
+    aria-controls="cost-table"
+    (click)="showTable.set(!showTable())"
+  >
+    {{ showTable() ? 'Hide the data table' : 'Show as a table' }}
+  </button>
+
+  @if (showTable()) {
+    <div class="table-wrap">
+      <table id="cost-table">
+        <caption class="visually-hidden">
+          Daily LLM cost by feature, in USD
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Day (UTC)</th>
+            @for (series of data().series; track series.key) {
+              <th scope="col">{{ series.label }}</th>
+            }
+            <th scope="col">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (day of data().days; track day.date) {
+            <tr>
+              <th scope="row">{{ formatDay(day.date) }}</th>
+              @for (series of data().series; track series.key) {
+                <td>{{ formatUsd(day.values[series.key] ?? 0) }}</td>
+              }
+              <td>{{ formatUsd(day.total) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</figure>

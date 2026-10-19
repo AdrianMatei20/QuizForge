@@ -35,6 +35,7 @@ describe('LLM persistence (e2e)', () => {
     attempts: 1,
     errorCode: null,
     correlationId: null,
+    usageEstimated: false,
     ...overrides,
   });
 

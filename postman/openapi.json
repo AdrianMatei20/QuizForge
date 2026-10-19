@@ -1,6 +1,39 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/metrics": {
+      "get": {
+        "description": "LLM metrics (llm_requests_total, llm_latency_seconds, llm_tokens_total, llm_cost_usd_total) and default Node.js process metrics, in the Prometheus text format. Unauthenticated: see the README known limitations.",
+        "operationId": "MetricsController_scrape",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Prometheus text exposition format.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Prometheus metrics",
+        "tags": [
+          "health"
+        ]
+      }
+    },
     "/health": {
       "get": {
         "description": "Pings PostgreSQL and Redis. 503 problem details, with per-dependency results in `checks`, when one is down.",
@@ -269,11 +302,11 @@
             }
           },
           "429": {
-            "description": "Today's AI budget (LLM_DAILY_BUDGET_USD) is used up; the provider was not called (urn:quizforge:problem:llm-budget-exceeded). The failed quiz is identified by `quizId`.",
+            "description": "Too many generation requests from this client (urn:quizforge:problem:too-many-requests; THROTTLE_GENERATE_LIMIT per THROTTLE_GENERATE_TTL_MS), or today's AI budget (LLM_DAILY_BUDGET_USD) is used up and the provider was not called (urn:quizforge:problem:llm-budget-exceeded). The failed quiz is identified by `quizId`.",
             "content": {
               "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QuizGenerationProblemDetailsDto"
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
                 }
               }
             },
@@ -923,11 +956,11 @@
             }
           },
           "429": {
-            "description": "Today's AI budget (LLM_DAILY_BUDGET_USD) is used up; the provider was not called (urn:quizforge:problem:llm-budget-exceeded). The question is left unchanged.",
+            "description": "Too many generation requests from this client (urn:quizforge:problem:too-many-requests; THROTTLE_GENERATE_LIMIT per THROTTLE_GENERATE_TTL_MS), or today's AI budget (LLM_DAILY_BUDGET_USD) is used up and the provider was not called (urn:quizforge:problem:llm-budget-exceeded). The question is left unchanged.",
             "content": {
               "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LlmProblemDetailsDto"
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
                 }
               }
             },
@@ -994,6 +1027,70 @@
         "summary": "Replace a question with a newly generated one",
         "tags": [
           "questions"
+        ]
+      }
+    },
+    "/api/usage": {
+      "get": {
+        "description": "Totals and a per-day, per-feature breakdown from llm_calls: calls, input and output tokens, cost, cache-hit rate, error rate, calls per status, and the estimated part (streams that never received the provider usage). Days are UTC.",
+        "operationId": "UsageController_report",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "First UTC day, YYYY-MM-DD. Default: 6 days before `to`.",
+            "schema": {
+              "example": "2026-10-13",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Last UTC day, YYYY-MM-DD. Default: today. At most 366 days in all.",
+            "schema": {
+              "example": "2026-10-19",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageReportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "LLM usage and cost",
+        "tags": [
+          "usage"
         ]
       }
     }
@@ -1842,6 +1939,234 @@
             "example": "approved"
           }
         }
+      },
+      "UsageStatusCounts": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "number",
+            "example": 40
+          },
+          "invalid_output": {
+            "type": "number",
+            "example": 1
+          },
+          "error": {
+            "type": "number",
+            "example": 0
+          },
+          "budget_exceeded": {
+            "type": "number",
+            "example": 0
+          },
+          "refused": {
+            "type": "number",
+            "example": 0
+          },
+          "truncated": {
+            "type": "number",
+            "example": 1
+          }
+        },
+        "required": [
+          "ok",
+          "invalid_output",
+          "error",
+          "budget_exceeded",
+          "refused",
+          "truncated"
+        ]
+      },
+      "EstimatedUsageResponse": {
+        "type": "object",
+        "properties": {
+          "calls": {
+            "type": "number",
+            "example": 1
+          },
+          "inputTokens": {
+            "type": "number",
+            "example": 1874
+          },
+          "outputTokens": {
+            "type": "number",
+            "example": 230
+          },
+          "costUsd": {
+            "type": "string",
+            "example": "0.000302"
+          }
+        },
+        "required": [
+          "calls",
+          "inputTokens",
+          "outputTokens",
+          "costUsd"
+        ]
+      },
+      "UsageBucketResponse": {
+        "type": "object",
+        "properties": {
+          "calls": {
+            "type": "number",
+            "description": "LLM calls (llm_calls rows).",
+            "example": 42
+          },
+          "inputTokens": {
+            "type": "number",
+            "example": 78000
+          },
+          "outputTokens": {
+            "type": "number",
+            "example": 61000
+          },
+          "costUsd": {
+            "type": "string",
+            "description": "USD, a decimal string summed exactly. Includes estimated rows.",
+            "example": "0.038300"
+          },
+          "cacheHitRate": {
+            "type": "number",
+            "nullable": true,
+            "description": "Cache hits / calls. Null when there are no calls.",
+            "example": 0.1
+          },
+          "errorRate": {
+            "type": "number",
+            "nullable": true,
+            "description": "Calls whose status is not \"ok\" (invalid output, errors, budget, refusals, truncation) / calls. Null when there are no calls.",
+            "example": 0.05
+          },
+          "byStatus": {
+            "description": "Calls per status.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UsageStatusCounts"
+              }
+            ]
+          },
+          "estimated": {
+            "description": "The part of these figures that is estimated: streams that ended without the provider reporting usage (timeout, shutdown).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstimatedUsageResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "calls",
+          "inputTokens",
+          "outputTokens",
+          "costUsd",
+          "cacheHitRate",
+          "errorRate",
+          "byStatus",
+          "estimated"
+        ]
+      },
+      "UsageDayResponse": {
+        "type": "object",
+        "properties": {
+          "calls": {
+            "type": "number",
+            "description": "LLM calls (llm_calls rows).",
+            "example": 42
+          },
+          "inputTokens": {
+            "type": "number",
+            "example": 78000
+          },
+          "outputTokens": {
+            "type": "number",
+            "example": 61000
+          },
+          "costUsd": {
+            "type": "string",
+            "description": "USD, a decimal string summed exactly. Includes estimated rows.",
+            "example": "0.038300"
+          },
+          "cacheHitRate": {
+            "type": "number",
+            "nullable": true,
+            "description": "Cache hits / calls. Null when there are no calls.",
+            "example": 0.1
+          },
+          "errorRate": {
+            "type": "number",
+            "nullable": true,
+            "description": "Calls whose status is not \"ok\" (invalid output, errors, budget, refusals, truncation) / calls. Null when there are no calls.",
+            "example": 0.05
+          },
+          "byStatus": {
+            "description": "Calls per status.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UsageStatusCounts"
+              }
+            ]
+          },
+          "estimated": {
+            "description": "The part of these figures that is estimated: streams that ended without the provider reporting usage (timeout, shutdown).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstimatedUsageResponse"
+              }
+            ]
+          },
+          "date": {
+            "type": "string",
+            "description": "UTC day.",
+            "example": "2026-10-19"
+          },
+          "feature": {
+            "type": "string",
+            "example": "quiz-generation-stream"
+          }
+        },
+        "required": [
+          "calls",
+          "inputTokens",
+          "outputTokens",
+          "costUsd",
+          "cacheHitRate",
+          "errorRate",
+          "byStatus",
+          "estimated",
+          "date",
+          "feature"
+        ]
+      },
+      "UsageReportResponse": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "First UTC day (inclusive).",
+            "example": "2026-10-13"
+          },
+          "to": {
+            "type": "string",
+            "description": "Last UTC day (inclusive).",
+            "example": "2026-10-19"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/UsageBucketResponse"
+          },
+          "days": {
+            "description": "One entry per day and feature that had calls, by day then feature.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsageDayResponse"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "totals",
+          "days"
+        ]
       }
     }
   }

@@ -17,5 +17,10 @@ export const routes: Routes = [
     title: 'Published quiz · QuizForge',
     loadComponent: () => import('./published/published-quiz.page').then((m) => m.PublishedQuizPage),
   },
+  {
+    path: 'usage',
+    title: 'Usage · QuizForge',
+    loadComponent: () => import('./usage/usage.page').then((m) => m.UsagePage),
+  },
   { path: '**', redirectTo: 'lessons/new' },
 ];

@@ -22,6 +22,10 @@ export type UpdateQuestionRequest = Schemas['UpdateQuestionDto'];
 
 export type ProblemFieldError = Schemas['ProblemFieldErrorDto'];
 
+export type UsageReport = Schemas['UsageReportResponse'];
+export type UsageBucket = Schemas['UsageBucketResponse'];
+export type UsageDay = Schemas['UsageDayResponse'];
+
 export type QuestionType = QuestionResponse['type'];
 export type QuestionStatus = QuestionResponse['status'];
 export type QuizStatus = QuizResponse['status'];

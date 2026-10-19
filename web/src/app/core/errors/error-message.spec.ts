@@ -14,6 +14,12 @@ describe('errorMessage', () => {
     );
   });
 
+  it('asks the teacher to slow down when our own rate limit is hit', () => {
+    expect(
+      errorMessage(new AppError('too-many-requests', 429, 'Too many generation requests')),
+    ).toBe("You're generating too quickly. Wait a minute and try again.");
+  });
+
   it("uses the API's own detail for conflicts and validation", () => {
     expect(
       errorMessage(

@@ -41,7 +41,9 @@ describe('OpenAPI document', () => {
       '/api/quizzes/{id}/publish',
       '/api/quizzes/{id}/review-stats',
       '/api/quizzes/{id}/stream',
+      '/api/usage',
       '/health',
+      '/metrics',
     ]);
     for (const [path, operations] of Object.entries(paths)) {
       for (const [method, operation] of Object.entries(operations)) {

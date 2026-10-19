@@ -293,6 +293,8 @@ describe('AnthropicLlmClient', () => {
 
       expect(sentBody(calls)).toMatchObject({ stream: true });
       expect(events).toEqual([
+        // From message_start: the input tokens are known before any text.
+        { type: 'start', inputTokens: 12 },
         { type: 'text', text: '{"answer"' },
         { type: 'text', text: ':42}' },
         {

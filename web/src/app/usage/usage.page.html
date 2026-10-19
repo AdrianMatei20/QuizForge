@@ -1,0 +1,97 @@
+<h1>Usage</h1>
+<p class="lead">LLM calls, tokens and cost, by UTC day.</p>
+
+<form class="range" novalidate (submit)="submit($event)" [attr.aria-busy]="loading()">
+  @let fromMessages = messages(rangeForm.from);
+  <div class="field">
+    <label for="usage-from">From</label>
+    <input
+      id="usage-from"
+      type="date"
+      [formField]="rangeForm.from"
+      [attr.aria-invalid]="fromMessages.length > 0"
+      [attr.aria-describedby]="fromMessages.length > 0 ? 'usage-from-errors' : null"
+    />
+  </div>
+  @let toMessages = messages(rangeForm.to);
+  <div class="field">
+    <label for="usage-to">To</label>
+    <input
+      id="usage-to"
+      type="date"
+      [formField]="rangeForm.to"
+      [attr.aria-invalid]="toMessages.length > 0"
+      [attr.aria-describedby]="toMessages.length > 0 ? 'usage-to-errors' : null"
+    />
+  </div>
+  <button type="submit" class="button primary" [disabled]="loading()">
+    {{ loading() ? 'Loading…' : 'Show' }}
+  </button>
+  @if (fromMessages.length > 0) {
+    <ul id="usage-from-errors" class="field-errors">
+      @for (message of fromMessages; track $index) {
+        <li>{{ message }}</li>
+      }
+    </ul>
+  }
+  @if (toMessages.length > 0) {
+    <ul id="usage-to-errors" class="field-errors">
+      @for (message of toMessages; track $index) {
+        <li>{{ message }}</li>
+      }
+    </ul>
+  }
+</form>
+
+<app-error-message [error]="error()" [retryable]="true" (retry)="load()" />
+
+@if (report(); as report) {
+  <section aria-labelledby="usage-totals-heading">
+    <h2 id="usage-totals-heading" class="visually-hidden">Totals</h2>
+    <dl class="tiles">
+      <div>
+        <dt>Cost</dt>
+        <dd>{{ formatUsd(+report.totals.costUsd) }}</dd>
+      </div>
+      <div>
+        <dt>LLM calls</dt>
+        <dd>{{ count(report.totals.calls) }}</dd>
+      </div>
+      <div>
+        <dt>Input tokens</dt>
+        <dd>{{ count(report.totals.inputTokens) }}</dd>
+      </div>
+      <div>
+        <dt>Output tokens</dt>
+        <dd>{{ count(report.totals.outputTokens) }}</dd>
+      </div>
+      <div>
+        <dt>Cache-hit rate</dt>
+        <dd>{{ percent(report.totals.cacheHitRate) }}</dd>
+      </div>
+      <div>
+        <dt>Error rate</dt>
+        <dd>{{ percent(report.totals.errorRate) }}</dd>
+      </div>
+    </dl>
+
+    @if (statuses().length > 0) {
+      <p class="hint statuses">
+        By status:
+        @for (status of statuses(); track status.label; let last = $last) {
+          {{ status.label }} {{ count(status.count) }}{{ last ? '' : ' · ' }}
+        }
+      </p>
+    }
+    @if (report.totals.estimated.calls > 0) {
+      <p class="hint">
+        Includes {{ formatUsd(+report.totals.estimated.costUsd) }} estimated for
+        {{ count(report.totals.estimated.calls) }}
+        {{ report.totals.estimated.calls === 1 ? 'stream' : 'streams' }} that stopped before the
+        provider reported usage.
+      </p>
+    }
+  </section>
+
+  <app-cost-chart [report]="report" />
+}

@@ -32,8 +32,11 @@ const LLM_ERRORS = (schema: Type, suffix: string) =>
     },
     budgetExceeded: {
       status: 429,
-      description: `Today's AI budget (LLM_DAILY_BUDGET_USD) is used up; the provider was not called (urn:quizforge:problem:llm-budget-exceeded).${suffix}`,
-      schema,
+      description:
+        'Too many generation requests from this client (urn:quizforge:problem:too-many-requests; THROTTLE_GENERATE_LIMIT per THROTTLE_GENERATE_TTL_MS), ' +
+        `or today's AI budget (LLM_DAILY_BUDGET_USD) is used up and the provider was not called (urn:quizforge:problem:llm-budget-exceeded).${suffix}`,
+      // Throttling happens before any quiz exists, so not every 429 has a quizId.
+      schema: ProblemDetailsDto,
       retryAfter: true,
     },
     badOutput: {

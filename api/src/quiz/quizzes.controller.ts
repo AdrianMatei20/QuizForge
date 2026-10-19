@@ -9,6 +9,7 @@ import {
   Query,
   Res,
   Sse,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiAcceptedResponse,
@@ -24,6 +25,7 @@ import {
 import type { Response } from 'express';
 import type { Observable } from 'rxjs';
 import { parseUuidParam } from '../common/problem-details/validation-problem.js';
+import { GenerateThrottlerGuard } from '../common/throttling/generate-throttler.guard.js';
 import { ProblemDetailsDto } from '../docs/problem-details.dto.js';
 import { ApiProblems, PROBLEMS } from '../docs/api-problems.js';
 import { EXAMPLE_IDS } from '../docs/problem-details.dto.js';
@@ -76,6 +78,7 @@ export class QuizzesController {
    * With stream: true, responds 202 at once; the questions arrive on the stream.
    */
   @Post('lessons/:lessonId/quizzes')
+  @UseGuards(GenerateThrottlerGuard)
   @ApiOperation({
     summary: 'Generate a quiz from a lesson',
     description:

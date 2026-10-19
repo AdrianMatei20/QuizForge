@@ -7,6 +7,7 @@ import type {
   LlmCallRecord,
   LlmCallStore,
   LlmUsageTotals,
+  UsageRow,
 } from '../../src/llm/llm-call.store.js';
 import {
   type LlmGenerateRequest,
@@ -16,6 +17,7 @@ import {
 import { formatUsd, parseUsd } from '../../src/llm/money.js';
 import { LlmPricing } from '../../src/llm/pricing.js';
 import { PROMPTS_DIR, PromptRegistry } from '../../src/llm/prompt-registry.js';
+import { LlmMetrics } from '../../src/metrics/llm-metrics.js';
 import { DEFAULT_BACKOFF } from '../../src/llm/retry.js';
 
 export const TEST_PROMPTS_DIR = join(
@@ -71,6 +73,46 @@ export class InMemoryLlmCallStore implements LlmCallStore {
     return Promise.resolve(formatUsd(total));
   }
 
+  usageByDay(from: Date, toExclusive: Date): Promise<UsageRow[]> {
+    const groups = new Map<string, UsageRow>();
+    for (const row of this.rows) {
+      if (row.createdAt < from || row.createdAt >= toExclusive) continue;
+      const day = row.createdAt.toISOString().slice(0, 10);
+      const key = `${day} ${row.feature} ${row.status}`;
+      const group = groups.get(key) ?? {
+        day,
+        feature: row.feature,
+        status: row.status,
+        calls: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        costUsd: '0.000000',
+        cacheHits: 0,
+        estimatedCalls: 0,
+        estimatedInputTokens: 0,
+        estimatedOutputTokens: 0,
+        estimatedCostUsd: '0.000000',
+      };
+      group.calls++;
+      group.inputTokens += row.inputTokens;
+      group.outputTokens += row.outputTokens;
+      group.costUsd = formatUsd(
+        parseUsd(group.costUsd) + parseUsd(row.costUsd),
+      );
+      if (row.cacheHit) group.cacheHits++;
+      if (row.usageEstimated) {
+        group.estimatedCalls++;
+        group.estimatedInputTokens += row.inputTokens;
+        group.estimatedOutputTokens += row.outputTokens;
+        group.estimatedCostUsd = formatUsd(
+          parseUsd(group.estimatedCostUsd) + parseUsd(row.costUsd),
+        );
+      }
+      groups.set(key, group);
+    }
+    return Promise.resolve([...groups.values()]);
+  }
+
   sumUsageByCorrelationId(correlationId: string): Promise<LlmUsageTotals> {
     const rows = this.rows.filter((row) => row.correlationId === correlationId);
     return Promise.resolve({
@@ -120,6 +162,8 @@ export function createTestLlmService(options: Partial<LlmServiceOptions> = {}) {
   const store = new InMemoryLlmCallStore();
   const cache = new InMemoryLlmCache();
   const prompts = PromptRegistry.load(PROMPTS_DIR, TEST_PROMPTS_DIR);
+  // A fresh registry per service, so a test sees only its own calls.
+  const metrics = new LlmMetrics();
   const service = new LlmService(
     client,
     prompts,
@@ -138,6 +182,7 @@ export function createTestLlmService(options: Partial<LlmServiceOptions> = {}) {
       sleep: () => Promise.resolve(),
       ...options,
     },
+    metrics,
   );
-  return { service, client, store, cache };
+  return { service, client, store, cache, metrics };
 }

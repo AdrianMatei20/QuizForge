@@ -54,6 +54,12 @@ export interface LlmResponse {
 }
 
 export type LlmStreamEvent =
+  /**
+   * First event, when the provider reports the input tokens up front
+   * (Anthropic does, in message_start). If the stream never completes, this
+   * is the only real usage figure there is.
+   */
+  | { type: 'start'; inputTokens?: number }
   | { type: 'text'; text: string }
   | { type: 'done'; usage: LlmUsage; stopReason: LlmStopReason };
 

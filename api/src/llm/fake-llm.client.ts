@@ -157,6 +157,7 @@ export class FakeLlmClient implements LlmClient {
   async *stream(request: LlmRequest): AsyncIterable<LlmStreamEvent> {
     const delayMs = this.peekChunkDelay();
     const response = await this.generate(request);
+    yield { type: 'start', inputTokens: response.usage.inputTokens };
     const chunkSize = this.chunkSize;
     for (let i = 0; i < response.text.length; i += chunkSize) {
       if (delayMs > 0) {

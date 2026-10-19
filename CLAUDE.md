@@ -16,10 +16,12 @@ Keep this section accurate whenever scripts change.
 Infrastructure (repo root):
 - `docker compose up -d`: start PostgreSQL and Redis (a fresh volume also creates the `quizforge_test` database)
 - `docker compose down`: stop them (add `-v` to delete the data volumes)
+- `docker compose --profile observability up -d`: also start Prometheus (9090), Grafana (3030), the OTel Collector (OTLP/HTTP on 4318) and Tempo; `docker compose --profile observability stop` stops them
 
 api/ (run from `api/`; copy `.env.example` to `.env` first):
 - `npm run start:dev`: run the API on http://localhost:3000 in watch mode
-- `npm run build` / `npm run start:prod`: compile to `dist/` / run the compiled app
+- `npm run build` / `npm run start:prod`: compile to `dist/` / run the compiled app (with the OpenTelemetry loader; tracing stays off unless `OTEL_EXPORTER_OTLP_ENDPOINT` is set)
+- `npm run start:traced`: build, then `start:prod`; with `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318` it exports traces to the observability profile
 - `npm test`: unit tests (`src/**/*.spec.ts`); the Nest logger is silenced, set `DEBUG=1` to see it
 - `npm run test:e2e`: e2e tests (`test/**/*.e2e-spec.ts`); needs docker compose running, reads `.env.test`, migrates the test database first
 - `LLM_LIVE_TESTS=1 npm run test:live`: live tests against the real provider (`test/**/*.live-spec.ts`, costs money): a smoke test, and one quiz per sample lesson with a printed report. Reads `LLM_API_KEY` and `LLM_MODEL` from the environment, then `.env.live.local` (see `.env.live.example`), then `.env`; skipped without the flag. Add a path (e.g. `test/quiz.live-spec.ts`) to run one file

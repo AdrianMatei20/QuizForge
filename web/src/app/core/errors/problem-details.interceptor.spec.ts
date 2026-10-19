@@ -73,6 +73,7 @@ describe('problemDetailsInterceptor', () => {
     ['llm-timeout', 504, 'timeout'],
     ['llm-refused', 422, 'refused'],
     ['lesson-too-large', 413, 'too-large'],
+    ['too-many-requests', 429, 'too-many-requests'],
   ] as const)('maps %s (%i) to kind "%s"', async (type, status, kind) => {
     const error = await failWith(
       { type: `${PROBLEM}${type}`, title: 'x', status, detail: 'x' },

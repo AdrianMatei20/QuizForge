@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { context, type Span, SpanStatusCode, trace } from '@opentelemetry/api';
 import type { z } from 'zod';
 import {
   CLOCK,
@@ -6,12 +7,14 @@ import {
   secondsUntilNextUtcMidnight,
   startOfUtcDay,
 } from './clock.js';
+import { LlmMetrics } from '../metrics/llm-metrics.js';
 import { buildCacheKey, LLM_CACHE, type LlmCache } from './llm-cache.js';
 import type { LlmCallStatus } from './llm-call.entity.js';
 import {
   LLM_CALL_STORE,
   type LlmCallStore,
   type LlmUsageTotals,
+  type UsageRow,
 } from './llm-call.store.js';
 import {
   LLM_CLIENT,
@@ -144,6 +147,15 @@ interface CallTally {
   model: string;
   usage: LlmUsage;
   attempts: number;
+  /** The llm.generate span; ended by record(). */
+  span: Span;
+  /** True when usage had to be estimated (a stream without final usage). */
+  usageEstimated: boolean;
+}
+
+/** About 4 characters per token: a rough estimate, used only when the provider never reported usage. */
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 4);
 }
 
 /**
@@ -165,17 +177,49 @@ export class LlmService {
     private readonly pricing: LlmPricing,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(LLM_SERVICE_OPTIONS) private readonly options: LlmServiceOptions,
+    private readonly metrics: LlmMetrics,
   ) {}
+
+  /** Does nothing until an OpenTelemetry SDK is registered (see src/telemetry.ts). */
+  private readonly tracer = trace.getTracer('quizforge.llm');
+
+  private newTally(
+    request: RecordedRequest & { model?: string },
+    streamed: boolean,
+  ): CallTally {
+    const model = request.model ?? this.options.defaultModel;
+    return {
+      model,
+      usage: { inputTokens: 0, outputTokens: 0 },
+      attempts: 0,
+      usageEstimated: false,
+      span: this.tracer.startSpan('llm.generate', {
+        attributes: {
+          'llm.feature': request.feature,
+          'llm.model': model,
+          'llm.prompt_id': request.promptId,
+          'llm.prompt_version': request.promptVersion,
+          'llm.streamed': streamed,
+        },
+      }),
+    };
+  }
 
   async generate<T>(
     request: LlmGenerateRequest<T>,
   ): Promise<LlmGenerateResult<T>> {
+    const tally = this.newTally(request, false);
+    // Active span: database and HTTP spans made during the call nest under it.
+    return context.with(trace.setSpan(context.active(), tally.span), () =>
+      this.generateWithTally(request, tally),
+    );
+  }
+
+  private async generateWithTally<T>(
+    request: LlmGenerateRequest<T>,
+    tally: CallTally,
+  ): Promise<LlmGenerateResult<T>> {
     const startedAt = performance.now();
-    const tally: CallTally = {
-      model: request.model ?? this.options.defaultModel,
-      usage: { inputTokens: 0, outputTokens: 0 },
-      attempts: 0,
-    };
     const finish = async (
       status: LlmCallStatus,
       extra: { cacheHit?: boolean; errorCode?: string } = {},
@@ -253,10 +297,21 @@ export class LlmService {
     request: LlmStreamRequest,
   ): AsyncGenerator<LlmServiceStreamEvent> {
     const startedAt = performance.now();
-    const tally: CallTally = {
-      model: request.model ?? this.options.defaultModel,
-      usage: { inputTokens: 0, outputTokens: 0 },
-      attempts: 0,
+    const tally = this.newTally(request, true);
+    // For estimating usage if the stream never reports it (see estimateUsage).
+    let reportedInputTokens: number | undefined;
+    let promptText = '';
+    let receivedText = '';
+    let usageReported = false;
+    const estimateUsage = () => {
+      if (usageReported || tally.attempts === 0) {
+        return;
+      }
+      tally.usage = {
+        inputTokens: reportedInputTokens ?? estimateTokens(promptText),
+        outputTokens: estimateTokens(receivedText),
+      };
+      tally.usageEstimated = true;
     };
     const finish = async (status: LlmCallStatus, errorCode?: string) => {
       const latencyMs = Math.round(performance.now() - startedAt);
@@ -278,6 +333,7 @@ export class LlmService {
         request.promptVersion,
         request.variables,
       );
+      promptText = (prompt.system ?? '') + prompt.user;
       const providerRequest: LlmRequest = {
         promptId: request.promptId,
         model: tally.model,
@@ -296,12 +352,16 @@ export class LlmService {
         try {
           for await (const event of this.client.stream(providerRequest)) {
             request.signal?.throwIfAborted();
-            if (event.type === 'text') {
+            if (event.type === 'start') {
+              reportedInputTokens = event.inputTokens;
+            } else if (event.type === 'text') {
               started = true;
+              receivedText += event.text;
               yield { type: 'text', text: event.text };
             } else {
               tally.usage.inputTokens += event.usage.inputTokens;
               tally.usage.outputTokens += event.usage.outputTokens;
+              usageReported = true;
               stopReason = event.stopReason;
             }
           }
@@ -347,6 +407,7 @@ export class LlmService {
       if (!recorded) {
         recorded = true;
         const { status, errorCode } = describeFailure(error);
+        estimateUsage();
         await finish(status, errorCode);
         this.logger.warn(
           `LLM stream failed: feature=${request.feature} prompt=${request.promptId}@v${request.promptVersion} ` +
@@ -357,9 +418,15 @@ export class LlmService {
     } finally {
       // The consumer stopped reading early (break / return): still one row.
       if (!recorded) {
+        estimateUsage();
         await finish('error', 'aborted');
       }
     }
+  }
+
+  /** llm_calls in [from, toExclusive), summed per UTC day, feature and status (for /usage). */
+  usageByDay(from: Date, toExclusive: Date): Promise<UsageRow[]> {
+    return this.store.usageByDay(from, toExclusive);
   }
 
   /** Calls, tokens and cost of every generate() call recorded with this correlation id. */
@@ -568,12 +635,57 @@ export class LlmService {
         attempts: tally.attempts,
         errorCode: outcome.errorCode ?? null,
         correlationId: request.correlationId ?? null,
+        usageEstimated: tally.usageEstimated,
       });
     } catch (error) {
       this.logger.error(
         `Failed to record an llm_calls row: ${describe(error)}`,
       );
     }
+    this.observe(request, tally, outcome);
+  }
+
+  /** Prometheus metrics and the span's final attributes. Never throws. */
+  private observe(
+    request: RecordedRequest,
+    tally: CallTally,
+    outcome: {
+      status: LlmCallStatus;
+      latencyMs: number;
+      costUsd: string;
+      cacheHit?: boolean;
+      errorCode?: string;
+    },
+  ): void {
+    try {
+      this.metrics.record({
+        feature: request.feature,
+        status: outcome.status,
+        latencyMs: outcome.latencyMs,
+        inputTokens: tally.usage.inputTokens,
+        outputTokens: tally.usage.outputTokens,
+        costUsd: outcome.costUsd,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to record LLM metrics: ${describe(error)}`);
+    }
+    const { span } = tally;
+    span.setAttributes({
+      'llm.input_tokens': tally.usage.inputTokens,
+      'llm.output_tokens': tally.usage.outputTokens,
+      'llm.cache_hit': outcome.cacheHit ?? false,
+      'llm.attempts': tally.attempts,
+      'llm.status': outcome.status,
+      'llm.usage_estimated': tally.usageEstimated,
+    });
+    if (outcome.status !== 'ok') {
+      // Only the status and code: an error message could quote model output.
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: outcome.errorCode ?? outcome.status,
+      });
+    }
+    span.end();
   }
 
   private result<T>(

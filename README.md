@@ -2,7 +2,7 @@
 
 QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a teacher approves, edits, rejects or regenerates them, and an eval harness measures prompt quality.
 
-> Status: Phase 5 (streaming). In the browser, a teacher writes a lesson and watches the quiz's questions appear one by one as the model writes them, then reviews every question (approve, reject, edit, regenerate) and publishes it.
+> Status: Phase 6 (metrics, tracing and usage). In the browser, a teacher writes a lesson and watches the quiz's questions appear one by one as the model writes them, then reviews every question (approve, reject, edit, regenerate) and publishes it. LLM calls, tokens and cost are visible on a /usage page, in Prometheus and Grafana, and as OpenTelemetry traces.
 
 ## Roadmap
 
@@ -12,6 +12,7 @@ QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a t
 - [x] Phase 3: Review actions and publishing (edit, approve/reject, regenerate one question, publish, review stats, shuffled answer options)
 - [x] Phase 4: Angular lesson editor and review board (lesson form, review board with optimistic status changes and inline editing, published view, typed API client, problem-details error handling)
 - [x] Phase 5: Streaming with JSON Lines over SSE (questions validated and saved as they arrive, one repair step for gaps, replay on reconnect, stuck-quiz cleanup, live review board)
+- [x] Phase 6: Metrics, tracing and usage (Prometheus metrics, OpenTelemetry traces, `GET /api/usage` and a /usage page, estimated usage for aborted streams, rate limiting on generation, a Prometheus, Grafana and Tempo stack in Docker Compose)
 
 ## Repository layout
 
@@ -23,11 +24,14 @@ QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a t
 | `api/config/`        | `llm-pricing.json`: USD per million tokens, per model              |
 | `api/src/lessons/`   | Lessons: create and read                                           |
 | `api/src/quiz/`      | Quizzes: generation, output schema, rule checks                    |
+| `api/src/metrics/`   | Prometheus metrics for LLM calls, served at `GET /metrics`         |
+| `api/src/usage/`     | `GET /api/usage`: LLM usage per day and feature                    |
+| `api/src/telemetry.ts` | OpenTelemetry setup, loaded before the app when tracing is on    |
 | `api/fixtures/`      | Sample lessons (recursion, binary search, HTTP caching)            |
 | `web/`               | Angular app (standalone components, signals, Signal Forms)         |
 | `web/src/app/core/`  | Typed API client (types generated from the OpenAPI spec), errors   |
-| `docker-compose.yml` | Local PostgreSQL and Redis                                         |
-| `docker/`            | Container init scripts (creates the `quizforge_test` database)     |
+| `docker-compose.yml` | Local PostgreSQL and Redis; Prometheus, Grafana, an OTel Collector and Tempo in the `observability` profile |
+| `docker/`            | Container init scripts (creates the `quizforge_test` database) and the observability config, including the Grafana dashboard |
 | `postman/`           | OpenAPI spec, Postman collections and the local environment        |
 
 ## Prerequisites
@@ -101,6 +105,10 @@ All feature routes are under `/api`. Interactive docs (Swagger UI) are at http:/
 | `POST /api/questions/:id/regenerate` | Generates one replacement question of the same type at the same position (201); the old one is soft-deleted |
 | `POST /api/quizzes/:id/publish` | Publishes a draft quiz with at least one approved question; returns it with only the approved questions |
 | `GET /api/quizzes/:id/review-stats` | `{ quizId, total, byStatus, regenerated, editRate, rejectRate, missRate }` |
+| `GET /api/usage`                | `?from=YYYY-MM-DD&to=YYYY-MM-DD` (UTC days, inclusive; default the last 7 days, at most 366). LLM usage totals plus one bucket per day and feature (see [Usage](#usage)) |
+| `GET /metrics`                  | Prometheus metrics (outside `/api`, like `/health`)                            |
+
+Starting a quiz (`POST /api/lessons/:id/quizzes`) and regenerating a question share one rate limit per client IP: `THROTTLE_GENERATE_LIMIT` requests (default 10) per `THROTTLE_GENERATE_TTL_MS` (default 60,000). Over it, they return 429 problem details (`urn:quizforge:problem:too-many-requests`) with `Retry-After`. Other endpoints are not limited.
 
 Generated questions must pass the zod output schema and the rule checks in `api/src/quiz/rules.ts`:
 - distinct options;
@@ -203,6 +211,51 @@ With `LLM_PROVIDER=fake` (the default), `FakeLlmClient` answers from `api/test/f
 
 Prices in `api/config/llm-pricing.json` were copied from Anthropic's pricing page on the date in its `checkedOn` field. Check them before relying on the budget.
 
+**Aborted streams.** A stream that fails or is stopped part-way often ends before the provider reports its usage, yet the tokens were still billed. In that case the `llm_calls` row is estimated and marked `usage_estimated = true`: input tokens come from the provider's `message_start` event when it arrived, otherwise from the prompt length (about 4 characters per token); output tokens come from the text received so far, by the same rule. Estimated cost counts towards the daily budget, and `/api/usage` reports it separately.
+
+## Usage
+
+`GET /api/usage` sums `llm_calls` by UTC day and feature. The response has `totals` and a `days` array (sorted by day, then feature), and every bucket has the same shape:
+
+- `calls`, `inputTokens`, `outputTokens`, `costUsd` (a decimal string, summed exactly);
+- `cacheHitRate` and `errorRate` (calls whose status is not `ok`), or `null` with no calls;
+- `byStatus`: a count for each status (`ok`, `invalid_output`, `error`, `budget_exceeded`, `refused`, `truncated`), zeros included;
+- `estimated`: the calls, tokens and cost that were estimated (see Aborted streams above), already included in the main figures.
+
+An invalid range (bad date, `from` after `to`, more than 366 days) returns 400 with a `{ parameter, detail }` entry.
+
+## Observability
+
+Every LLM call, cached or not, is recorded inside `LlmService`, so no caller can skip it.
+
+**Metrics.** `GET /metrics` serves, from the API's own prom-client registry:
+
+| Metric | Labels | What it counts |
+| ------ | ------ | -------------- |
+| `llm_requests_total` | `feature`, `status` | LLM calls, by outcome |
+| `llm_latency_seconds` | `feature` | Histogram of call latency, retries included (buckets from 0.25 s to 120 s) |
+| `llm_tokens_total` | `feature`, `direction` (`input`, `output`) | Tokens |
+| `llm_cost_usd_total` | `feature` | Cost in USD |
+
+plus the default Node.js process metrics. `llm_cost_usd_total` is a float, which is fine for a graph; the exact cost stays a decimal in `llm_calls` and in `/api/usage`.
+
+**Traces.** Tracing is off unless `OTEL_EXPORTER_OTLP_ENDPOINT` is set. With it, the API exports OTLP over HTTP spans for incoming HTTP requests, each Nest controller handler, PostgreSQL queries, and one `llm.generate` span per LLM call. That span carries `llm.feature`, `llm.model`, `llm.prompt_id`, `llm.prompt_version`, `llm.streamed`, `llm.input_tokens`, `llm.output_tokens`, `llm.cache_hit`, `llm.attempts`, `llm.status` and `llm.usage_estimated`, and never the prompt or the model output.
+
+Tracing needs the instrumentation loaded before the app, so it only works with the compiled app:
+
+```bash
+# 1. Prometheus (9090), Grafana (3030), OTel Collector (OTLP/HTTP on 4318) and Tempo
+docker compose --profile observability up -d
+
+# 2. The API with tracing on (builds first)
+cd api
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 npm run start:traced
+```
+
+`npm run start:traced` runs `node --experimental-loader=@opentelemetry/instrumentation/hook.mjs --import ./dist/telemetry.js dist/main.js`. `telemetry.ts` reads `api/.env` itself (if it exists, and without overriding variables already set in the environment), because it runs before Nest's config module.
+
+Open http://localhost:3030 (Grafana, no login locally). The home dashboard, **QuizForge LLM**, shows LLM request rate, p95 latency, tokens and cost by feature, and error rate. Prometheus scrapes the API at `host.docker.internal:3000/metrics` every 15 seconds, so it works with `npm run start:dev` too. For traces, open **Explore**, choose **Tempo** and search with TraceQL, e.g. `{ name = "llm.generate" }`. `docker compose --profile observability stop` stops the stack and leaves PostgreSQL and Redis running.
+
 ## Tests
 
 ```bash
@@ -236,11 +289,13 @@ Without `LLM_LIVE_TESTS=1` it is skipped.
 | `/lessons/new` | Lesson editor with live character counters at the API's limits, and the quiz settings |
 | `/quizzes/:id/review` | Review board: one card per question, counts and edit rate in the header, Publish |
 | `/quizzes/:id/published` | The published quiz, read-only |
+| `/usage` | LLM usage for a date range (default the last 7 UTC days): cost, calls, tokens, cache-hit and error rates, counts by status, and a daily cost-by-feature chart with a data table view |
 
 - **API client:** `LessonsApi`, `QuizzesApi` and `QuestionsApi` use types generated from `postman/openapi.json`. After an API change, run `npm run openapi:export` in `api/`, then `npm run api:types` in `web/`.
 - **State:** the review board's state lives in signals in `QuizReviewStore`. Approve and reject are optimistic: the card changes at once and rolls back with an error if the API refuses.
 - **Streaming:** Generate uses stream mode and opens the review board straight away. `QuizzesApi.stream()` wraps `EventSource` in an Observable that completes on `done`, errors on `problem` (the message is shown), and closes when the page is destroyed. If the connection drops, `EventSource` reconnects by itself, and the server replays what was missed. While generating, approve, reject and edit work on the questions that have arrived; Regenerate and Publish wait until generation is done.
-- **Errors:** an HTTP interceptor turns every error response into a typed `AppError`, and the UI shows a sentence a teacher can act on, never raw JSON. Unusable model output (502) offers Try again; a used-up daily budget (429) says so.
+- **Errors:** an HTTP interceptor turns every error response into a typed `AppError`, and the UI shows a sentence a teacher can act on, never raw JSON. Unusable model output (502) offers Try again; a used-up daily budget (429) says so, and so does the generation rate limit (429).
+- **Charts:** the usage chart is plain SVG, without a chart library. Each feature keeps its colour whatever else is shown, and the chart has a text summary for screen readers and a table of the same numbers.
 - **Model output is always text.** `npm run lint` fails on `[innerHTML]` or `[outerHTML]` bindings and on any `bypassSecurityTrust*` call.
 
 ## Errors
@@ -254,6 +309,7 @@ Every API error is an [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem
 LLM failures map to these statuses:
 
 - Daily budget used up: 429, with `Retry-After` set to the seconds until UTC midnight.
+- Generation rate limit exceeded (not an LLM failure, but the same status): 429 `too-many-requests`, with `Retry-After`.
 - Provider rate limit: 503, with `Retry-After`.
 - Provider timeout: 504.
 - Model refused the request: 422.
@@ -262,7 +318,17 @@ LLM failures map to these statuses:
 
 An invalid-output response lists the violations in `errors` but never includes the model output.
 
+## Design decisions
+
+- **OpenTelemetry directly, not `@nestjs/observe`.** `@nestjs/observe` (0.3.13 when evaluated in October 2026) is an agent for a hosted service, NestJS Observe, which needs an account, an app key and secret, and sends data in its own format rather than OTLP. It is also pre-1.0 and was releasing several times a week. The OpenTelemetry SDK is vendor-neutral: the same OTLP export works with the local Collector and Tempo here, or any other backend.
+- **A Nest tracing interceptor instead of the Nest auto-instrumentation.** `@opentelemetry/instrumentation-nestjs-core` does not support `@nestjs/core` 12 yet, so `TracingInterceptor` (`api/src/common/tracing/`) makes the span for each controller handler. HTTP and PostgreSQL still use the official instrumentations. When the official one supports Nest 12, the interceptor can go.
+- **Metrics and the span are recorded in `LlmService`**, next to the `llm_calls` row, so the database, Prometheus and the trace always agree, and a new feature gets them without any extra code.
+- **The rate limit is one counter per IP across both endpoints.** `@nestjs/throttler` counts each handler separately by default, which would allow 10 quizzes and 10 regenerations a minute. Both cost LLM calls, so they share one budget.
+
 ## Known limitations
+
+- **`/metrics` is not authenticated.** Anyone who can reach the API can read it. The figures are counts, latencies, tokens and cost, with no lesson content, but in production it should be reachable only from the Prometheus network (or behind auth at the proxy).
+- **Rate-limit counts are in memory, per instance.** With several API instances, each one counts on its own, so a client gets the limit once per instance. `@nestjs/throttler` supports a Redis storage, which would make the limit shared.
 
 - **One API instance for live streaming.** Live stream events are kept in the memory of the process that runs the generation. With several API instances behind a load balancer, a client connected to another instance would still get the replay of saved questions and the final `done` or `problem`, but not the live events in between. Fanning them out through Redis pub/sub (Redis is already part of the stack) would remove that limit.
 - **The fake provider only knows the recursion lesson.** With `LLM_PROVIDER=fake`, other lessons fail the source-quote rule, because the fake always answers with the recursion questions.
