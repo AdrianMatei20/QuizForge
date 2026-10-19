@@ -2,7 +2,7 @@
 
 QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a teacher approves, edits, rejects or regenerates them, and an eval harness measures prompt quality.
 
-> Status: Phase 6 (metrics, tracing and usage). In the browser, a teacher writes a lesson and watches the quiz's questions appear one by one as the model writes them, then reviews every question (approve, reject, edit, regenerate) and publishes it. LLM calls, tokens and cost are visible on a /usage page, in Prometheus and Grafana, and as OpenTelemetry traces.
+> Status: Phase 7 (lesson and quiz history). In the browser, a teacher finds earlier lessons and their quizzes, writes a lesson and watches the quiz's questions appear one by one as the model writes them, then reviews every question (approve, reject, edit, regenerate) and publishes it. LLM calls, tokens and cost are visible on a /usage page, in Prometheus and Grafana, and as OpenTelemetry traces.
 
 ## Roadmap
 
@@ -13,6 +13,7 @@ QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a t
 - [x] Phase 4: Angular lesson editor and review board (lesson form, review board with optimistic status changes and inline editing, published view, typed API client, problem-details error handling)
 - [x] Phase 5: Streaming with JSON Lines over SSE (questions validated and saved as they arrive, one repair step for gaps, replay on reconnect, stuck-quiz cleanup, live review board)
 - [x] Phase 6: Metrics, tracing and usage (Prometheus metrics, OpenTelemetry traces, `GET /api/usage` and a /usage page, estimated usage for aborted streams, rate limiting on generation, a Prometheus, Grafana and Tempo stack in Docker Compose)
+- [x] Phase 7: Lesson and quiz history (`GET /api/lessons` with quiz counts by status, question counts in a lesson's quiz list, a lessons list and a lesson page in the web app)
 
 ## Repository layout
 
@@ -22,7 +23,7 @@ QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a t
 | `api/src/llm/`       | LlmModule: the only way the API talks to an LLM                    |
 | `api/prompts/`       | Prompt files, `<promptId>/v<n>.md`                                 |
 | `api/config/`        | `llm-pricing.json`: USD per million tokens, per model              |
-| `api/src/lessons/`   | Lessons: create and read                                           |
+| `api/src/lessons/`   | Lessons: create, read and list                                     |
 | `api/src/quiz/`      | Quizzes: generation, output schema, rule checks                    |
 | `api/src/metrics/`   | Prometheus metrics for LLM calls, served at `GET /metrics`         |
 | `api/src/usage/`     | `GET /api/usage`: LLM usage per day and feature                    |
@@ -71,9 +72,10 @@ curl http://localhost:4200/api/x       # proxied to the API: a 404 problem-detai
 
 With the API on `LLM_PROVIDER=fake` (the default in `.env.example`), open http://localhost:4200:
 
-1. **New lesson:** paste the text of `api/fixtures/lessons/recursion.md` (everything below its `# Recursion` title line; the fake provider only answers for this lesson), give it a title, keep the default settings (5 questions), and press **Generate quiz**. The review board opens at once, and the questions appear as they are written ("Generating 3 of 5").
-2. **Review board:** each question has **Approve**, **Reject**, **Edit** and **Regenerate**. Pressing Approve or Reject again moves a question back to draft. Edit opens an inline form that checks the same rules as the API. Regenerate replaces one question.
-3. **Publish quiz** becomes available once a question is approved. It opens the read-only published view.
+1. **Lessons:** the home page lists every lesson, newest first, with its quizzes counted by status. Open one to see its text, its quizzes, and **Generate another quiz**.
+2. **New lesson:** paste the text of `api/fixtures/lessons/recursion.md` (everything below its `# Recursion` title line; the fake provider only answers for this lesson), give it a title, keep the default settings (5 questions), and press **Generate quiz**. The review board opens at once, and the questions appear as they are written ("Generating 3 of 5").
+3. **Review board:** each question has **Approve**, **Reject**, **Edit** and **Regenerate**. Pressing Approve or Reject again moves a question back to draft. Edit opens an inline form that checks the same rules as the API. Regenerate replaces one question.
+4. **Publish quiz** becomes available once a question is approved. It opens the read-only published view.
 
 Everything works from the keyboard: fields are labelled, focus is always visible, and status changes are announced to screen readers.
 
@@ -95,10 +97,11 @@ All feature routes are under `/api`. Interactive docs (Swagger UI) are at http:/
 | Method and path                 | What it does                                                                  |
 | ------------------------------- | ----------------------------------------------------------------------------- |
 | `POST /api/lessons`             | `{ title, content }`. Content must be 200 to 20,000 characters (400 if shorter, 413 if longer) |
+| `GET /api/lessons`              | `?limit=1-100` (default 20) `&offset=` (default 0). Lessons newest first, without their content: `{ items: [{ id, title, createdAt, quizCounts: { generating, draft, published, failed } }], total, limit, offset }` |
 | `GET /api/lessons/:id`          | Read a lesson                                                                 |
 | `POST /api/lessons/:id/quizzes` | `{ count: 3-10, difficulty: easy \| medium \| hard, types: [multiple_choice, true_false], stream? }`. Without `stream`: generates synchronously and returns the quiz (201). With `stream: true`: returns 202 `{ quizId }` at once and generates in the background |
 | `GET /api/quizzes/:id/stream`   | Server-Sent Events while the quiz is generated: `question`, `question_rejected`, `done`, `problem` (see below) |
-| `GET /api/lessons/:id/quizzes`  | The lesson's quizzes, newest first, without questions: `{ id, status, failureReason, settings, createdAt }`. `?limit=` from 1 to 100 (default 20) |
+| `GET /api/lessons/:id/quizzes`  | The lesson's quizzes, newest first, without questions: `{ id, status, failureReason, settings, createdAt, questionCount }`. `questionCount` is the approved questions of a published quiz, otherwise all current ones; replaced questions never count. `?limit=` from 1 to 100 (default 20) |
 | `GET /api/quizzes/:id`          | Read a quiz with its questions, in order. A failed quiz has a `failureReason` |
 | `GET /api/quizzes/:id/cost`     | `{ quizId, calls, attempts, inputTokens, outputTokens, totalTokens, costUsd }` summed over every LLM call made for the quiz (regenerations and failed calls included) |
 | `PATCH /api/questions/:id`      | `{ stem?, options?, correctIndex?, explanation?, status? }`. Edits content and/or changes the status; returns the question |
@@ -286,11 +289,14 @@ Without `LLM_LIVE_TESTS=1` it is skipped.
 
 | Route | What it is |
 | ----- | ---------- |
+| `/` | Lessons, newest first, 20 per page (`?offset=` in the URL), with quiz counts by status and a New lesson button |
 | `/lessons/new` | Lesson editor with live character counters at the API's limits, and the quiz settings |
+| `/lessons/:id` | A lesson: its text (collapsed), its quizzes newest first, and Generate another quiz |
 | `/quizzes/:id/review` | Review board: one card per question, counts and edit rate in the header, Publish |
 | `/quizzes/:id/published` | The published quiz, read-only |
 | `/usage` | LLM usage for a date range (default the last 7 UTC days): cost, calls, tokens, cache-hit and error rates, counts by status, and a daily cost-by-feature chart with a data table view |
 
+- **Lesson page:** each quiz shows a status badge (with its name, not only a colour), its questions against the requested count ("4 of 5 questions"), its settings and date. Draft and generating quizzes link to the review board, where a generating quiz picks up its live stream; published ones link to the published view; a failed one says why in a sentence ("Failed because the AI service took too long."), never as a code. Generate another quiz uses the same settings fields as the lesson editor (`QuizSettingsFields`, with one shared validation schema) and opens the new quiz's review board.
 - **API client:** `LessonsApi`, `QuizzesApi` and `QuestionsApi` use types generated from `postman/openapi.json`. After an API change, run `npm run openapi:export` in `api/`, then `npm run api:types` in `web/`.
 - **State:** the review board's state lives in signals in `QuizReviewStore`. Approve and reject are optimistic: the card changes at once and rolls back with an error if the API refuses.
 - **Streaming:** Generate uses stream mode and opens the review board straight away. `QuizzesApi.stream()` wraps `EventSource` in an Observable that completes on `done`, errors on `problem` (the message is shown), and closes when the page is destroyed. If the connection drops, `EventSource` reconnects by itself, and the server replays what was missed. While generating, approve, reject and edit work on the questions that have arrived; Regenerate and Publish wait until generation is done.

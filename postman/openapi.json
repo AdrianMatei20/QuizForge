@@ -158,6 +158,73 @@
         "tags": [
           "lessons"
         ]
+      },
+      "get": {
+        "description": "Newest first, without their content, each with its quiz counts by status. `limit` defaults to 20, at most 100.",
+        "operationId": "LessonsController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "How many lessons to return, newest first.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "How many of the newest lessons to skip.",
+            "schema": {
+              "minimum": 0,
+              "default": 0,
+              "example": 0,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List lessons",
+        "tags": [
+          "lessons"
+        ]
       }
     },
     "/api/lessons/{id}": {
@@ -376,7 +443,7 @@
         ]
       },
       "get": {
-        "description": "Newest first, without questions. Failed quizzes included.",
+        "description": "Newest first, without questions but with their count. Failed quizzes included.",
         "operationId": "QuizzesController_listForLesson",
         "parameters": [
           {
@@ -411,7 +478,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/QuizSummaryResponse"
+                    "$ref": "#/components/schemas/QuizListItemResponse"
                   }
                 }
               }
@@ -1367,6 +1434,97 @@
           "createdAt"
         ]
       },
+      "QuizStatusCountsResponse": {
+        "type": "object",
+        "properties": {
+          "generating": {
+            "type": "number",
+            "example": 0
+          },
+          "draft": {
+            "type": "number",
+            "example": 1
+          },
+          "published": {
+            "type": "number",
+            "example": 2
+          },
+          "failed": {
+            "type": "number",
+            "example": 0
+          }
+        },
+        "required": [
+          "generating",
+          "draft",
+          "published",
+          "failed"
+        ]
+      },
+      "LessonSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c"
+          },
+          "title": {
+            "type": "string",
+            "example": "Recursion"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-19T15:00:00.000Z"
+          },
+          "quizCounts": {
+            "description": "The lesson's quizzes, counted by status (zeros included).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QuizStatusCountsResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "createdAt",
+          "quizCounts"
+        ]
+      },
+      "LessonListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Newest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LessonSummaryResponse"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "All lessons, not just this page.",
+            "example": 42
+          },
+          "limit": {
+            "type": "number",
+            "example": 20
+          },
+          "offset": {
+            "type": "number",
+            "example": 0
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ]
+      },
       "GenerateQuizDto": {
         "type": "object",
         "properties": {
@@ -1724,7 +1882,7 @@
           "usage"
         ]
       },
-      "QuizSummaryResponse": {
+      "QuizListItemResponse": {
         "type": "object",
         "properties": {
           "id": {
@@ -1767,6 +1925,11 @@
             "type": "string",
             "format": "date-time",
             "example": "2026-10-19T15:00:00.000Z"
+          },
+          "questionCount": {
+            "type": "number",
+            "description": "How many questions the quiz has: approved ones once published, otherwise all current ones (replaced questions never count). Compare with settings.count.",
+            "example": 4
           }
         },
         "required": [
@@ -1774,7 +1937,8 @@
           "status",
           "failureReason",
           "settings",
-          "createdAt"
+          "createdAt",
+          "questionCount"
         ]
       },
       "QuestionStatusCountsResponse": {

@@ -1,0 +1,68 @@
+@if (loading() && !lesson()) {
+  <p role="status"><span class="spinner" aria-hidden="true"></span> Loading the lesson…</p>
+}
+<app-error-message [error]="error()" [retryable]="true" (retry)="load(id())" />
+
+@if (lesson(); as lesson) {
+  <p class="back"><a routerLink="/">All lessons</a></p>
+  <h1>{{ lesson.title }}</h1>
+  <p class="lead">
+    Created <time [attr.datetime]="lesson.createdAt">{{ lesson.createdAt | date }}</time>
+  </p>
+
+  <details class="lesson-preview">
+    <summary>Show the lesson text</summary>
+    <div class="lesson-text">{{ lesson.content }}</div>
+  </details>
+
+  <section class="quizzes" aria-labelledby="quizzes-heading">
+    <div class="section-header">
+      <h2 id="quizzes-heading">Quizzes</h2>
+      <button
+        type="button"
+        class="button primary"
+        aria-controls="generate-form"
+        [attr.aria-expanded]="showGenerate()"
+        (click)="showGenerate.set(!showGenerate())"
+      >
+        Generate another quiz
+      </button>
+    </div>
+
+    @if (showGenerate()) {
+      <form
+        id="generate-form"
+        class="generate-form"
+        novalidate
+        (submit)="submit($event)"
+        (input)="serverErrors.set([])"
+        [attr.aria-busy]="generating()"
+      >
+        <app-quiz-settings-fields [settings]="settingsForm" [serverErrors]="serverErrors()" />
+        <app-error-message [error]="generateError()" [retryable]="true" (retry)="generate()" />
+        <div class="form-actions">
+          <button type="submit" class="button primary" [disabled]="generating()">
+            @if (generating()) {
+              <span class="spinner" aria-hidden="true"></span> Starting…
+            } @else {
+              Generate quiz
+            }
+          </button>
+          <button type="button" class="button secondary" (click)="showGenerate.set(false)">
+            Cancel
+          </button>
+        </div>
+      </form>
+    }
+
+    @if (quizzes().length === 0) {
+      <p class="empty">No quizzes yet. Generate one from this lesson.</p>
+    } @else {
+      <ul class="quiz-list">
+        @for (quiz of quizzes(); track quiz.id) {
+          <li><app-quiz-history-item [quiz]="quiz" /></li>
+        }
+      </ul>
+    }
+  </section>
+}

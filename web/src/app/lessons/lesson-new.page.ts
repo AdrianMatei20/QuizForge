@@ -1,29 +1,32 @@
 import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import {
+  apply,
   type FieldTree,
   form,
   FormField,
-  max,
   maxLength,
-  min,
   validate,
 } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { Difficulty, ProblemFieldError, QuestionType } from '../core/api/api.types';
+import type { ProblemFieldError } from '../core/api/api.types';
 import { LessonsApi } from '../core/api/lessons.api';
 import { QuizzesApi } from '../core/api/quizzes.api';
 import { AppError, toAppError } from '../core/errors/app-error';
 import { LIMITS, textLength } from '../core/limits';
 import { ErrorMessage } from '../shared/error-message';
+import { QuizSettingsFields } from '../shared/quiz-settings-fields';
+import {
+  defaultQuizSettings,
+  type QuizSettingsModel,
+  quizSettingsSchema,
+  toQuizRequest,
+} from '../shared/quiz-settings.model';
 
 interface LessonFormModel {
   title: string;
   content: string;
-  count: number;
-  difficulty: Difficulty;
-  multipleChoice: boolean;
-  trueFalse: boolean;
+  settings: QuizSettingsModel;
 }
 
 /** The lesson this page already created, so a retry does not create a duplicate. */
@@ -40,7 +43,7 @@ interface CreatedLesson {
  */
 @Component({
   selector: 'app-lesson-new-page',
-  imports: [ErrorMessage, FormField],
+  imports: [ErrorMessage, FormField, QuizSettingsFields],
   templateUrl: './lesson-new.page.html',
   styleUrl: './lesson-new.page.scss',
 })
@@ -50,28 +53,11 @@ export class LessonNewPage {
   private readonly router = inject(Router);
 
   protected readonly limits = LIMITS;
-  /** Short labels fit the dropdown; the selected level's description is shown under it. */
-  protected readonly difficulties: readonly {
-    value: Difficulty;
-    label: string;
-    description: string;
-  }[] = [
-    { value: 'easy', label: 'Easy', description: 'Recall facts stated in the lesson.' },
-    {
-      value: 'medium',
-      label: 'Medium',
-      description: 'Understand or apply an idea from the lesson.',
-    },
-    { value: 'hard', label: 'Hard', description: 'Combine several parts of the lesson.' },
-  ];
 
   protected readonly model = signal<LessonFormModel>({
     title: '',
     content: '',
-    count: 5,
-    difficulty: 'medium',
-    multipleChoice: true,
-    trueFalse: true,
+    settings: defaultQuizSettings(),
   });
 
   protected readonly lessonForm = form(this.model, (path) => {
@@ -97,20 +83,7 @@ export class LessonNewPage {
       }
       return undefined;
     });
-    min(path.count, LIMITS.quizCountMin, {
-      message: `Ask for at least ${LIMITS.quizCountMin} questions.`,
-    });
-    max(path.count, LIMITS.quizCountMax, {
-      message: `Ask for at most ${LIMITS.quizCountMax} questions.`,
-    });
-    validate(path.count, ({ value }) =>
-      Number.isInteger(value()) ? undefined : { kind: 'integer', message: 'Enter a whole number.' },
-    );
-    validate(path.multipleChoice, ({ value, valueOf }) =>
-      value() || valueOf(path.trueFalse)
-        ? undefined
-        : { kind: 'no-type', message: 'Choose at least one question type.' },
-    );
+    apply(path.settings, quizSettingsSchema);
   });
 
   protected readonly contentLength = computed(() => textLength(this.model().content));
@@ -121,14 +94,11 @@ export class LessonNewPage {
     return 'ok';
   });
   protected readonly titleLength = computed(() => textLength(this.model().title));
-  protected readonly difficultyDescription = computed(
-    () => this.difficulties.find((option) => option.value === this.model().difficulty)?.description,
-  );
 
   protected readonly generating = signal(false);
   protected readonly error = signal<AppError | null>(null);
   /** API validation errors from the last attempt, until the teacher edits something. */
-  private readonly serverErrors = linkedSignal<AppError | null, readonly ProblemFieldError[]>({
+  protected readonly serverErrors = linkedSignal<AppError | null, readonly ProblemFieldError[]>({
     source: this.error,
     computation: (error) => (error?.kind === 'validation' ? error.fieldErrors : []),
   });
@@ -165,11 +135,7 @@ export class LessonNewPage {
 
   /** Also the Retry action: reuses the lesson if it was already created with this text. */
   protected async generate(): Promise<void> {
-    const { title, content, count, difficulty, multipleChoice, trueFalse } = this.model();
-    const types: QuestionType[] = [
-      ...(multipleChoice ? (['multiple_choice'] as const) : []),
-      ...(trueFalse ? (['true_false'] as const) : []),
-    ];
+    const { title, content, settings } = this.model();
     this.generating.set(true);
     this.error.set(null);
     try {
@@ -177,7 +143,7 @@ export class LessonNewPage {
       // Stream mode: the API answers at once and the review board shows the
       // questions as they are written.
       const { quizId } = await firstValueFrom(
-        this.quizzesApi.startStreaming(lessonId, { count, difficulty, types }),
+        this.quizzesApi.startStreaming(lessonId, toQuizRequest(settings)),
       );
       await this.router.navigate(['/quizzes', quizId, 'review']);
     } catch (error) {

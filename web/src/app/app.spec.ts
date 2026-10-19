@@ -1,5 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -24,21 +24,45 @@ describe('App', () => {
     const compiled = fixture.nativeElement as HTMLElement;
 
     expect(compiled.querySelector('header .brand')?.textContent).toContain('QuizForge');
-    expect(compiled.querySelector('nav[aria-label="Main"] a')?.textContent).toContain('New lesson');
+    const links = [...compiled.querySelectorAll('nav[aria-label="Main"] a')].map((link) =>
+      link.textContent?.trim(),
+    );
+    expect(links).toEqual(['Lessons', 'Usage']);
   });
 
-  it('opens the lesson editor at the root route', async () => {
+  it('opens the lessons list at the root route', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/');
+    TestBed.inject(HttpTestingController)
+      .expectOne((request) => request.url === '/api/lessons')
+      .flush({ items: [], total: 0, limit: 20, offset: 0 });
+    await harness.fixture.whenStable();
 
-    expect(TestBed.inject(Router).url).toBe('/lessons/new');
-    expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain('New lesson');
+    expect(TestBed.inject(Router).url).toBe('/');
+    expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain('Lessons');
   });
 
-  it('redirects unknown routes to the lesson editor', async () => {
+  it('marks Lessons as the current section on lesson and quiz pages, and not on Usage', async () => {
+    const fixture = TestBed.createComponent(App);
+    const router = TestBed.inject(Router);
+    const lessonsLink = () =>
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
+        'nav[aria-label="Main"] a',
+      );
+
+    await router.navigateByUrl('/lessons/new');
+    await fixture.whenStable();
+    expect(lessonsLink()?.getAttribute('aria-current')).toBe('true');
+
+    await router.navigateByUrl('/usage');
+    await fixture.whenStable();
+    expect(lessonsLink()?.getAttribute('aria-current')).toBeNull();
+  });
+
+  it('redirects unknown routes to the lessons list', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/nowhere');
 
-    expect(TestBed.inject(Router).url).toBe('/lessons/new');
+    expect(TestBed.inject(Router).url).toBe('/');
   });
 });

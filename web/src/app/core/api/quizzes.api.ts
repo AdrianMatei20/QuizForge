@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 import type {
   GenerateQuizRequest,
+  QuizListItem,
   QuizResponse,
   QuizStreamStartedResponse,
   ReviewStatsResponse,
@@ -46,6 +47,11 @@ export class QuizzesApi {
         problemEvent: PROBLEM_EVENT_NAME,
       },
     );
+  }
+
+  /** The lesson's quizzes, newest first, without their questions. */
+  listForLesson(lessonId: string): Observable<QuizListItem[]> {
+    return this.http.get<QuizListItem[]>(`/api/lessons/${lessonId}/quizzes`);
   }
 
   get(quizId: string): Observable<QuizResponse> {

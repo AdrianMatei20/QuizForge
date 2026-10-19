@@ -2,26 +2,12 @@ import { Component, computed, effect, inject, input, untracked } from '@angular/
 import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import type { QuestionResponse } from '../core/api/api.types';
-import type { QuizFailureReason } from '../core/api/api.types';
 import { ErrorMessage } from '../shared/error-message';
+import { FAILURE_TEXT } from '../shared/quiz-labels';
 import { QuestionCard } from './question-card';
 import type { OtherStem } from './question-edit-form';
 import { type QuestionEdit, QuizReviewStore } from './quiz-review.store';
 import { ReviewHeader } from './review-header';
-
-/** Typed by the API's reasons, so a new reason is a compile error here. */
-const FAILURE_TEXT: Record<QuizFailureReason, string> = {
-  invalid_output: 'the AI kept returning answers that could not be used',
-  refusal: 'the AI declined to write questions for this lesson',
-  truncated: 'the AI answer was cut off',
-  budget_exceeded: "today's AI budget was used up",
-  timeout: 'the AI service took too long',
-  rate_limited: 'the AI service was busy',
-  provider_error: 'the AI service had a problem',
-  cancelled: 'the request was cancelled',
-  internal_error: 'of an unexpected error',
-  interrupted: 'the server stopped while generating it',
-};
 
 /** /quizzes/:id/review: the container that connects QuizReviewStore to the cards. */
 @Component({

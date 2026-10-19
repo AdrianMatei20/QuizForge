@@ -51,7 +51,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List lessons
+         * @description Newest first, without their content, each with its quiz counts by status. `limit` defaults to 20, at most 100.
+         */
+        get: operations["LessonsController_list"];
         put?: never;
         /**
          * Create a lesson
@@ -90,7 +94,7 @@ export interface paths {
         };
         /**
          * List a lesson's quizzes
-         * @description Newest first, without questions. Failed quizzes included.
+         * @description Newest first, without questions but with their count. Failed quizzes included.
          */
         get: operations["QuizzesController_listForLesson"];
         put?: never;
@@ -451,6 +455,45 @@ export interface components {
              */
             createdAt: string;
         };
+        QuizStatusCountsResponse: {
+            /** @example 0 */
+            generating: number;
+            /** @example 1 */
+            draft: number;
+            /** @example 2 */
+            published: number;
+            /** @example 0 */
+            failed: number;
+        };
+        LessonSummaryResponse: {
+            /**
+             * Format: uuid
+             * @example 6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c
+             */
+            id: string;
+            /** @example Recursion */
+            title: string;
+            /**
+             * Format: date-time
+             * @example 2026-10-19T15:00:00.000Z
+             */
+            createdAt: string;
+            /** @description The lesson's quizzes, counted by status (zeros included). */
+            quizCounts: components["schemas"]["QuizStatusCountsResponse"];
+        };
+        LessonListResponse: {
+            /** @description Newest first. */
+            items: components["schemas"]["LessonSummaryResponse"][];
+            /**
+             * @description All lessons, not just this page.
+             * @example 42
+             */
+            total: number;
+            /** @example 20 */
+            limit: number;
+            /** @example 0 */
+            offset: number;
+        };
         GenerateQuizDto: {
             /**
              * @description How many questions to generate.
@@ -638,7 +681,7 @@ export interface components {
             /** @description Every LLM call made for the quiz so far. */
             usage: components["schemas"]["StreamUsage"];
         };
-        QuizSummaryResponse: {
+        QuizListItemResponse: {
             /**
              * Format: uuid
              * @example 0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10
@@ -661,6 +704,11 @@ export interface components {
              * @example 2026-10-19T15:00:00.000Z
              */
             createdAt: string;
+            /**
+             * @description How many questions the quiz has: approved ones once published, otherwise all current ones (replaced questions never count). Compare with settings.count.
+             * @example 4
+             */
+            questionCount: number;
         };
         QuestionStatusCountsResponse: {
             /** @example 2 */
@@ -940,6 +988,48 @@ export interface operations {
             };
         };
     };
+    LessonsController_list: {
+        parameters: {
+            query?: {
+                /** @description How many lessons to return, newest first. */
+                limit?: number;
+                /** @description How many of the newest lessons to skip. */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonListResponse"];
+                };
+            };
+            /** @description Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. The details are logged, never returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
     LessonsController_create: {
         parameters: {
             query?: never;
@@ -1058,7 +1148,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QuizSummaryResponse"][];
+                    "application/json": components["schemas"]["QuizListItemResponse"][];
                 };
             };
             /** @description Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem. */

@@ -7,6 +7,8 @@ import {
 } from 'typeorm';
 
 @Entity('lessons')
+// Serves the lesson list, newest first.
+@Index('IDX_lessons_created_at', ['createdAt'])
 export class Lesson {
   @PrimaryGeneratedColumn('uuid')
   id: string;

@@ -9,10 +9,13 @@ type Schemas = components['schemas'];
 
 export type CreateLessonRequest = Schemas['CreateLessonDto'];
 export type LessonResponse = Schemas['LessonResponse'];
+export type LessonList = Schemas['LessonListResponse'];
+export type LessonSummary = Schemas['LessonSummaryResponse'];
+export type QuizStatusCounts = Schemas['QuizStatusCountsResponse'];
 
 export type GenerateQuizRequest = Schemas['GenerateQuizDto'];
 export type QuizResponse = Schemas['QuizResponse'];
-export type QuizSummaryResponse = Schemas['QuizSummaryResponse'];
+export type QuizListItem = Schemas['QuizListItemResponse'];
 export type QuizStreamStartedResponse = Schemas['QuizStreamStartedResponse'];
 export type QuizSettings = Schemas['QuizSettingsResponse'];
 export type ReviewStatsResponse = Schemas['ReviewStatsResponse'];

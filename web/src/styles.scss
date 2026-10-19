@@ -126,6 +126,8 @@ textarea {
   color: var(--color-text);
   font: inherit;
   font-weight: 600;
+  // Also used on links that act as buttons (e.g. "New lesson").
+  text-decoration: none;
   cursor: pointer;
 
   &:hover:not(:disabled) {

@@ -163,14 +163,50 @@ export class QuizService {
     return quiz;
   }
 
-  /** The lesson's quizzes, newest first, without their questions. 404 for an unknown lesson. */
-  async listForLesson(lessonId: string, limit: number): Promise<Quiz[]> {
+  /**
+   * The lesson's quizzes, newest first, without their questions but with how
+   * many each has. 404 for an unknown lesson.
+   */
+  async listForLesson(
+    lessonId: string,
+    limit: number,
+  ): Promise<{ quiz: Quiz; questionCount: number }[]> {
     await this.lessons.findById(lessonId);
-    return this.quizzes.find({
+    const quizzes = await this.quizzes.find({
       where: { lessonId },
-      order: { createdAt: 'DESC' },
+      order: { createdAt: 'DESC', id: 'DESC' },
       take: limit,
     });
+    const counts = await this.questionCounts(quizzes.map((quiz) => quiz.id));
+    return quizzes.map((quiz) => ({
+      quiz,
+      questionCount: counts.get(quiz.id) ?? 0,
+    }));
+  }
+
+  /**
+   * Questions per quiz, counted the way each quiz is shown: a published quiz
+   * is only its approved questions; any other quiz, all its current ones.
+   * Replaced (soft-deleted) questions never count: the query builder leaves
+   * them out.
+   */
+  private async questionCounts(
+    quizIds: string[],
+  ): Promise<Map<string, number>> {
+    if (quizIds.length === 0) {
+      return new Map();
+    }
+    const rows = await this.dataSource
+      .getRepository(Question)
+      .createQueryBuilder('question')
+      .innerJoin('question.quiz', 'quiz')
+      .select('question.quizId', 'quizId')
+      .addSelect('COUNT(*)::int', 'count')
+      .where('question.quizId IN (:...quizIds)', { quizIds })
+      .andWhere("(quiz.status <> 'published' OR question.status = 'approved')")
+      .groupBy('question.quizId')
+      .getRawMany<{ quizId: string; count: number }>();
+    return new Map(rows.map((row) => [row.quizId, row.count]));
   }
 
   /** What generating this quiz used: every llm_calls row with the quiz id as correlation id. */

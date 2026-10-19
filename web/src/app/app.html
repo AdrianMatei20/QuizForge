@@ -3,8 +3,11 @@
 <header class="app-header">
   <a routerLink="/" class="brand">QuizForge</a>
   <nav aria-label="Main">
-    <a routerLink="/lessons/new" routerLinkActive="active" ariaCurrentWhenActive="page"
-      >New lesson</a
+    <a
+      routerLink="/"
+      [class.active]="lessonsActive()"
+      [attr.aria-current]="lessonsActive() ? 'true' : null"
+      >Lessons</a
     >
     <a routerLink="/usage" routerLinkActive="active" ariaCurrentWhenActive="page">Usage</a>
   </nav>

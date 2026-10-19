@@ -1,0 +1,50 @@
+<div class="page-header">
+  <h1>Lessons</h1>
+  <a routerLink="/lessons/new" class="button primary">New lesson</a>
+</div>
+
+@if (loading() && !page()) {
+  <p role="status"><span class="spinner" aria-hidden="true"></span> Loading lessons…</p>
+}
+<app-error-message [error]="error()" [retryable]="true" (retry)="load(pageOffset())" />
+
+@if (page(); as page) {
+  @if (page.total === 0) {
+    <div class="notice empty-state">
+      <p>No lessons yet. Paste a lesson and the AI drafts a quiz from it for you to review.</p>
+      <a routerLink="/lessons/new">Write your first lesson</a>
+    </div>
+  } @else if (page.items.length === 0) {
+    <div class="notice">
+      <p>There are no lessons on this page.</p>
+      <a routerLink="/">Go to the newest lessons</a>
+    </div>
+  } @else {
+    <ul class="lesson-list" [attr.aria-busy]="loading()">
+      @for (lesson of page.items; track lesson.id) {
+        <li class="lesson-row">
+          <a class="lesson-title" [routerLink]="['/lessons', lesson.id]">{{ lesson.title }}</a>
+          <span class="meta">
+            Created <time [attr.datetime]="lesson.createdAt">{{ lesson.createdAt | date }}</time>
+          </span>
+          <span class="meta quiz-counts">{{ countsSummary(lesson.quizCounts) }}</span>
+        </li>
+      }
+    </ul>
+
+    @if (newerOffset() !== null || olderOffset() !== null) {
+      <nav class="pager" aria-label="Lesson pages">
+        <span class="meta">
+          {{ pageOffset() + 1 }}–{{ pageOffset() + page.items.length }} of {{ page.total }}
+        </span>
+        @if (newerOffset() !== null) {
+          <!-- Offset 0 drops the parameter, so the first page is plain "/". -->
+          <a [routerLink]="[]" [queryParams]="{ offset: newerOffset() || null }">Newer</a>
+        }
+        @if (olderOffset() !== null) {
+          <a [routerLink]="[]" [queryParams]="{ offset: olderOffset() }">Older</a>
+        }
+      </nav>
+    }
+  }
+}

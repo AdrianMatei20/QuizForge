@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { parseUuidParam } from '../common/problem-details/validation-problem.js';
 import {
   ApiCreatedResponse,
@@ -12,7 +12,11 @@ import { ApiProblems, PROBLEMS } from '../docs/api-problems.js';
 import { EXAMPLE_IDS } from '../docs/problem-details.dto.js';
 import { CreateLessonDto } from './create-lesson.dto.js';
 import type { Lesson } from './lesson.entity.js';
-import { LessonsService } from './lessons.service.js';
+import {
+  LESSON_LIST_DEFAULT_LIMIT,
+  ListLessonsQueryDto,
+} from './list-lessons-query.dto.js';
+import { LessonsService, type LessonSummary } from './lessons.service.js';
 
 export class LessonResponse {
   @ApiProperty({ format: 'uuid', example: EXAMPLE_IDS.lesson })
@@ -48,6 +52,60 @@ export function toLessonResponse(lesson: Lesson): LessonResponse {
   };
 }
 
+export class QuizStatusCountsResponse {
+  @ApiProperty({ example: 0 })
+  generating!: number;
+
+  @ApiProperty({ example: 1 })
+  draft!: number;
+
+  @ApiProperty({ example: 2 })
+  published!: number;
+
+  @ApiProperty({ example: 0 })
+  failed!: number;
+}
+
+export class LessonSummaryResponse {
+  @ApiProperty({ format: 'uuid', example: EXAMPLE_IDS.lesson })
+  id!: string;
+
+  @ApiProperty({ example: 'Recursion' })
+  title!: string;
+
+  @ApiProperty({ format: 'date-time', example: '2026-10-19T15:00:00.000Z' })
+  createdAt!: string;
+
+  @ApiProperty({
+    type: QuizStatusCountsResponse,
+    description: "The lesson's quizzes, counted by status (zeros included).",
+  })
+  quizCounts!: QuizStatusCountsResponse;
+}
+
+export class LessonListResponse {
+  @ApiProperty({ type: [LessonSummaryResponse], description: 'Newest first.' })
+  items!: LessonSummaryResponse[];
+
+  @ApiProperty({ description: 'All lessons, not just this page.', example: 42 })
+  total!: number;
+
+  @ApiProperty({ example: LESSON_LIST_DEFAULT_LIMIT })
+  limit!: number;
+
+  @ApiProperty({ example: 0 })
+  offset!: number;
+}
+
+function toLessonSummaryResponse(lesson: LessonSummary): LessonSummaryResponse {
+  return {
+    id: lesson.id,
+    title: lesson.title,
+    createdAt: lesson.createdAt.toISOString(),
+    quizCounts: lesson.quizCounts,
+  };
+}
+
 @ApiTags('lessons')
 @Controller('lessons')
 export class LessonsController {
@@ -62,6 +120,26 @@ export class LessonsController {
   @ApiProblems(PROBLEMS.validation, PROBLEMS.lessonTooLarge)
   async create(@Body() body: CreateLessonDto): Promise<LessonResponse> {
     return toLessonResponse(await this.lessons.create(body));
+  }
+
+  @Get()
+  @ApiOperation({
+    summary: 'List lessons',
+    description:
+      'Newest first, without their content, each with its quiz counts by status. `limit` defaults to 20, at most 100.',
+  })
+  @ApiOkResponse({ type: LessonListResponse })
+  @ApiProblems(PROBLEMS.validation)
+  async list(@Query() query: ListLessonsQueryDto): Promise<LessonListResponse> {
+    const limit = query.limit ?? LESSON_LIST_DEFAULT_LIMIT;
+    const offset = query.offset ?? 0;
+    const page = await this.lessons.list(limit, offset);
+    return {
+      items: page.lessons.map(toLessonSummaryResponse),
+      total: page.total,
+      limit,
+      offset,
+    };
   }
 
   @Get(':id')

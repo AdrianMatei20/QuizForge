@@ -492,6 +492,223 @@
           }
         },
         {
+          "name": "List lessons",
+          "request": {
+            "name": "List lessons",
+            "description": {
+              "content": "Newest first, without their content, each with its quiz counts by status. `limit` defaults to 20, at most 100.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "lessons"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "How many lessons to return, newest first.",
+                    "type": "text/plain"
+                  },
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "How many of the newest lessons to skip.",
+                    "type": "text/plain"
+                  },
+                  "key": "offset",
+                  "value": "0"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "body": {},
+            "auth": null
+          },
+          "response": [
+            {
+              "name": "200",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "lessons"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "How many lessons to return, newest first.",
+                        "type": "text/plain"
+                      },
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "How many of the newest lessons to skip.",
+                        "type": "text/plain"
+                      },
+                      "key": "offset",
+                      "value": "0"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"items\": [\n    {\n      \"id\": \"6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c\",\n      \"title\": \"Recursion\",\n      \"createdAt\": \"2026-10-19T15:00:00.000Z\",\n      \"quizCounts\": {\n        \"generating\": 0,\n        \"draft\": 1,\n        \"published\": 2,\n        \"failed\": 0\n      }\n    },\n    {\n      \"id\": \"6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c\",\n      \"title\": \"Recursion\",\n      \"createdAt\": \"2026-10-19T15:00:00.000Z\",\n      \"quizCounts\": {\n        \"generating\": 0,\n        \"draft\": 1,\n        \"published\": 2,\n        \"failed\": 0\n      }\n    }\n  ],\n  \"total\": 42,\n  \"limit\": 20,\n  \"offset\": 0\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "lessons"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "How many lessons to return, newest first.",
+                        "type": "text/plain"
+                      },
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "How many of the newest lessons to skip.",
+                        "type": "text/plain"
+                      },
+                      "key": "offset",
+                      "value": "0"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:quizforge:problem:quiz-published\",\n  \"title\": \"Quiz is published\",\n  \"status\": 409,\n  \"detail\": \"A published quiz and its questions can no longer be changed.\",\n  \"instance\": \"/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n  \"errors\": [\n    {\n      \"detail\": \"question 2: options 1 and 2 are identical\",\n      \"pointer\": \"#/options/3\",\n      \"parameter\": \"limit\"\n    },\n    {\n      \"detail\": \"question 2: options 1 and 2 are identical\",\n      \"pointer\": \"#/options/3\",\n      \"parameter\": \"limit\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Unexpected error. The details are logged, never returned.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "lessons"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "How many lessons to return, newest first.",
+                        "type": "text/plain"
+                      },
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "How many of the newest lessons to skip.",
+                        "type": "text/plain"
+                      },
+                      "key": "offset",
+                      "value": "0"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:quizforge:problem:quiz-published\",\n  \"title\": \"Quiz is published\",\n  \"status\": 409,\n  \"detail\": \"A published quiz and its questions can no longer be changed.\",\n  \"instance\": \"/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
           "name": "Read a lesson",
           "request": {
             "name": "Read a lesson",
@@ -843,7 +1060,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n  \"status\": \"draft\",\n  \"failureReason\": \"invalid_output\",\n  \"settings\": {\n    \"count\": 5,\n    \"difficulty\": \"medium\",\n    \"types\": [\n      \"multiple_choice\",\n      \"true_false\"\n    ]\n  },\n  \"createdAt\": \"2026-10-19T15:00:00.000Z\",\n  \"lessonId\": \"6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c\",\n  \"promptId\": \"quiz\",\n  \"promptVersion\": 1,\n  \"model\": \"claude-haiku-5-5\",\n  \"questions\": [\n    {\n      \"id\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"position\": 1,\n      \"type\": \"multiple_choice\",\n      \"stem\": \"What is the base case of a recursive function?\",\n      \"options\": [\n        \"The first call made to the function\",\n        \"A condition where the function returns a result without calling itself\",\n        \"The deepest call on the call stack\",\n        \"A loop that replaces the recursion\"\n      ],\n      \"correctIndex\": 1,\n      \"explanation\": \"The lesson defines the base case as the condition where the function returns without calling itself.\",\n      \"sourceQuote\": \"a base case, which is a condition where the function returns a result without calling itself\",\n      \"status\": \"draft\",\n      \"editedAt\": \"2026-10-19T15:00:00.000Z\",\n      \"isEdited\": false\n    },\n    {\n      \"id\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"position\": 1,\n      \"type\": \"multiple_choice\",\n      \"stem\": \"What is the base case of a recursive function?\",\n      \"options\": [\n        \"The first call made to the function\",\n        \"A condition where the function returns a result without calling itself\",\n        \"The deepest call on the call stack\",\n        \"A loop that replaces the recursion\"\n      ],\n      \"correctIndex\": 1,\n      \"explanation\": \"The lesson defines the base case as the condition where the function returns without calling itself.\",\n      \"sourceQuote\": \"a base case, which is a condition where the function returns a result without calling itself\",\n      \"status\": \"draft\",\n      \"editedAt\": \"2026-10-19T15:00:00.000Z\",\n      \"isEdited\": false\n    }\n  ]\n}",
+              "body": "{\n  \"id\": \"0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n  \"status\": \"draft\",\n  \"failureReason\": \"refusal\",\n  \"settings\": {\n    \"count\": 5,\n    \"difficulty\": \"medium\",\n    \"types\": [\n      \"multiple_choice\",\n      \"true_false\"\n    ]\n  },\n  \"createdAt\": \"2026-10-19T15:00:00.000Z\",\n  \"lessonId\": \"6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c\",\n  \"promptId\": \"quiz\",\n  \"promptVersion\": 1,\n  \"model\": \"claude-haiku-5-5\",\n  \"questions\": [\n    {\n      \"id\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"position\": 1,\n      \"type\": \"multiple_choice\",\n      \"stem\": \"What is the base case of a recursive function?\",\n      \"options\": [\n        \"The first call made to the function\",\n        \"A condition where the function returns a result without calling itself\",\n        \"The deepest call on the call stack\",\n        \"A loop that replaces the recursion\"\n      ],\n      \"correctIndex\": 1,\n      \"explanation\": \"The lesson defines the base case as the condition where the function returns without calling itself.\",\n      \"sourceQuote\": \"a base case, which is a condition where the function returns a result without calling itself\",\n      \"status\": \"draft\",\n      \"editedAt\": \"2026-10-19T15:00:00.000Z\",\n      \"isEdited\": false\n    },\n    {\n      \"id\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"position\": 1,\n      \"type\": \"multiple_choice\",\n      \"stem\": \"What is the base case of a recursive function?\",\n      \"options\": [\n        \"The first call made to the function\",\n        \"A condition where the function returns a result without calling itself\",\n        \"The deepest call on the call stack\",\n        \"A loop that replaces the recursion\"\n      ],\n      \"correctIndex\": 1,\n      \"explanation\": \"The lesson defines the base case as the condition where the function returns without calling itself.\",\n      \"sourceQuote\": \"a base case, which is a condition where the function returns a result without calling itself\",\n      \"status\": \"draft\",\n      \"editedAt\": \"2026-10-19T15:00:00.000Z\",\n      \"isEdited\": false\n    }\n  ]\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
@@ -1425,7 +1642,7 @@
           "request": {
             "name": "List a lesson's quizzes",
             "description": {
-              "content": "Newest first, without questions. Failed quizzes included.",
+              "content": "Newest first, without questions but with their count. Failed quizzes included.",
               "type": "text/plain"
             },
             "url": {
@@ -1527,7 +1744,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n  {\n    \"id\": \"0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n    \"status\": \"draft\",\n    \"failureReason\": \"budget_exceeded\",\n    \"settings\": {\n      \"count\": 5,\n      \"difficulty\": \"medium\",\n      \"types\": [\n        \"multiple_choice\",\n        \"true_false\"\n      ]\n    },\n    \"createdAt\": \"2026-10-19T15:00:00.000Z\"\n  },\n  {\n    \"id\": \"0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n    \"status\": \"draft\",\n    \"failureReason\": \"truncated\",\n    \"settings\": {\n      \"count\": 5,\n      \"difficulty\": \"medium\",\n      \"types\": [\n        \"multiple_choice\",\n        \"true_false\"\n      ]\n    },\n    \"createdAt\": \"2026-10-19T15:00:00.000Z\"\n  }\n]",
+              "body": "[\n  {\n    \"id\": \"0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n    \"status\": \"draft\",\n    \"failureReason\": \"rate_limited\",\n    \"settings\": {\n      \"count\": 5,\n      \"difficulty\": \"medium\",\n      \"types\": [\n        \"multiple_choice\",\n        \"true_false\"\n      ]\n    },\n    \"createdAt\": \"2026-10-19T15:00:00.000Z\",\n    \"questionCount\": 4\n  },\n  {\n    \"id\": \"0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n    \"status\": \"draft\",\n    \"failureReason\": \"provider_error\",\n    \"settings\": {\n      \"count\": 5,\n      \"difficulty\": \"medium\",\n      \"types\": [\n        \"multiple_choice\",\n        \"true_false\"\n      ]\n    },\n    \"createdAt\": \"2026-10-19T15:00:00.000Z\",\n    \"questionCount\": 4\n  }\n]",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
@@ -1989,7 +2206,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n  \"status\": \"draft\",\n  \"failureReason\": \"invalid_output\",\n  \"settings\": {\n    \"count\": 5,\n    \"difficulty\": \"medium\",\n    \"types\": [\n      \"multiple_choice\",\n      \"true_false\"\n    ]\n  },\n  \"createdAt\": \"2026-10-19T15:00:00.000Z\",\n  \"lessonId\": \"6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c\",\n  \"promptId\": \"quiz\",\n  \"promptVersion\": 1,\n  \"model\": \"claude-haiku-5-5\",\n  \"questions\": [\n    {\n      \"id\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"position\": 1,\n      \"type\": \"multiple_choice\",\n      \"stem\": \"What is the base case of a recursive function?\",\n      \"options\": [\n        \"The first call made to the function\",\n        \"A condition where the function returns a result without calling itself\",\n        \"The deepest call on the call stack\",\n        \"A loop that replaces the recursion\"\n      ],\n      \"correctIndex\": 1,\n      \"explanation\": \"The lesson defines the base case as the condition where the function returns without calling itself.\",\n      \"sourceQuote\": \"a base case, which is a condition where the function returns a result without calling itself\",\n      \"status\": \"draft\",\n      \"editedAt\": \"2026-10-19T15:00:00.000Z\",\n      \"isEdited\": false\n    },\n    {\n      \"id\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"position\": 1,\n      \"type\": \"multiple_choice\",\n      \"stem\": \"What is the base case of a recursive function?\",\n      \"options\": [\n        \"The first call made to the function\",\n        \"A condition where the function returns a result without calling itself\",\n        \"The deepest call on the call stack\",\n        \"A loop that replaces the recursion\"\n      ],\n      \"correctIndex\": 1,\n      \"explanation\": \"The lesson defines the base case as the condition where the function returns without calling itself.\",\n      \"sourceQuote\": \"a base case, which is a condition where the function returns a result without calling itself\",\n      \"status\": \"draft\",\n      \"editedAt\": \"2026-10-19T15:00:00.000Z\",\n      \"isEdited\": false\n    }\n  ]\n}",
+              "body": "{\n  \"id\": \"0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n  \"status\": \"draft\",\n  \"failureReason\": \"refusal\",\n  \"settings\": {\n    \"count\": 5,\n    \"difficulty\": \"medium\",\n    \"types\": [\n      \"multiple_choice\",\n      \"true_false\"\n    ]\n  },\n  \"createdAt\": \"2026-10-19T15:00:00.000Z\",\n  \"lessonId\": \"6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c\",\n  \"promptId\": \"quiz\",\n  \"promptVersion\": 1,\n  \"model\": \"claude-haiku-5-5\",\n  \"questions\": [\n    {\n      \"id\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"position\": 1,\n      \"type\": \"multiple_choice\",\n      \"stem\": \"What is the base case of a recursive function?\",\n      \"options\": [\n        \"The first call made to the function\",\n        \"A condition where the function returns a result without calling itself\",\n        \"The deepest call on the call stack\",\n        \"A loop that replaces the recursion\"\n      ],\n      \"correctIndex\": 1,\n      \"explanation\": \"The lesson defines the base case as the condition where the function returns without calling itself.\",\n      \"sourceQuote\": \"a base case, which is a condition where the function returns a result without calling itself\",\n      \"status\": \"draft\",\n      \"editedAt\": \"2026-10-19T15:00:00.000Z\",\n      \"isEdited\": false\n    },\n    {\n      \"id\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"position\": 1,\n      \"type\": \"multiple_choice\",\n      \"stem\": \"What is the base case of a recursive function?\",\n      \"options\": [\n        \"The first call made to the function\",\n        \"A condition where the function returns a result without calling itself\",\n        \"The deepest call on the call stack\",\n        \"A loop that replaces the recursion\"\n      ],\n      \"correctIndex\": 1,\n      \"explanation\": \"The lesson defines the base case as the condition where the function returns without calling itself.\",\n      \"sourceQuote\": \"a base case, which is a condition where the function returns a result without calling itself\",\n      \"status\": \"draft\",\n      \"editedAt\": \"2026-10-19T15:00:00.000Z\",\n      \"isEdited\": false\n    }\n  ]\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
@@ -2227,7 +2444,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n  \"status\": \"draft\",\n  \"failureReason\": \"invalid_output\",\n  \"settings\": {\n    \"count\": 5,\n    \"difficulty\": \"medium\",\n    \"types\": [\n      \"multiple_choice\",\n      \"true_false\"\n    ]\n  },\n  \"createdAt\": \"2026-10-19T15:00:00.000Z\",\n  \"lessonId\": \"6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c\",\n  \"promptId\": \"quiz\",\n  \"promptVersion\": 1,\n  \"model\": \"claude-haiku-5-5\",\n  \"questions\": [\n    {\n      \"id\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"position\": 1,\n      \"type\": \"multiple_choice\",\n      \"stem\": \"What is the base case of a recursive function?\",\n      \"options\": [\n        \"The first call made to the function\",\n        \"A condition where the function returns a result without calling itself\",\n        \"The deepest call on the call stack\",\n        \"A loop that replaces the recursion\"\n      ],\n      \"correctIndex\": 1,\n      \"explanation\": \"The lesson defines the base case as the condition where the function returns without calling itself.\",\n      \"sourceQuote\": \"a base case, which is a condition where the function returns a result without calling itself\",\n      \"status\": \"draft\",\n      \"editedAt\": \"2026-10-19T15:00:00.000Z\",\n      \"isEdited\": false\n    },\n    {\n      \"id\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"position\": 1,\n      \"type\": \"multiple_choice\",\n      \"stem\": \"What is the base case of a recursive function?\",\n      \"options\": [\n        \"The first call made to the function\",\n        \"A condition where the function returns a result without calling itself\",\n        \"The deepest call on the call stack\",\n        \"A loop that replaces the recursion\"\n      ],\n      \"correctIndex\": 1,\n      \"explanation\": \"The lesson defines the base case as the condition where the function returns without calling itself.\",\n      \"sourceQuote\": \"a base case, which is a condition where the function returns a result without calling itself\",\n      \"status\": \"draft\",\n      \"editedAt\": \"2026-10-19T15:00:00.000Z\",\n      \"isEdited\": false\n    }\n  ]\n}",
+              "body": "{\n  \"id\": \"0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n  \"status\": \"draft\",\n  \"failureReason\": \"refusal\",\n  \"settings\": {\n    \"count\": 5,\n    \"difficulty\": \"medium\",\n    \"types\": [\n      \"multiple_choice\",\n      \"true_false\"\n    ]\n  },\n  \"createdAt\": \"2026-10-19T15:00:00.000Z\",\n  \"lessonId\": \"6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c\",\n  \"promptId\": \"quiz\",\n  \"promptVersion\": 1,\n  \"model\": \"claude-haiku-5-5\",\n  \"questions\": [\n    {\n      \"id\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"position\": 1,\n      \"type\": \"multiple_choice\",\n      \"stem\": \"What is the base case of a recursive function?\",\n      \"options\": [\n        \"The first call made to the function\",\n        \"A condition where the function returns a result without calling itself\",\n        \"The deepest call on the call stack\",\n        \"A loop that replaces the recursion\"\n      ],\n      \"correctIndex\": 1,\n      \"explanation\": \"The lesson defines the base case as the condition where the function returns without calling itself.\",\n      \"sourceQuote\": \"a base case, which is a condition where the function returns a result without calling itself\",\n      \"status\": \"draft\",\n      \"editedAt\": \"2026-10-19T15:00:00.000Z\",\n      \"isEdited\": false\n    },\n    {\n      \"id\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"position\": 1,\n      \"type\": \"multiple_choice\",\n      \"stem\": \"What is the base case of a recursive function?\",\n      \"options\": [\n        \"The first call made to the function\",\n        \"A condition where the function returns a result without calling itself\",\n        \"The deepest call on the call stack\",\n        \"A loop that replaces the recursion\"\n      ],\n      \"correctIndex\": 1,\n      \"explanation\": \"The lesson defines the base case as the condition where the function returns without calling itself.\",\n      \"sourceQuote\": \"a base case, which is a condition where the function returns a result without calling itself\",\n      \"status\": \"draft\",\n      \"editedAt\": \"2026-10-19T15:00:00.000Z\",\n      \"isEdited\": false\n    }\n  ]\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },

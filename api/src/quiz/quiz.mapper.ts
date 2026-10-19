@@ -129,6 +129,15 @@ export class QuizSummaryResponse {
   createdAt!: string;
 }
 
+export class QuizListItemResponse extends QuizSummaryResponse {
+  @ApiProperty({
+    description:
+      'How many questions the quiz has: approved ones once published, otherwise all current ones (replaced questions never count). Compare with settings.count.',
+    example: 4,
+  })
+  questionCount!: number;
+}
+
 export class QuizResponse extends QuizSummaryResponse {
   @ApiProperty(LESSON_ID)
   lessonId!: string;
@@ -257,13 +266,17 @@ export function toQuizResponse(quiz: Quiz): QuizResponse {
   };
 }
 
-export function toQuizSummaryResponse(quiz: Quiz): QuizSummaryResponse {
+export function toQuizListItemResponse(
+  quiz: Quiz,
+  questionCount: number,
+): QuizListItemResponse {
   return {
     id: quiz.id,
     status: quiz.status,
     failureReason: quiz.failureReason,
     settings: quiz.settings,
     createdAt: quiz.createdAt.toISOString(),
+    questionCount,
   };
 }
 

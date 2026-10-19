@@ -40,14 +40,14 @@ import {
   QuestionRejectedEvent,
   QuestionResponse,
   QuizCostResponse,
+  QuizListItemResponse,
   QuizResponse,
   QuizStreamStartedResponse,
-  QuizSummaryResponse,
   ReviewStatsResponse,
   StreamDoneEvent,
   toQuizCostResponse,
   toQuizResponse,
-  toQuizSummaryResponse,
+  toQuizListItemResponse,
 } from './quiz.mapper.js';
 import { QuizService } from './quiz.service.js';
 import { ReviewService } from './review.service.js';
@@ -164,20 +164,23 @@ export class QuizzesController {
   @Get('lessons/:lessonId/quizzes')
   @ApiOperation({
     summary: "List a lesson's quizzes",
-    description: 'Newest first, without questions. Failed quizzes included.',
+    description:
+      'Newest first, without questions but with their count. Failed quizzes included.',
   })
   @LESSON_ID
-  @ApiOkResponse({ type: [QuizSummaryResponse] })
+  @ApiOkResponse({ type: [QuizListItemResponse] })
   @ApiProblems(PROBLEMS.validation, PROBLEMS.notFound)
   async listForLesson(
     @Param('lessonId', parseUuidParam('lessonId')) lessonId: string,
     @Query() query: ListQuizzesQueryDto,
-  ): Promise<QuizSummaryResponse[]> {
+  ): Promise<QuizListItemResponse[]> {
     const quizzes = await this.quizzes.listForLesson(
       lessonId,
       query.limit ?? QUIZ_LIST_DEFAULT_LIMIT,
     );
-    return quizzes.map(toQuizSummaryResponse);
+    return quizzes.map(({ quiz, questionCount }) =>
+      toQuizListItemResponse(quiz, questionCount),
+    );
   }
 
   @Get('quizzes/:id')

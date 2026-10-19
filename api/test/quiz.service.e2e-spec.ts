@@ -346,16 +346,24 @@ describe('QuizService (integration)', () => {
 
       const all = await quizService.listForLesson(lesson.id, 20);
       expect(
-        all.map((quiz) => [quiz.id, quiz.status, quiz.failureReason]),
+        all.map(({ quiz, questionCount }) => [
+          quiz.id,
+          quiz.status,
+          quiz.failureReason,
+          questionCount,
+        ]),
       ).toEqual([
-        [third.id, 'draft', null],
-        [second.quizId, 'failed', 'refusal'],
-        [first.id, 'draft', null],
+        [third.id, 'draft', null, 5],
+        [second.quizId, 'failed', 'refusal', 0],
+        [first.id, 'draft', null, 5],
       ]);
-      expect(all[0]?.questions).toBeUndefined();
+      expect(all[0]?.quiz.questions).toBeUndefined();
 
       const limited = await quizService.listForLesson(lesson.id, 2);
-      expect(limited.map((quiz) => quiz.id)).toEqual([third.id, second.quizId]);
+      expect(limited.map(({ quiz }) => quiz.id)).toEqual([
+        third.id,
+        second.quizId,
+      ]);
     });
 
     it('rejects an unknown lesson with 404', async () => {

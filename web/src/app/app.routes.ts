@@ -1,11 +1,21 @@
 import type { Routes } from '@angular/router';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'lessons/new' },
+  {
+    path: '',
+    pathMatch: 'full',
+    title: 'Lessons · QuizForge',
+    loadComponent: () => import('./lessons/lessons-list.page').then((m) => m.LessonsListPage),
+  },
   {
     path: 'lessons/new',
     title: 'New lesson · QuizForge',
     loadComponent: () => import('./lessons/lesson-new.page').then((m) => m.LessonNewPage),
+  },
+  {
+    path: 'lessons/:id',
+    title: 'Lesson · QuizForge',
+    loadComponent: () => import('./lessons/lesson.page').then((m) => m.LessonPage),
   },
   {
     path: 'quizzes/:id/review',
@@ -22,5 +32,5 @@ export const routes: Routes = [
     title: 'Usage · QuizForge',
     loadComponent: () => import('./usage/usage.page').then((m) => m.UsagePage),
   },
-  { path: '**', redirectTo: 'lessons/new' },
+  { path: '**', redirectTo: '' },
 ];

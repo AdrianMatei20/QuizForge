@@ -525,6 +525,7 @@ describe('Lessons and quizzes (e2e)', () => {
           failureReason: null,
           settings,
           createdAt: expect.any(String),
+          questionCount: 5,
         })),
       );
 

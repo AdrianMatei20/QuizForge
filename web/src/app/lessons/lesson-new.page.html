@@ -69,69 +69,7 @@
     }
   </div>
 
-  <fieldset class="settings">
-    <legend>Quiz settings</legend>
-
-    @let countMessages = messages(lessonForm.count, '#/count');
-    <div class="field">
-      <label for="quiz-count">Number of questions</label>
-      <input
-        id="quiz-count"
-        type="number"
-        [formField]="lessonForm.count"
-        [attr.aria-invalid]="countMessages.length > 0"
-        [attr.aria-describedby]="countMessages.length > 0 ? 'quiz-count-errors' : 'quiz-count-hint'"
-      />
-      <span id="quiz-count-hint" class="hint">
-        {{ limits.quizCountMin }} to {{ limits.quizCountMax }}
-      </span>
-      @if (countMessages.length > 0) {
-        <ul id="quiz-count-errors" class="field-errors">
-          @for (message of countMessages; track $index) {
-            <li>{{ message }}</li>
-          }
-        </ul>
-      }
-    </div>
-
-    <div class="field">
-      <label for="quiz-difficulty">Difficulty</label>
-      <select
-        id="quiz-difficulty"
-        aria-describedby="quiz-difficulty-hint"
-        [formField]="lessonForm.difficulty"
-      >
-        @for (option of difficulties; track option.value) {
-          <option [value]="option.value">{{ option.label }}</option>
-        }
-      </select>
-      <span id="quiz-difficulty-hint" class="hint">{{ difficultyDescription() }}</span>
-    </div>
-
-    @let typeMessages = messages(lessonForm.multipleChoice, '#/types');
-    <fieldset
-      class="field types"
-      [attr.aria-invalid]="typeMessages.length > 0"
-      [attr.aria-describedby]="typeMessages.length > 0 ? 'quiz-types-errors' : null"
-    >
-      <legend>Question types</legend>
-      <label class="checkbox">
-        <input type="checkbox" [formField]="lessonForm.multipleChoice" />
-        Multiple choice
-      </label>
-      <label class="checkbox">
-        <input type="checkbox" [formField]="lessonForm.trueFalse" />
-        True/false
-      </label>
-      @if (typeMessages.length > 0) {
-        <ul id="quiz-types-errors" class="field-errors">
-          @for (message of typeMessages; track $index) {
-            <li>{{ message }}</li>
-          }
-        </ul>
-      }
-    </fieldset>
-  </fieldset>
+  <app-quiz-settings-fields [settings]="lessonForm.settings" [serverErrors]="serverErrors()" />
 
   <app-error-message [error]="error()" [retryable]="true" (retry)="generate()" />
 

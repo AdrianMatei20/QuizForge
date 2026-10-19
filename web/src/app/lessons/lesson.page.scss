@@ -1,0 +1,75 @@
+:host {
+  display: block;
+  max-width: 48rem;
+}
+
+.back {
+  margin: 0 0 var(--space-2);
+}
+
+h1 {
+  margin: 0 0 var(--space-2);
+}
+
+.lead {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.lesson-preview {
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+
+  summary {
+    cursor: pointer;
+    font-weight: 600;
+  }
+}
+
+.lesson-text {
+  margin-top: var(--space-3);
+  max-height: 24rem;
+  overflow-y: auto;
+  // The lesson is plain text: keep its line breaks.
+  white-space: pre-wrap;
+}
+
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+
+  h2 {
+    margin: 0;
+  }
+}
+
+.generate-form {
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.quiz-list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.empty {
+  color: var(--color-text-muted);
+}
