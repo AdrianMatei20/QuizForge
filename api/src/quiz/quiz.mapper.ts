@@ -297,3 +297,80 @@ export function toQuestionResponse(question: Question): QuestionResponse {
     isEdited: contentDiffers(question),
   };
 }
+
+/** 202 body of POST /lessons/:id/quizzes with stream: true. */
+export class QuizStreamStartedResponse {
+  @ApiProperty({
+    ...QUIZ_ID,
+    description: 'Watch it at GET /api/quizzes/{quizId}/stream.',
+  })
+  quizId!: string;
+}
+
+/** Data of a `question_rejected` stream event. */
+export class QuestionRejectedEvent {
+  @ApiProperty({
+    description: 'The position the rejected line would have had.',
+    example: 3,
+  })
+  position!: number;
+
+  @ApiProperty({
+    description: 'Why the line was rejected. Never quotes the model output.',
+    type: [String],
+    example: ['question 3: sourceQuote does not appear in the lesson'],
+  })
+  violations!: string[];
+}
+
+export class StreamUsage {
+  @ApiProperty({ example: 2 })
+  calls!: number;
+
+  @ApiProperty({ example: 1874 })
+  inputTokens!: number;
+
+  @ApiProperty({ example: 1814 })
+  outputTokens!: number;
+
+  @ApiProperty({ example: 3688 })
+  totalTokens!: number;
+
+  @ApiProperty({
+    description: 'USD as a decimal string with 6 places.',
+    example: '0.001094',
+  })
+  costUsd!: string;
+}
+
+/** Data of the `done` stream event. */
+export class StreamDoneEvent {
+  @ApiProperty({
+    description:
+      'Questions saved, including those filled in by the repair step.',
+    example: 5,
+  })
+  generated!: number;
+
+  @ApiProperty({
+    description: 'Lines the model wrote that failed validation.',
+    example: 1,
+  })
+  rejected!: number;
+
+  @ApiProperty({
+    type: StreamUsage,
+    description: 'Every LLM call made for the quiz so far.',
+  })
+  usage!: StreamUsage;
+}
+
+export function toStreamUsage(usage: LlmUsageTotals): StreamUsage {
+  return {
+    calls: usage.calls,
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    totalTokens: usage.inputTokens + usage.outputTokens,
+    costUsd: usage.costUsd,
+  };
+}

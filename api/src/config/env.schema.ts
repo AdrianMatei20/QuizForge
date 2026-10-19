@@ -42,6 +42,18 @@ export const baseEnvSchema = z.object({
   LLM_PRICING_FILE: z.string().min(1).default('config/llm-pricing.json'),
   // A generated question's sourceQuote must have at least this many words.
   QUIZ_SOURCE_QUOTE_MIN_WORDS: z.coerce.number().int().min(1).default(5),
+  // A streamed quiz's whole generation, repair included. The provider stream is aborted after this.
+  QUIZ_GENERATION_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .min(1_000)
+    .default(180_000),
+  // How often quizzes left "generating" by a crash or restart are cleaned up (also once at startup).
+  QUIZ_STUCK_SWEEP_INTERVAL_MS: z.coerce
+    .number()
+    .int()
+    .min(1_000)
+    .default(300_000),
 });
 
 export const envSchema = baseEnvSchema.refine(

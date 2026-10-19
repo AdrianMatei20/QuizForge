@@ -76,9 +76,41 @@ export interface paths {
         put?: never;
         /**
          * Generate a quiz from a lesson
-         * @description Synchronous: responds once the LLM has written the questions and they passed the schema and rule checks (with up to one repair call). Multiple-choice options are shuffled before saving. If generation fails, the quiz is kept with status "failed" and a failureReason, and the error response includes its `quizId`.
+         * @description Synchronous (default): responds once the LLM has written the questions and they passed the schema and rule checks (with up to one repair call). If generation fails, the quiz is kept with status "failed" and a failureReason, and the error response includes its `quizId`.
+         *
+         *     With `stream: true`: creates the quiz as "generating", returns 202 `{ quizId }` at once, and generates in the background; watch it at GET /api/quizzes/{quizId}/stream. Generation errors then arrive as a `problem` event on that stream.
+         *
+         *     Multiple-choice options are shuffled before saving.
          */
         post: operations["QuizzesController_generate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/quizzes/{id}/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Watch a quiz being generated (Server-Sent Events)
+         * @description A text/event-stream. First every saved question is replayed, so a reconnecting client catches up; then the live events while generation runs. Events:
+         *     - `question`: a validated, saved question (QuestionResponse)
+         *     - `question_rejected`: `{ position, violations }` for a line that failed validation; the repair step fills its position later
+         *     - `done`: `{ generated, rejected, usage }`; the stream ends
+         *     - `problem`: problem details (generation failed, or unknown quiz); the stream ends
+         *
+         *     Disconnecting does not stop generation. Works for synchronously generated quizzes too (replay, then `done`).
+         *
+         *     From a terminal: `curl -N http://localhost:3000/api/quizzes/{id}/stream`
+         */
+        get: operations["QuizzesController_stream"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -399,6 +431,11 @@ export interface components {
              *     ]
              */
             types: ("multiple_choice" | "true_false")[];
+            /**
+             * @description true: return 202 { quizId } at once and stream the questions from GET /api/quizzes/{quizId}/stream. Absent or false: generate synchronously and return the quiz (201).
+             * @example false
+             */
+            stream?: boolean;
         };
         QuizSettingsResponse: {
             /** @example 5 */
@@ -489,7 +526,7 @@ export interface components {
              * @example null
              * @enum {string|null}
              */
-            failureReason: "invalid_output" | "refusal" | "truncated" | "budget_exceeded" | "timeout" | "rate_limited" | "provider_error" | "cancelled" | "internal_error" | null;
+            failureReason: "invalid_output" | "refusal" | "truncated" | "budget_exceeded" | "timeout" | "rate_limited" | "provider_error" | "cancelled" | "internal_error" | "interrupted" | null;
             settings: components["schemas"]["QuizSettingsResponse"];
             /**
              * Format: date-time
@@ -510,6 +547,57 @@ export interface components {
             /** @description Current questions in order. Once published, only the approved ones. */
             questions: components["schemas"]["QuestionResponse"][];
         };
+        QuizStreamStartedResponse: {
+            /**
+             * Format: uuid
+             * @description Watch it at GET /api/quizzes/{quizId}/stream.
+             * @example 0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10
+             */
+            quizId: string;
+        };
+        QuestionRejectedEvent: {
+            /**
+             * @description The position the rejected line would have had.
+             * @example 3
+             */
+            position: number;
+            /**
+             * @description Why the line was rejected. Never quotes the model output.
+             * @example [
+             *       "question 3: sourceQuote does not appear in the lesson"
+             *     ]
+             */
+            violations: string[];
+        };
+        StreamUsage: {
+            /** @example 2 */
+            calls: number;
+            /** @example 1874 */
+            inputTokens: number;
+            /** @example 1814 */
+            outputTokens: number;
+            /** @example 3688 */
+            totalTokens: number;
+            /**
+             * @description USD as a decimal string with 6 places.
+             * @example 0.001094
+             */
+            costUsd: string;
+        };
+        StreamDoneEvent: {
+            /**
+             * @description Questions saved, including those filled in by the repair step.
+             * @example 5
+             */
+            generated: number;
+            /**
+             * @description Lines the model wrote that failed validation.
+             * @example 1
+             */
+            rejected: number;
+            /** @description Every LLM call made for the quiz so far. */
+            usage: components["schemas"]["StreamUsage"];
+        };
         QuizSummaryResponse: {
             /**
              * Format: uuid
@@ -526,7 +614,7 @@ export interface components {
              * @example null
              * @enum {string|null}
              */
-            failureReason: "invalid_output" | "refusal" | "truncated" | "budget_exceeded" | "timeout" | "rate_limited" | "provider_error" | "cancelled" | "internal_error" | null;
+            failureReason: "invalid_output" | "refusal" | "truncated" | "budget_exceeded" | "timeout" | "rate_limited" | "provider_error" | "cancelled" | "internal_error" | "interrupted" | null;
             settings: components["schemas"]["QuizSettingsResponse"];
             /**
              * Format: date-time
@@ -851,6 +939,15 @@ export interface operations {
                     "application/json": components["schemas"]["QuizResponse"];
                 };
             };
+            /** @description stream: true. Generation has started. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizStreamStartedResponse"];
+                };
+            };
             /** @description Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem. */
             400: {
                 headers: {
@@ -925,6 +1022,47 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["QuizGenerationProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    QuizzesController_stream: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Quiz id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A stream of `question`, `question_rejected`, `done` and `problem` events; each `data:` line is one of these JSON payloads. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["QuestionResponse"] | components["schemas"]["QuestionRejectedEvent"] | components["schemas"]["StreamDoneEvent"] | components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. The details are logged, never returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
         };

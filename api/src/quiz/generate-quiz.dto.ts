@@ -1,10 +1,12 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayNotEmpty,
   ArrayUnique,
   IsArray,
+  IsBoolean,
   IsIn,
   IsInt,
+  IsOptional,
   Max,
   Min,
 } from 'class-validator';
@@ -51,4 +53,14 @@ export class GenerateQuizDto {
   @ArrayUnique()
   @IsIn(QUESTION_TYPES, { each: true })
   types!: QuestionType[];
+
+  @ApiPropertyOptional({
+    description:
+      'true: return 202 { quizId } at once and stream the questions from GET /api/quizzes/{quizId}/stream. ' +
+      'Absent or false: generate synchronously and return the quiz (201).',
+    example: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  stream?: boolean;
 }

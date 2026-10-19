@@ -7,15 +7,24 @@ import {
   Param,
   Post,
   Query,
+  Res,
+  Sse,
 } from '@nestjs/common';
-import { parseUuidParam } from '../common/problem-details/validation-problem.js';
 import {
+  ApiAcceptedResponse,
   ApiCreatedResponse,
+  ApiExtraModels,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiProduces,
   ApiTags,
+  getSchemaPath,
 } from '@nestjs/swagger';
+import type { Response } from 'express';
+import type { Observable } from 'rxjs';
+import { parseUuidParam } from '../common/problem-details/validation-problem.js';
+import { ProblemDetailsDto } from '../docs/problem-details.dto.js';
 import { ApiProblems, PROBLEMS } from '../docs/api-problems.js';
 import { EXAMPLE_IDS } from '../docs/problem-details.dto.js';
 import { GenerateQuizDto } from './generate-quiz.dto.js';
@@ -23,11 +32,17 @@ import {
   ListQuizzesQueryDto,
   QUIZ_LIST_DEFAULT_LIMIT,
 } from './list-quizzes-query.dto.js';
+import type { QuizStreamEvent } from './quiz-stream.events.js';
+import { QuizStreamService } from './quiz-stream.service.js';
 import {
+  QuestionRejectedEvent,
+  QuestionResponse,
   QuizCostResponse,
   QuizResponse,
+  QuizStreamStartedResponse,
   QuizSummaryResponse,
   ReviewStatsResponse,
+  StreamDoneEvent,
   toQuizCostResponse,
   toQuizResponse,
   toQuizSummaryResponse,
@@ -53,18 +68,29 @@ export class QuizzesController {
   constructor(
     private readonly quizzes: QuizService,
     private readonly review: ReviewService,
+    private readonly streams: QuizStreamService,
   ) {}
 
-  /** Synchronous for now: responds once the quiz is generated and saved. */
+  /**
+   * Synchronous by default: responds once the quiz is generated and saved.
+   * With stream: true, responds 202 at once; the questions arrive on the stream.
+   */
   @Post('lessons/:lessonId/quizzes')
   @ApiOperation({
     summary: 'Generate a quiz from a lesson',
     description:
-      'Synchronous: responds once the LLM has written the questions and they passed the schema and rule checks (with up to one repair call). ' +
-      'Multiple-choice options are shuffled before saving. If generation fails, the quiz is kept with status "failed" and a failureReason, and the error response includes its `quizId`.',
+      'Synchronous (default): responds once the LLM has written the questions and they passed the schema and rule checks (with up to one repair call). ' +
+      'If generation fails, the quiz is kept with status "failed" and a failureReason, and the error response includes its `quizId`.\n\n' +
+      'With `stream: true`: creates the quiz as "generating", returns 202 `{ quizId }` at once, and generates in the background; ' +
+      'watch it at GET /api/quizzes/{quizId}/stream. Generation errors then arrive as a `problem` event on that stream.\n\n' +
+      'Multiple-choice options are shuffled before saving.',
   })
   @LESSON_ID
   @ApiCreatedResponse({ type: QuizResponse, description: 'The draft quiz.' })
+  @ApiAcceptedResponse({
+    type: QuizStreamStartedResponse,
+    description: 'stream: true. Generation has started.',
+  })
   @ApiProblems(
     PROBLEMS.validation,
     PROBLEMS.notFound,
@@ -78,8 +104,57 @@ export class QuizzesController {
   async generate(
     @Param('lessonId', parseUuidParam('lessonId')) lessonId: string,
     @Body() body: GenerateQuizDto,
-  ): Promise<QuizResponse> {
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<QuizResponse | QuizStreamStartedResponse> {
+    if (body.stream === true) {
+      response.status(HttpStatus.ACCEPTED);
+      return { quizId: await this.quizzes.startStreamed(lessonId, body) };
+    }
     return toQuizResponse(await this.quizzes.generate(lessonId, body));
+  }
+
+  @Sse('quizzes/:id/stream')
+  @ApiOperation({
+    summary: 'Watch a quiz being generated (Server-Sent Events)',
+    description:
+      'A text/event-stream. First every saved question is replayed, so a reconnecting client catches up; then the live events while generation runs. ' +
+      'Events:\n' +
+      '- `question`: a validated, saved question (QuestionResponse)\n' +
+      '- `question_rejected`: `{ position, violations }` for a line that failed validation; the repair step fills its position later\n' +
+      '- `done`: `{ generated, rejected, usage }`; the stream ends\n' +
+      '- `problem`: problem details (generation failed, or unknown quiz); the stream ends\n\n' +
+      'Disconnecting does not stop generation. Works for synchronously generated quizzes too (replay, then `done`).\n\n' +
+      'From a terminal: `curl -N http://localhost:3000/api/quizzes/{id}/stream`',
+  })
+  @QUIZ_ID
+  @ApiProduces('text/event-stream')
+  @ApiExtraModels(
+    QuestionResponse,
+    QuestionRejectedEvent,
+    StreamDoneEvent,
+    ProblemDetailsDto,
+  )
+  @ApiOkResponse({
+    description:
+      'A stream of `question`, `question_rejected`, `done` and `problem` events; each `data:` line is one of these JSON payloads.',
+    content: {
+      'text/event-stream': {
+        schema: {
+          oneOf: [
+            { $ref: getSchemaPath(QuestionResponse) },
+            { $ref: getSchemaPath(QuestionRejectedEvent) },
+            { $ref: getSchemaPath(StreamDoneEvent) },
+            { $ref: getSchemaPath(ProblemDetailsDto) },
+          ],
+        },
+      },
+    },
+  })
+  @ApiProblems(PROBLEMS.validation)
+  stream(
+    @Param('id', parseUuidParam('id')) id: string,
+  ): Observable<QuizStreamEvent> {
+    return this.streams.events(id);
   }
 
   /** Newest first. `limit` defaults to 20, at most 100. */

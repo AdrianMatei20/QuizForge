@@ -120,16 +120,31 @@ export function toAppError(error: unknown): AppError {
       retryAfterSeconds: retryAfterSeconds(error),
     });
   }
+  return appErrorFromProblem(body, error.status, retryAfterSeconds(error));
+}
+
+/**
+ * An AppError from problem details, wherever they arrived: an error response
+ * (via toAppError) or the `problem` event of a stream.
+ */
+export function appErrorFromProblem(
+  problem: unknown,
+  status: number,
+  retryAfter?: number,
+): AppError {
+  if (!isProblemBody(problem)) {
+    return new AppError(kindForStatus(status), status, undefined);
+  }
   return new AppError(
-    KIND_BY_TYPE[body.type] ?? kindForStatus(error.status),
-    error.status,
-    body.detail,
-    Array.isArray(body.errors) ? body.errors : [],
+    KIND_BY_TYPE[problem.type] ?? kindForStatus(status),
+    status,
+    problem.detail,
+    Array.isArray(problem.errors) ? problem.errors : [],
     {
-      type: body.type,
-      title: body.title,
-      quizId: typeof body.quizId === 'string' ? body.quizId : undefined,
-      retryAfterSeconds: retryAfterSeconds(error),
+      type: problem.type,
+      title: problem.title,
+      quizId: typeof problem.quizId === 'string' ? problem.quizId : undefined,
+      retryAfterSeconds: retryAfter,
     },
   );
 }

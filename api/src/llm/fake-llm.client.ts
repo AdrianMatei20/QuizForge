@@ -35,7 +35,7 @@ type Step =
       usage?: LlmUsage;
       stopReason?: LlmStopReason;
     }
-  | { kind: 'fixture'; name: string };
+  | { kind: 'fixture'; name: string; chunkDelayMs?: number };
 
 const FAILURES: Record<
   FakeFailure,
@@ -64,6 +64,7 @@ export class FakeLlmClient implements LlmClient {
   /** Every request received, in order, for assertions. */
   readonly requests: LlmRequest[] = [];
   private readonly steps: Step[] = [];
+  private streamChunkSize: number | undefined;
 
   constructor(
     private readonly options: { fixturesDir?: string; chunkSize?: number } = {},
@@ -99,10 +100,25 @@ export class FakeLlmClient implements LlmClient {
     return this;
   }
 
-  /** The next call returns <fixturesDir>/<promptId>/<name>.txt. */
-  respondWithFixture(name: string): this {
-    this.steps.push({ kind: 'fixture', name });
+  /**
+   * The next call returns <fixturesDir>/<promptId>/<name>.txt. When streamed,
+   * `chunkDelayMs` waits between chunks, to simulate a slow model.
+   */
+  respondWithFixture(
+    name: string,
+    options: { chunkDelayMs?: number } = {},
+  ): this {
+    this.steps.push({ kind: 'fixture', name, ...options });
     return this;
+  }
+
+  /** Characters per streamed chunk. Small values exercise lines split across chunks. */
+  get chunkSize(): number {
+    return this.streamChunkSize ?? this.options.chunkSize ?? 8;
+  }
+
+  set chunkSize(size: number) {
+    this.streamChunkSize = size;
   }
 
   /** The next call returns text that is not JSON at all. */
@@ -139,9 +155,14 @@ export class FakeLlmClient implements LlmClient {
   }
 
   async *stream(request: LlmRequest): AsyncIterable<LlmStreamEvent> {
+    const delayMs = this.peekChunkDelay();
     const response = await this.generate(request);
-    const chunkSize = this.options.chunkSize ?? 8;
+    const chunkSize = this.chunkSize;
     for (let i = 0; i < response.text.length; i += chunkSize) {
+      if (delayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        request.signal?.throwIfAborted();
+      }
       yield { type: 'text', text: response.text.slice(i, i + chunkSize) };
     }
     yield {
@@ -149,6 +170,11 @@ export class FakeLlmClient implements LlmClient {
       usage: response.usage,
       stopReason: response.stopReason,
     };
+  }
+
+  private peekChunkDelay(): number {
+    const next = this.steps[0];
+    return next?.kind === 'fixture' ? (next.chunkDelayMs ?? 0) : 0;
   }
 
   private answer(request: LlmRequest): LlmResponse {

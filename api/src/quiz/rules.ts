@@ -289,11 +289,11 @@ export function editedQuestionViolations(
 }
 
 /**
- * One regenerated question: every per-question rule, the replaced question's
- * type, and a stem that is new compared with the replaced question and every
- * other question. Labelled "question" because the model wrote only one.
+ * Every per-question rule, for one question the model wrote on its own: a
+ * regenerated question, or one line of a streamed quiz. (Type is checked
+ * against the requested types in the context.)
  */
-export const REGENERATE_CHECKS: readonly QuestionCheck[] = [
+export const GENERATED_QUESTION_CHECKS: readonly QuestionCheck[] = [
   checkTypeRequested,
   messagesOf(checkOptionsDistinct),
   messagesOf(checkCorrectIndexInRange),
@@ -302,6 +302,11 @@ export const REGENERATE_CHECKS: readonly QuestionCheck[] = [
   checkSourceQuoteInLesson,
 ];
 
+/**
+ * One regenerated question: every per-question rule, the replaced question's
+ * type, and a stem that is new compared with the replaced question and every
+ * other question. Labelled "question" because the model wrote only one.
+ */
 export interface RegenerateRuleInput {
   lessonContent: string;
   settings: QuizSettings;
@@ -326,7 +331,9 @@ export function regeneratedQuestionRules(
       normalizeStem(question.stem) === normalizeStem(input.replacedStem);
     const duplicate = stemMatches(question.stem, input.others);
     return [
-      ...REGENERATE_CHECKS.flatMap((check) => check(question, label, context)),
+      ...GENERATED_QUESTION_CHECKS.flatMap((check) =>
+        check(question, label, context),
+      ),
       ...(repeatsReplaced
         ? [`${label}: stem is the same as the question it replaces`]
         : []),
@@ -337,4 +344,32 @@ export function regeneratedQuestionRules(
           ]),
     ];
   };
+}
+
+/**
+ * One line of a streamed quiz, checked as it arrives: every per-question
+ * rule, plus the quiz-level rules that can be checked so far: no stem
+ * repeating an already saved question, and no more questions than requested.
+ */
+export function streamedQuestionViolations(
+  question: CheckedQuestion,
+  position: number,
+  saved: readonly OtherQuestion[],
+  context: QuizRuleContext,
+): string[] {
+  const label = `question ${position}`;
+  const duplicate = stemMatches(question.stem, saved);
+  return [
+    ...(position > context.settings.count
+      ? [
+          `${label}: more questions than the ${context.settings.count} requested`,
+        ]
+      : []),
+    ...GENERATED_QUESTION_CHECKS.flatMap((check) =>
+      check(question, label, context),
+    ),
+    ...(duplicate === undefined
+      ? []
+      : [`${label}: stem is the same as question ${duplicate.position}`]),
+  ];
 }

@@ -40,6 +40,7 @@ describe('OpenAPI document', () => {
       '/api/quizzes/{id}/cost',
       '/api/quizzes/{id}/publish',
       '/api/quizzes/{id}/review-stats',
+      '/api/quizzes/{id}/stream',
       '/health',
     ]);
     for (const [path, operations] of Object.entries(paths)) {

@@ -1,5 +1,7 @@
 import { Component, computed, effect, inject, input, untracked } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
+import type { QuestionResponse } from '../core/api/api.types';
 import type { QuizFailureReason } from '../core/api/api.types';
 import { ErrorMessage } from '../shared/error-message';
 import { QuestionCard } from './question-card';
@@ -18,12 +20,13 @@ const FAILURE_TEXT: Record<QuizFailureReason, string> = {
   provider_error: 'the AI service had a problem',
   cancelled: 'the request was cancelled',
   internal_error: 'of an unexpected error',
+  interrupted: 'the server stopped while generating it',
 };
 
 /** /quizzes/:id/review: the container that connects QuizReviewStore to the cards. */
 @Component({
   selector: 'app-review-board-page',
-  imports: [ErrorMessage, QuestionCard, ReviewHeader, RouterLink],
+  imports: [ErrorMessage, NgTemplateOutlet, QuestionCard, ReviewHeader, RouterLink],
   providers: [QuizReviewStore],
   templateUrl: './review-board.page.html',
   styleUrl: './review-board.page.scss',
@@ -55,6 +58,33 @@ export class ReviewBoardPage {
       }
     });
   }
+
+  /**
+   * One slot per position. While generating, positions without a question
+   * yet get a placeholder ("on its way", or "being rewritten" after a
+   * rejected line); afterwards only the questions themselves.
+   */
+  protected readonly slots = computed(
+    (): { position: number; question?: QuestionResponse; rewriting: boolean }[] => {
+      const questions = this.store.questions();
+      if (!this.store.generating()) {
+        return questions.map((question) => ({
+          position: question.position,
+          question,
+          rewriting: false,
+        }));
+      }
+      const byPosition = new Map(questions.map((question) => [question.position, question]));
+      const rewriting = this.store.rewriting();
+      return Array.from({ length: this.store.expectedCount() }, (_, index) => {
+        const position = index + 1;
+        const question = byPosition.get(position);
+        return question
+          ? { position, question, rewriting: false }
+          : { position, rewriting: rewriting.has(position) };
+      });
+    },
+  );
 
   protected otherStems(position: number): OtherStem[] {
     return this.store

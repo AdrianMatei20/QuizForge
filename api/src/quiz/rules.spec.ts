@@ -13,6 +13,7 @@ import {
   quizRules,
   type QuizRuleContext,
   regeneratedQuestionRules,
+  streamedQuestionViolations,
   sourceQuotesAppearInLesson,
   sourceQuotesAreLongEnough,
   stemsAreUnique,
@@ -424,6 +425,45 @@ describe('regeneratedQuestionRules', () => {
     ).toEqual([
       'question: sourceQuote has 2 words; at least 5 are required',
       'question: sourceQuote does not appear in the lesson',
+    ]);
+  });
+});
+
+describe('streamedQuestionViolations', () => {
+  const saved = [{ position: 1, stem: 'Plants use sunlight.' }];
+
+  it('passes a valid line', () => {
+    expect(streamedQuestionViolations(mc(), 2, saved, context())).toEqual([]);
+  });
+
+  it('rejects a stem that repeats an already saved question', () => {
+    expect(
+      streamedQuestionViolations(
+        mc({ stem: 'plants use SUNLIGHT' }),
+        2,
+        saved,
+        context(),
+      ),
+    ).toEqual(['question 2: stem is the same as question 1']);
+  });
+
+  it('rejects a line past the requested count', () => {
+    expect(
+      streamedQuestionViolations(mc(), 3, saved, context({ count: 2 })),
+    ).toEqual(['question 3: more questions than the 2 requested']);
+  });
+
+  it('applies the per-question rules, including the sourceQuote ones', () => {
+    expect(
+      streamedQuestionViolations(
+        mc({ sourceQuote: 'Plants sleep at night quietly.' }),
+        2,
+        saved,
+        context({ types: ['true_false'] }),
+      ),
+    ).toEqual([
+      'question 2: type "multiple_choice" was not requested (allowed: true_false)',
+      'question 2: sourceQuote does not appear in the lesson',
     ]);
   });
 });

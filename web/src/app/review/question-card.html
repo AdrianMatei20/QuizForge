@@ -66,7 +66,8 @@
       <button
         type="button"
         class="button secondary"
-        [disabled]="isBusy()"
+        [disabled]="isBusy() || !canRegenerate()"
+        [attr.title]="canRegenerate() ? null : 'Available once all questions have arrived'"
         (click)="regenerate.emit()"
       >
         {{ busy() === 'regenerating' ? 'Regenerating…' : 'Regenerate' }}

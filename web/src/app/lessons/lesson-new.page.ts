@@ -174,10 +174,12 @@ export class LessonNewPage {
     this.error.set(null);
     try {
       const lessonId = await this.lessonId(title, content);
-      const quiz = await firstValueFrom(
-        this.quizzesApi.generate(lessonId, { count, difficulty, types }),
+      // Stream mode: the API answers at once and the review board shows the
+      // questions as they are written.
+      const { quizId } = await firstValueFrom(
+        this.quizzesApi.startStreaming(lessonId, { count, difficulty, types }),
       );
-      await this.router.navigate(['/quizzes', quiz.id, 'review']);
+      await this.router.navigate(['/quizzes', quizId, 'review']);
     } catch (error) {
       this.error.set(toAppError(error));
     } finally {

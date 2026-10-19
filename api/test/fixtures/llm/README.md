@@ -20,3 +20,12 @@ regenerate rules.
 
 - `default.txt` is a new multiple-choice question about the call stack, with a quote from the recursion lesson.
 - `repeated-stem.txt` repeats question 4's stem, to exercise the repair call for the "stem is new" rule.
+
+## quiz-stream
+
+JSON Lines answers to the streaming prompt (`api/prompts/quiz-stream/v1.md`): one question per line.
+
+- `default.txt` is the five recursion questions, one per line.
+- `with-invalid-line.txt` is the same questions wrapped in code fences, with a blank line, no final newline, and
+  line 3's `sourceQuote` replaced by a sentence that is not in the lesson. It exercises the parser, the rejection of
+  one line, and the repair step (which uses `quiz-regenerate/default.txt`).

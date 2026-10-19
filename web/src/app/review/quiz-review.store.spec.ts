@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of, Subject, throwError } from 'rxjs';
 import type { QuestionResponse, QuizResponse, ReviewStatsResponse } from '../core/api/api.types';
+import type { QuizStreamEvent } from '../core/api/stream-events';
 import { QuestionsApi } from '../core/api/questions.api';
 import { QuizzesApi } from '../core/api/quizzes.api';
 import { AppError } from '../core/errors/app-error';
@@ -53,6 +54,7 @@ describe('QuizReviewStore', () => {
     get: ReturnType<typeof vi.fn>;
     reviewStats: ReturnType<typeof vi.fn>;
     publish: ReturnType<typeof vi.fn>;
+    stream: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -61,6 +63,7 @@ describe('QuizReviewStore', () => {
       get: vi.fn(() => of(QUIZ)),
       reviewStats: vi.fn(() => of(STATS)),
       publish: vi.fn(),
+      stream: vi.fn(),
     };
     TestBed.configureTestingModule({
       providers: [
@@ -212,6 +215,88 @@ describe('QuizReviewStore', () => {
       await store.setStatus(1, 'approved');
 
       expect(store.canPublish()).toBe(true);
+    });
+  });
+
+  describe('streaming', () => {
+    const GENERATING: QuizResponse = {
+      ...QUIZ,
+      status: 'generating',
+      settings: { ...QUIZ.settings, count: 3 },
+      questions: [],
+    };
+    let events: Subject<QuizStreamEvent>;
+
+    beforeEach(async () => {
+      events = new Subject<QuizStreamEvent>();
+      quizzesApi.stream.mockReturnValue(events);
+      quizzesApi.get.mockReturnValue(of(GENERATING));
+      await store.load('quiz-1');
+    });
+
+    it('listens to the stream while the quiz is generating', () => {
+      expect(quizzesApi.stream).toHaveBeenCalledWith('quiz-1');
+      expect(store.generating()).toBe(true);
+      expect(store.expectedCount()).toBe(3);
+    });
+
+    it('inserts questions by position as they arrive, and a replayed one replaces itself', () => {
+      events.next({ type: 'question', data: question(2) });
+      events.next({ type: 'question', data: question(1) });
+      // After a reconnect, the server replays question 1.
+      events.next({ type: 'question', data: question(1, { stem: 'Replayed?' }) });
+
+      expect(store.questions().map((q) => q.position)).toEqual([1, 2]);
+      expect(store.questions()[0]?.stem).toBe('Replayed?');
+    });
+
+    it('marks a rejected position as being rewritten until its repaired question arrives', () => {
+      events.next({
+        type: 'question_rejected',
+        data: { position: 3, violations: ['question 3: x'] },
+      });
+      expect([...store.rewriting()]).toEqual([3]);
+
+      events.next({ type: 'question', data: question(3) });
+
+      expect([...store.rewriting()]).toEqual([]);
+    });
+
+    it('does not regenerate while generating', async () => {
+      events.next({ type: 'question', data: question(1) });
+
+      await store.regenerate(1);
+
+      expect(questionsApi.regenerate).not.toHaveBeenCalled();
+    });
+
+    it('reloads the quiz on done', async () => {
+      quizzesApi.get.mockReturnValue(of(QUIZ));
+      events.next({ type: 'question', data: question(1) });
+      events.next({
+        type: 'done',
+        data: {
+          generated: 2,
+          rejected: 0,
+          usage: { calls: 1, inputTokens: 1, outputTokens: 1, totalTokens: 2, costUsd: '0.000000' },
+        },
+      });
+      events.complete();
+
+      await vi.waitFor(() => expect(store.generating()).toBe(false));
+      expect(store.quiz()?.status).toBe('draft');
+      expect(store.questions().map((q) => q.id)).toEqual(['q1', 'q2']);
+    });
+
+    it('shows the problem and reloads the quiz when generation fails', async () => {
+      quizzesApi.get.mockReturnValue(
+        of({ ...GENERATING, status: 'failed', failureReason: 'budget_exceeded' }),
+      );
+
+      events.error(new AppError('budget-exceeded', 429, "Today's budget is used up."));
+
+      await vi.waitFor(() => expect(store.quiz()?.status).toBe('failed'));
+      expect(store.streamError()?.kind).toBe('budget-exceeded');
     });
   });
 });

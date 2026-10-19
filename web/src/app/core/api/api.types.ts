@@ -13,6 +13,7 @@ export type LessonResponse = Schemas['LessonResponse'];
 export type GenerateQuizRequest = Schemas['GenerateQuizDto'];
 export type QuizResponse = Schemas['QuizResponse'];
 export type QuizSummaryResponse = Schemas['QuizSummaryResponse'];
+export type QuizStreamStartedResponse = Schemas['QuizStreamStartedResponse'];
 export type QuizSettings = Schemas['QuizSettingsResponse'];
 export type ReviewStatsResponse = Schemas['ReviewStatsResponse'];
 

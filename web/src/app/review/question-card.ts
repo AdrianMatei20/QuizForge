@@ -46,6 +46,8 @@ export class QuestionCard {
   readonly fieldErrors = input<readonly ProblemFieldError[]>([]);
   readonly editing = input(false);
   readonly otherStems = input<readonly OtherStem[]>([]);
+  /** Off while the quiz is still being generated. */
+  readonly canRegenerate = input(true);
 
   readonly statusChange = output<QuestionStatus>();
   readonly editStart = output<void>();

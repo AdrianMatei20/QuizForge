@@ -193,7 +193,7 @@
     },
     "/api/lessons/{lessonId}/quizzes": {
       "post": {
-        "description": "Synchronous: responds once the LLM has written the questions and they passed the schema and rule checks (with up to one repair call). Multiple-choice options are shuffled before saving. If generation fails, the quiz is kept with status \"failed\" and a failureReason, and the error response includes its `quizId`.",
+        "description": "Synchronous (default): responds once the LLM has written the questions and they passed the schema and rule checks (with up to one repair call). If generation fails, the quiz is kept with status \"failed\" and a failureReason, and the error response includes its `quizId`.\n\nWith `stream: true`: creates the quiz as \"generating\", returns 202 `{ quizId }` at once, and generates in the background; watch it at GET /api/quizzes/{quizId}/stream. Generation errors then arrive as a `problem` event on that stream.\n\nMultiple-choice options are shuffled before saving.",
         "operationId": "QuizzesController_generate",
         "parameters": [
           {
@@ -224,6 +224,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/QuizResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "stream: true. Generation has started.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizStreamStartedResponse"
                 }
               }
             }
@@ -406,6 +416,74 @@
           }
         },
         "summary": "List a lesson's quizzes",
+        "tags": [
+          "quizzes"
+        ]
+      }
+    },
+    "/api/quizzes/{id}/stream": {
+      "get": {
+        "description": "A text/event-stream. First every saved question is replayed, so a reconnecting client catches up; then the live events while generation runs. Events:\n- `question`: a validated, saved question (QuestionResponse)\n- `question_rejected`: `{ position, violations }` for a line that failed validation; the repair step fills its position later\n- `done`: `{ generated, rejected, usage }`; the stream ends\n- `problem`: problem details (generation failed, or unknown quiz); the stream ends\n\nDisconnecting does not stop generation. Works for synchronously generated quizzes too (replay, then `done`).\n\nFrom a terminal: `curl -N http://localhost:3000/api/quizzes/{id}/stream`",
+        "operationId": "QuizzesController_stream",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Quiz id",
+            "schema": {
+              "format": "uuid",
+              "example": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A stream of `question`, `question_rejected`, `done` and `problem` events; each `data:` line is one of these JSON payloads.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/QuestionResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/QuestionRejectedEvent"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StreamDoneEvent"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProblemDetailsDto"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Watch a quiz being generated (Server-Sent Events)",
         "tags": [
           "quizzes"
         ]
@@ -1228,6 +1306,11 @@
                 "true_false"
               ]
             }
+          },
+          "stream": {
+            "type": "boolean",
+            "description": "true: return 202 { quizId } at once and stream the questions from GET /api/quizzes/{quizId}/stream. Absent or false: generate synchronously and return the quiz (201).",
+            "example": false
           }
         },
         "required": [
@@ -1392,7 +1475,8 @@
               "rate_limited",
               "provider_error",
               "cancelled",
-              "internal_error"
+              "internal_error",
+              "interrupted"
             ],
             "nullable": true,
             "description": "Why the quiz failed; null unless status is \"failed\".",
@@ -1444,6 +1528,105 @@
           "questions"
         ]
       },
+      "QuizStreamStartedResponse": {
+        "type": "object",
+        "properties": {
+          "quizId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+            "description": "Watch it at GET /api/quizzes/{quizId}/stream."
+          }
+        },
+        "required": [
+          "quizId"
+        ]
+      },
+      "QuestionRejectedEvent": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "number",
+            "description": "The position the rejected line would have had.",
+            "example": 3
+          },
+          "violations": {
+            "description": "Why the line was rejected. Never quotes the model output.",
+            "example": [
+              "question 3: sourceQuote does not appear in the lesson"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "position",
+          "violations"
+        ]
+      },
+      "StreamUsage": {
+        "type": "object",
+        "properties": {
+          "calls": {
+            "type": "number",
+            "example": 2
+          },
+          "inputTokens": {
+            "type": "number",
+            "example": 1874
+          },
+          "outputTokens": {
+            "type": "number",
+            "example": 1814
+          },
+          "totalTokens": {
+            "type": "number",
+            "example": 3688
+          },
+          "costUsd": {
+            "type": "string",
+            "description": "USD as a decimal string with 6 places.",
+            "example": "0.001094"
+          }
+        },
+        "required": [
+          "calls",
+          "inputTokens",
+          "outputTokens",
+          "totalTokens",
+          "costUsd"
+        ]
+      },
+      "StreamDoneEvent": {
+        "type": "object",
+        "properties": {
+          "generated": {
+            "type": "number",
+            "description": "Questions saved, including those filled in by the repair step.",
+            "example": 5
+          },
+          "rejected": {
+            "type": "number",
+            "description": "Lines the model wrote that failed validation.",
+            "example": 1
+          },
+          "usage": {
+            "description": "Every LLM call made for the quiz so far.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StreamUsage"
+              }
+            ]
+          }
+        },
+        "required": [
+          "generated",
+          "rejected",
+          "usage"
+        ]
+      },
       "QuizSummaryResponse": {
         "type": "object",
         "properties": {
@@ -1473,7 +1656,8 @@
               "rate_limited",
               "provider_error",
               "cancelled",
-              "internal_error"
+              "internal_error",
+              "interrupted"
             ],
             "nullable": true,
             "description": "Why the quiz failed; null unless status is \"failed\".",

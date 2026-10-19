@@ -2,7 +2,7 @@
 
 QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a teacher approves, edits, rejects or regenerates them, and an eval harness measures prompt quality.
 
-> Status: Phase 4 (Angular lesson editor and review board). In the browser, a teacher can write a lesson, generate a quiz, review every question (approve, reject, edit, regenerate) and publish it.
+> Status: Phase 5 (streaming). In the browser, a teacher writes a lesson and watches the quiz's questions appear one by one as the model writes them, then reviews every question (approve, reject, edit, regenerate) and publishes it.
 
 ## Roadmap
 
@@ -11,6 +11,7 @@ QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a t
 - [x] Phase 2: Lessons and synchronous quiz generation (lessons, quizzes and questions tables, quiz prompt v1, rule checks, sample lessons)
 - [x] Phase 3: Review actions and publishing (edit, approve/reject, regenerate one question, publish, review stats, shuffled answer options)
 - [x] Phase 4: Angular lesson editor and review board (lesson form, review board with optimistic status changes and inline editing, published view, typed API client, problem-details error handling)
+- [x] Phase 5: Streaming with JSON Lines over SSE (questions validated and saved as they arrive, one repair step for gaps, replay on reconnect, stuck-quiz cleanup, live review board)
 
 ## Repository layout
 
@@ -66,7 +67,7 @@ curl http://localhost:4200/api/x       # proxied to the API: a 404 problem-detai
 
 With the API on `LLM_PROVIDER=fake` (the default in `.env.example`), open http://localhost:4200:
 
-1. **New lesson:** paste the text of `api/fixtures/lessons/recursion.md` (everything below its `# Recursion` title line; the fake provider only answers for this lesson), give it a title, keep the default settings, and press **Generate quiz**.
+1. **New lesson:** paste the text of `api/fixtures/lessons/recursion.md` (everything below its `# Recursion` title line; the fake provider only answers for this lesson), give it a title, keep the default settings (5 questions), and press **Generate quiz**. The review board opens at once, and the questions appear as they are written ("Generating 3 of 5").
 2. **Review board:** each question has **Approve**, **Reject**, **Edit** and **Regenerate**. Pressing Approve or Reject again moves a question back to draft. Edit opens an inline form that checks the same rules as the API. Regenerate replaces one question.
 3. **Publish quiz** becomes available once a question is approved. It opens the read-only published view.
 
@@ -91,7 +92,8 @@ All feature routes are under `/api`. Interactive docs (Swagger UI) are at http:/
 | ------------------------------- | ----------------------------------------------------------------------------- |
 | `POST /api/lessons`             | `{ title, content }`. Content must be 200 to 20,000 characters (400 if shorter, 413 if longer) |
 | `GET /api/lessons/:id`          | Read a lesson                                                                 |
-| `POST /api/lessons/:id/quizzes` | `{ count: 3-10, difficulty: easy \| medium \| hard, types: [multiple_choice, true_false] }`. Generates the quiz synchronously and returns it with its draft questions |
+| `POST /api/lessons/:id/quizzes` | `{ count: 3-10, difficulty: easy \| medium \| hard, types: [multiple_choice, true_false], stream? }`. Without `stream`: generates synchronously and returns the quiz (201). With `stream: true`: returns 202 `{ quizId }` at once and generates in the background |
+| `GET /api/quizzes/:id/stream`   | Server-Sent Events while the quiz is generated: `question`, `question_rejected`, `done`, `problem` (see below) |
 | `GET /api/lessons/:id/quizzes`  | The lesson's quizzes, newest first, without questions: `{ id, status, failureReason, settings, createdAt }`. `?limit=` from 1 to 100 (default 20) |
 | `GET /api/quizzes/:id`          | Read a quiz with its questions, in order. A failed quiz has a `failureReason` |
 | `GET /api/quizzes/:id/cost`     | `{ quizId, calls, attempts, inputTokens, outputTokens, totalTokens, costUsd }` summed over every LLM call made for the quiz (regenerations and failed calls included) |
@@ -113,6 +115,32 @@ If a quiz still fails after the one repair call, it is saved with status `failed
 When generation fails, the error response includes a `quizId` member, so the failed quiz can be looked up. Errors that happen before a quiz exists (unknown lesson, invalid settings) have none. A failed quiz records why in `failure_reason`, as an error code and never model output (a database constraint requires a reason exactly when the status is `failed`): `invalid_output`, `refusal`, `truncated`, `budget_exceeded`, `timeout`, `rate_limited`, `provider_error`, `cancelled` or `internal_error`. Every `llm_calls` row made for a quiz carries the quiz id in `correlation_id`, which is what the cost endpoint sums.
 
 Before saving, each multiple-choice question's options are shuffled and `correctIndex` updated, so the answer's position carries no signal. `original` keeps the model's raw output in its own order, so position bias can be measured later.
+
+### Streaming a quiz
+
+With `stream: true`, the quiz is created as `generating` and the model writes JSON Lines (`api/prompts/quiz-stream/v1.md`): one question object per line. Each line is checked as soon as it is complete, with the same schema and per-question rules as above, plus a duplicate-stem check against the questions already saved and the requested count:
+
+- a valid line is saved (options shuffled) and sent as a `question` event;
+- an invalid one is sent as `question_rejected` with `{ position, violations }`.
+
+After the stream ends, **one repair step** regenerates each missing position (rejected, or never written) with the regenerate prompt, and sends those questions too. The quiz then becomes a `draft` with whatever was saved, even if a position could not be filled, and the stream sends `done` with `{ generated, rejected, usage }`. Only a quiz with no questions at all becomes `failed`, with a `problem` event.
+
+Generation runs once per quiz, in the background:
+
+- **Reconnecting:** a client that connects later, or reconnects after a page refresh, first gets every saved question again, then the live events, or straight away `done` or `problem`.
+- **Disconnecting** never stops generation.
+- **Timeouts:** the whole run is limited by `QUIZ_GENERATION_TIMEOUT_MS`. If it times out with nothing saved, the quiz fails with reason `timeout`.
+- **Cleanup:** quizzes left `generating` by a crash or restart are cleaned up at startup and every `QUIZ_STUCK_SWEEP_INTERVAL_MS`. They become a `draft` if they have questions; otherwise they fail with reason `interrupted`.
+
+Streamed calls go through `LlmService.stream()`, with the same budget guard and the same `llm_calls` recording as any other call. To watch a stream from a terminal:
+
+```bash
+# Start a streamed quiz for a lesson, then follow its events (-N: don't buffer).
+curl -s -X POST http://localhost:3000/api/lessons/<lessonId>/quizzes \
+  -H 'Content-Type: application/json' \
+  -d '{"count": 5, "difficulty": "medium", "types": ["multiple_choice", "true_false"], "stream": true}'
+curl -N http://localhost:3000/api/quizzes/<quizId>/stream
+```
 
 ### Reviewing a quiz
 
@@ -211,6 +239,7 @@ Without `LLM_LIVE_TESTS=1` it is skipped.
 
 - **API client:** `LessonsApi`, `QuizzesApi` and `QuestionsApi` use types generated from `postman/openapi.json`. After an API change, run `npm run openapi:export` in `api/`, then `npm run api:types` in `web/`.
 - **State:** the review board's state lives in signals in `QuizReviewStore`. Approve and reject are optimistic: the card changes at once and rolls back with an error if the API refuses.
+- **Streaming:** Generate uses stream mode and opens the review board straight away. `QuizzesApi.stream()` wraps `EventSource` in an Observable that completes on `done`, errors on `problem` (the message is shown), and closes when the page is destroyed. If the connection drops, `EventSource` reconnects by itself, and the server replays what was missed. While generating, approve, reject and edit work on the questions that have arrived; Regenerate and Publish wait until generation is done.
 - **Errors:** an HTTP interceptor turns every error response into a typed `AppError`, and the UI shows a sentence a teacher can act on, never raw JSON. Unusable model output (502) offers Try again; a used-up daily budget (429) says so.
 - **Model output is always text.** `npm run lint` fails on `[innerHTML]` or `[outerHTML]` bindings and on any `bypassSecurityTrust*` call.
 
@@ -232,3 +261,8 @@ LLM failures map to these statuses:
 - Provider error or invalid model output: 502.
 
 An invalid-output response lists the violations in `errors` but never includes the model output.
+
+## Known limitations
+
+- **One API instance for live streaming.** Live stream events are kept in the memory of the process that runs the generation. With several API instances behind a load balancer, a client connected to another instance would still get the replay of saved questions and the final `done` or `problem`, but not the live events in between. Fanning them out through Redis pub/sub (Redis is already part of the stack) would remove that limit.
+- **The fake provider only knows the recursion lesson.** With `LLM_PROVIDER=fake`, other lessons fail the source-quote rule, because the fake always answers with the recursion questions.

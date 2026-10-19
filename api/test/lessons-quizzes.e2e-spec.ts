@@ -213,6 +213,111 @@ describe('Lessons and quizzes (e2e)', () => {
     });
   });
 
+  /** Parses a text/event-stream body into { event, data } pairs. */
+  function parseSse(body: string): { event: string; data: unknown }[] {
+    return body
+      .split(/\n\n/)
+      .filter((block) => block.trim() !== '')
+      .map((block) => {
+        const lines = block.split('\n');
+        const event =
+          lines.find((line) => line.startsWith('event: '))?.slice(7) ??
+          'message';
+        const data = lines
+          .filter((line) => line.startsWith('data: '))
+          .map((line) => line.slice(6))
+          .join('\n');
+        return { event, data: JSON.parse(data) as unknown };
+      });
+  }
+
+  describe('streamed generation over HTTP', () => {
+    it('returns 202 with the quiz id, and streams the questions as Server-Sent Events', async () => {
+      const lessonId = await createLesson();
+
+      const started = await http()
+        .post(`/api/lessons/${lessonId}/quizzes`)
+        .send({ ...settings, stream: true })
+        .expect(202);
+      const { quizId } = started.body as { quizId: string };
+      expect(started.body).toEqual({
+        quizId: expect.stringMatching(/^[0-9a-f-]{36}$/),
+      });
+
+      const response = await http()
+        .get(`/api/quizzes/${quizId}/stream`)
+        .buffer(true)
+        .parse((res, callback) => {
+          let text = '';
+          res.setEncoding('utf8');
+          res.on('data', (chunk: string) => (text += chunk));
+          res.on('end', () => callback(null, text));
+        })
+        .expect(200)
+        .expect('Content-Type', /text\/event-stream/);
+
+      const events = parseSse(response.body as string);
+      expect(events.map((event) => event.event)).toEqual([
+        'question',
+        'question',
+        'question',
+        'question',
+        'question',
+        'done',
+      ]);
+      expect(events[0]?.data).toMatchObject({
+        position: 1,
+        status: 'draft',
+        isEdited: false,
+      });
+      expect(events.at(-1)?.data).toMatchObject({ generated: 5, rejected: 0 });
+
+      const quiz = await http().get(`/api/quizzes/${quizId}`).expect(200);
+      expect(quiz.body).toMatchObject({ status: 'draft' });
+      expect((quiz.body as { questions: unknown[] }).questions).toHaveLength(5);
+    });
+
+    it('still answers a request without stream synchronously with 201', async () => {
+      const lessonId = await createLesson();
+      fake.respondWithFixture('recursion');
+
+      await http()
+        .post(`/api/lessons/${lessonId}/quizzes`)
+        .send({ ...settings, stream: false })
+        .expect(201);
+    });
+
+    it('rejects a malformed quiz id with a normal 400 problem, not a stream', async () => {
+      const response = await http()
+        .get('/api/quizzes/not-a-uuid/stream')
+        .expect(400);
+
+      expect(response.headers['content-type']).toMatch(
+        /application\/problem\+json/,
+      );
+      expect(response.body).toMatchObject({
+        errors: [{ parameter: 'id', detail: 'id must be a UUID' }],
+      });
+    });
+
+    it('streams a problem event for an unknown quiz', async () => {
+      const response = await http()
+        .get('/api/quizzes/00000000-0000-4000-8000-000000000000/stream')
+        .buffer(true)
+        .parse((res, callback) => {
+          let text = '';
+          res.setEncoding('utf8');
+          res.on('data', (chunk: string) => (text += chunk));
+          res.on('end', () => callback(null, text));
+        })
+        .expect(200);
+
+      expect(parseSse(response.body as string)).toEqual([
+        { event: 'problem', data: expect.objectContaining({ status: 404 }) },
+      ]);
+    });
+  });
+
   describe('quizzes', () => {
     it('generates a quiz and returns it with draft questions on GET', async () => {
       const lessonId = await createLesson();

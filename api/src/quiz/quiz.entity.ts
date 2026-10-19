@@ -66,6 +66,14 @@ export class Quiz {
   @Column({ type: 'jsonb' })
   settings: QuizSettings;
 
+  /**
+   * Streamed generation only: lines the model wrote that failed validation
+   * (before the repair step). Kept so a reconnecting client gets the same
+   * `done` counts after the run has ended.
+   */
+  @Column({ name: 'stream_rejected', type: 'integer', default: 0 })
+  streamRejected: number;
+
   /** Set whenever the quiz ends as "failed"; null otherwise. */
   @Column({
     name: 'failure_reason',

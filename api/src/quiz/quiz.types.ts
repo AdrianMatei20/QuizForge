@@ -34,6 +34,8 @@ export const QUIZ_FAILURE_REASONS = [
   'provider_error',
   'cancelled',
   'internal_error',
+  // Left "generating" by a crash or restart; cleaned up by the stuck-quiz sweep.
+  'interrupted',
 ] as const;
 export type QuizFailureReason = (typeof QUIZ_FAILURE_REASONS)[number];
 

@@ -13,6 +13,7 @@ import {
   LlmTimeoutError,
   LlmUpstreamError,
 } from './llm.errors.js';
+import type { LlmServiceStreamEvent, LlmStreamRequest } from './llm.service.js';
 
 const VALID_ONE_QUESTION =
   '{"questions":[{"text":"What is the powerhouse of the cell?","answer":"Mitochondria"}]}';
@@ -612,6 +613,154 @@ describe('LlmService.generate', () => {
         outputTokens: 0,
         costUsd: '0.000000',
       });
+    });
+  });
+
+  describe('stream', () => {
+    const streamRequest = (
+      overrides: Partial<LlmStreamRequest> = {},
+    ): LlmStreamRequest => ({
+      feature: 'test-stream',
+      promptId: 'test-quiz',
+      promptVersion: 1,
+      variables: { count: 2, lesson: 'Plants turn sunlight into energy.' },
+      maxTokens: 1024,
+      correlationId: 'quiz-1',
+      ...overrides,
+    });
+
+    async function collect(events: AsyncIterable<LlmServiceStreamEvent>) {
+      const collected: LlmServiceStreamEvent[] = [];
+      for await (const event of events) {
+        collected.push(event);
+      }
+      return collected;
+    }
+
+    it('streams the text in chunks, then done with usage, and records one llm_calls row', async () => {
+      const { service, client, store } = createTestLlmService();
+      client.chunkSize = 5;
+      client.respondNext('line one\nline two\n', {
+        inputTokens: 1_000,
+        outputTokens: 500,
+      });
+
+      const events = await collect(service.stream(streamRequest()));
+
+      const text = events
+        .flatMap((event) => (event.type === 'text' ? [event.text] : []))
+        .join('');
+      expect(text).toBe('line one\nline two\n');
+      expect(
+        events.filter((event) => event.type === 'text').length,
+      ).toBeGreaterThan(1);
+      expect(events.at(-1)).toMatchObject({
+        type: 'done',
+        stopReason: 'complete',
+        usage: { inputTokens: 1_000, outputTokens: 500, costUsd: '0.007000' },
+        attempts: 1,
+      });
+      expect(store.rows).toEqual([
+        expect.objectContaining({
+          feature: 'test-stream',
+          status: 'ok',
+          inputTokens: 1_000,
+          outputTokens: 500,
+          costUsd: '0.007000',
+          correlationId: 'quiz-1',
+        }),
+      ]);
+      // Free text: no structured-output schema is sent with a stream.
+      expect(client.requests[0]?.outputSchema).toBeUndefined();
+    });
+
+    it('runs the budget guard before any provider call', async () => {
+      const { service, client, store } = createTestLlmService({
+        dailyBudgetUsd: '0.00',
+      });
+
+      await expect(
+        collect(service.stream(streamRequest())),
+      ).rejects.toBeInstanceOf(LlmBudgetExceededError);
+      expect(client.requests).toHaveLength(0);
+      expect(store.rows).toEqual([
+        expect.objectContaining({ status: 'budget_exceeded', attempts: 0 }),
+      ]);
+    });
+
+    it('retries a failure before the first chunk', async () => {
+      const { service, client, store } = createTestLlmService();
+      client.failNext(1, 'server').respondNext('ok\n');
+
+      const events = await collect(service.stream(streamRequest()));
+
+      expect(events.at(-1)).toMatchObject({ type: 'done', attempts: 2 });
+      expect(store.rows).toHaveLength(1);
+    });
+
+    it('throws LlmRefusalError on a refusal and records it', async () => {
+      const { service, client, store } = createTestLlmService();
+      client.nextRefusal();
+
+      await expect(
+        collect(service.stream(streamRequest())),
+      ).rejects.toBeInstanceOf(LlmRefusalError);
+      expect(store.rows).toEqual([
+        expect.objectContaining({ status: 'refused' }),
+      ]);
+    });
+
+    it('does not throw at the token limit, but records the call as truncated', async () => {
+      const { service, client, store } = createTestLlmService();
+      client.respondNext('{"a":1}\n{"b":', undefined, 'max_tokens');
+
+      const events = await collect(service.stream(streamRequest()));
+
+      expect(events.at(-1)).toMatchObject({
+        type: 'done',
+        stopReason: 'max_tokens',
+      });
+      expect(store.rows).toEqual([
+        expect.objectContaining({ status: 'truncated' }),
+      ]);
+    });
+
+    it('records one row when the consumer stops reading early', async () => {
+      const { service, client, store } = createTestLlmService();
+      client.chunkSize = 2;
+      client.respondNext('a long answer that will not be read to the end');
+
+      for await (const event of service.stream(streamRequest())) {
+        expect(event.type).toBe('text');
+        break;
+      }
+
+      expect(store.rows).toEqual([
+        expect.objectContaining({ status: 'error', errorCode: 'aborted' }),
+      ]);
+    });
+
+    it('stops when the signal is aborted mid-stream', async () => {
+      const { service, client, store } = createTestLlmService();
+      client.chunkSize = 1;
+      client.respondNext('abcdef');
+      const controller = new AbortController();
+      const events: LlmServiceStreamEvent[] = [];
+
+      const error = await (async () => {
+        for await (const event of service.stream(
+          streamRequest({ signal: controller.signal }),
+        )) {
+          events.push(event);
+          controller.abort();
+        }
+      })().catch((caught: unknown) => caught);
+
+      expect(events).toHaveLength(1);
+      expect((error as Error).name).toBe('AbortError');
+      expect(store.rows).toEqual([
+        expect.objectContaining({ status: 'error', errorCode: 'aborted' }),
+      ]);
     });
   });
 

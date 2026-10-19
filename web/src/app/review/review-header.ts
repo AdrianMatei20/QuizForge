@@ -8,6 +8,13 @@ import { ErrorMessage } from '../shared/error-message';
   selector: 'app-review-header',
   imports: [ErrorMessage],
   template: `
+    @if (generating()) {
+      <div class="progress" role="status">
+        <span class="spinner" aria-hidden="true"></span>
+        <label for="generation-progress">Generating {{ received() }} of {{ expected() }}</label>
+        <progress id="generation-progress" [value]="received()" [max]="expected()"></progress>
+      </div>
+    }
     <section class="review-header" aria-labelledby="review-summary-heading">
       <h2 id="review-summary-heading" class="visually-hidden">Review summary</h2>
       <dl class="stats">
@@ -54,6 +61,10 @@ export class ReviewHeader {
   readonly canPublish = input(false);
   readonly publishing = input(false);
   readonly publishError = input<AppError | null>(null);
+  /** While generating: questions received so far, of how many asked for. */
+  readonly generating = input(false);
+  readonly received = input(0);
+  readonly expected = input(0);
 
   readonly publish = output<void>();
 

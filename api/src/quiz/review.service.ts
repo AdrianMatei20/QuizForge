@@ -27,7 +27,8 @@ import {
   quizPublishedProblem,
 } from './review.problems.js';
 import { editedQuestionViolations } from './rules.js';
-import { QUIZ_RANDOM, type Random, shuffleOptions } from './shuffle.js';
+import { newQuestionRow } from './question-row.js';
+import { QUIZ_RANDOM, type Random } from './shuffle.js';
 import { assertTransition } from './status-transitions.js';
 import type { UpdateQuestionDto } from './update-question.dto.js';
 
@@ -158,20 +159,17 @@ export class ReviewService {
         throw questionAlreadyReplacedProblem(id);
       }
       return manager.save(
-        manager.create(Question, {
-          quizId: quiz.id,
-          position: question.position,
-          type: generated.type,
-          stem: generated.stem,
-          ...shuffleOptions(generated, this.random),
-          explanation: generated.explanation,
-          sourceQuote: generated.sourceQuote,
-          status: 'draft',
-          promptId: REGENERATE_PROMPT.id,
-          promptVersion: result.promptVersion,
-          model: result.model,
-          original: generated,
-        }),
+        manager.create(
+          Question,
+          newQuestionRow({
+            quizId: quiz.id,
+            position: question.position,
+            generated,
+            prompt: { id: REGENERATE_PROMPT.id, version: result.promptVersion },
+            model: result.model,
+            random: this.random,
+          }),
+        ),
       );
     });
   }

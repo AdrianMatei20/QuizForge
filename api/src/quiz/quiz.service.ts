@@ -9,10 +9,17 @@ import { LlmService } from '../llm/llm.service.js';
 import { Question } from './question.entity.js';
 import { quizFailureReason } from './quiz-failure.js';
 import { QuizGenerationFailedError } from './quiz-generation-failed.error.js';
-import { buildQuizRequest, QUIZ_PROMPT } from './quiz-request.js';
+import { ActiveGenerations } from './active-generations.js';
+import {
+  buildQuizRequest,
+  QUIZ_PROMPT,
+  QUIZ_STREAM_PROMPT,
+} from './quiz-request.js';
+import { QuizStreamService } from './quiz-stream.service.js';
 import { Quiz } from './quiz.entity.js';
 import type { QuizFailureReason, QuizSettings } from './quiz.types.js';
-import { QUIZ_RANDOM, type Random, shuffleOptions } from './shuffle.js';
+import { newQuestionRow } from './question-row.js';
+import { QUIZ_RANDOM, type Random } from './shuffle.js';
 
 @Injectable()
 export class QuizService {
@@ -25,6 +32,8 @@ export class QuizService {
     private readonly llm: LlmService,
     private readonly config: ConfigService<Env, true>,
     @Inject(QUIZ_RANDOM) private readonly random: Random,
+    private readonly streams: QuizStreamService,
+    private readonly active: ActiveGenerations,
   ) {}
 
   /**
@@ -43,21 +52,10 @@ export class QuizService {
     const lesson = await this.lessons.findById(lessonId);
     // Passed explicitly, so the quiz row names the model before the call.
     const model = this.config.get('LLM_MODEL', { infer: true });
-    const quiz = await this.quizzes.save(
-      this.quizzes.create({
-        lessonId,
-        status: 'generating',
-        promptId: QUIZ_PROMPT.id,
-        promptVersion: QUIZ_PROMPT.version,
-        model,
-        settings: {
-          count: settings.count,
-          difficulty: settings.difficulty,
-          types: settings.types,
-        },
-      }),
-    );
+    const quiz = await this.createGenerating(lessonId, settings, QUIZ_PROMPT);
 
+    // Tells the stuck-quiz sweep this "generating" quiz is being worked on.
+    this.active.add(quiz.id);
     try {
       const result = await this.llm.generate(
         buildQuizRequest({
@@ -74,20 +72,16 @@ export class QuizService {
       await this.dataSource.transaction(async (manager) => {
         await manager.insert(
           Question,
-          result.data.questions.map((question, index) => ({
-            quizId: quiz.id,
-            position: index + 1,
-            type: question.type,
-            stem: question.stem,
-            ...shuffleOptions(question, this.random),
-            explanation: question.explanation,
-            sourceQuote: question.sourceQuote,
-            status: 'draft' as const,
-            promptId: QUIZ_PROMPT.id,
-            promptVersion: result.promptVersion,
-            model: result.model,
-            original: question,
-          })),
+          result.data.questions.map((generated, index) =>
+            newQuestionRow({
+              quizId: quiz.id,
+              position: index + 1,
+              generated,
+              prompt: { id: QUIZ_PROMPT.id, version: result.promptVersion },
+              model: result.model,
+              random: this.random,
+            }),
+          ),
         );
         await manager.update(Quiz, quiz.id, {
           status: 'draft',
@@ -100,9 +94,51 @@ export class QuizService {
       this.logFailure(quiz.id, reason, error);
       await this.markFailed(quiz.id, reason);
       throw new QuizGenerationFailedError(quiz.id, reason, { cause: error });
+    } finally {
+      this.active.delete(quiz.id);
     }
 
     return this.findById(quiz.id);
+  }
+
+  /**
+   * Starts a streamed generation and returns the new quiz's id at once.
+   * The questions arrive at GET /quizzes/:id/stream (QuizStreamService).
+   */
+  async startStreamed(
+    lessonId: string,
+    settings: QuizSettings,
+  ): Promise<string> {
+    const lesson = await this.lessons.findById(lessonId);
+    const quiz = await this.createGenerating(
+      lessonId,
+      settings,
+      QUIZ_STREAM_PROMPT,
+    );
+    this.streams.start(quiz, lesson.content);
+    return quiz.id;
+  }
+
+  /** Saved first, so a crash mid-generation leaves a trace (and the sweep can clean it up). */
+  private createGenerating(
+    lessonId: string,
+    settings: QuizSettings,
+    prompt: { id: string; version: number },
+  ): Promise<Quiz> {
+    return this.quizzes.save(
+      this.quizzes.create({
+        lessonId,
+        status: 'generating',
+        promptId: prompt.id,
+        promptVersion: prompt.version,
+        model: this.config.get('LLM_MODEL', { infer: true }),
+        settings: {
+          count: settings.count,
+          difficulty: settings.difficulty,
+          types: settings.types,
+        },
+      }),
+    );
   }
 
   /**

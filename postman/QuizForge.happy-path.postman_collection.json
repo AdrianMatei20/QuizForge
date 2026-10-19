@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "QuizForge happy path",
-    "description": "Runs the review flow end to end, in order: create a lesson, generate a quiz, approve a question, regenerate another, publish.\n\nEach request saves the ids the next one needs into collection variables, and its test script checks the status code. Uses the recursion sample lesson, so it also works with LLM_PROVIDER=fake (no API key, no cost).\n\nHand-maintained. The generated collection (QuizForge.generated.postman_collection.json) covers every endpoint and is rebuilt by `npm run openapi:export`.\n\nRun it with `npm run postman:happy-path` from api/, with the API running.",
+    "description": "Runs the review flow end to end, in order: create a lesson, generate a quiz, approve a question, regenerate another, publish; then generate a second quiz in stream mode and watch its stream.\n\nEach request saves the ids the next one needs into collection variables, and its test script checks the status code. Uses the recursion sample lesson, so it also works with LLM_PROVIDER=fake (no API key, no cost).\n\nHand-maintained. The generated collection (QuizForge.generated.postman_collection.json) covers every endpoint and is rebuilt by `npm run openapi:export`.\n\nRun it with `npm run postman:happy-path` from api/, with the API running.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -23,6 +23,10 @@
     },
     {
       "key": "replacementQuestionId",
+      "value": ""
+    },
+    {
+      "key": "streamQuizId",
       "value": ""
     }
   ],
@@ -249,6 +253,95 @@
             "quizzes",
             "{{quizId}}",
             "publish"
+          ]
+        }
+      }
+    },
+    {
+      "name": "6. Generate quiz (streamed)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('202 Accepted', () => pm.response.to.have.status(202));",
+              "",
+              "pm.collectionVariables.set('streamQuizId', pm.response.json().quizId);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"count\": 5,\n  \"difficulty\": \"medium\",\n  \"types\": [\n    \"multiple_choice\",\n    \"true_false\"\n  ],\n  \"stream\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/lessons/{{lessonId}}/quizzes",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "lessons",
+            "{{lessonId}}",
+            "quizzes"
+          ]
+        }
+      }
+    },
+    {
+      "name": "7. Watch the stream",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "",
+              "// Server-Sent Events: the response ends after the done event.",
+              "const body = pm.response.text();",
+              "pm.test('streams the questions, then done', () => {",
+              "  pm.expect(body).to.include('event: question');",
+              "  pm.expect(body).to.include('event: done');",
+              "  pm.expect(body).to.not.include('event: problem');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "text/event-stream"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/quizzes/{{streamQuizId}}/stream",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "quizzes",
+            "{{streamQuizId}}",
+            "stream"
           ]
         }
       }

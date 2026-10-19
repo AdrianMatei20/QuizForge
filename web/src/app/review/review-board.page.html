@@ -12,36 +12,11 @@
 @if (store.quiz(); as quiz) {
   @switch (quiz.status) {
     @case ('draft') {
-      <app-review-header
-        [counts]="store.counts()"
-        [editRate]="store.editRate()"
-        [canPublish]="store.canPublish()"
-        [publishing]="store.publishing()"
-        [publishError]="store.publishError()"
-        (publish)="publish()"
-      />
-      <ol class="question-list">
-        @for (question of store.questions(); track question.position) {
-          @let card = store.card(question.position);
-          <li>
-            <app-question-card
-              [question]="question"
-              [busy]="card.busy"
-              [error]="card.error"
-              [retryable]="card.retry !== undefined"
-              [fieldErrors]="card.fieldErrors ?? []"
-              [editing]="store.editing() === question.position"
-              [otherStems]="otherStems(question.position)"
-              (statusChange)="store.setStatus(question.position, $event)"
-              (editStart)="store.startEdit(question.position)"
-              (editCancel)="store.cancelEdit()"
-              (save)="save(question.position, $event)"
-              (regenerate)="store.regenerate(question.position)"
-              (retry)="retry(question.position)"
-            />
-          </li>
-        }
-      </ol>
+      <ng-container *ngTemplateOutlet="board" />
+    }
+    @case ('generating') {
+      <app-error-message [error]="store.streamError()" />
+      <ng-container *ngTemplateOutlet="board" />
     }
     @case ('failed') {
       <div class="notice" role="alert">
@@ -49,8 +24,56 @@
         <a routerLink="/lessons/new">Write a new lesson</a>
       </div>
     }
-    @case ('generating') {
-      <p class="notice" role="status">This quiz is still being generated. Reload in a moment.</p>
-    }
   }
 }
+
+<ng-template #board>
+  <app-review-header
+    [counts]="store.counts()"
+    [editRate]="store.editRate()"
+    [canPublish]="store.canPublish()"
+    [publishing]="store.publishing()"
+    [publishError]="store.publishError()"
+    [generating]="store.generating()"
+    [received]="store.questions().length"
+    [expected]="store.expectedCount()"
+    (publish)="publish()"
+  />
+  <ol class="question-list">
+    @for (slot of slots(); track slot.position) {
+      <li>
+        @if (slot.question; as question) {
+          @let card = store.card(question.position);
+          <app-question-card
+            [question]="question"
+            [busy]="card.busy"
+            [error]="card.error"
+            [retryable]="card.retry !== undefined"
+            [fieldErrors]="card.fieldErrors ?? []"
+            [editing]="store.editing() === question.position"
+            [otherStems]="otherStems(question.position)"
+            [canRegenerate]="!store.generating()"
+            (statusChange)="store.setStatus(question.position, $event)"
+            (editStart)="store.startEdit(question.position)"
+            (editCancel)="store.cancelEdit()"
+            (save)="save(question.position, $event)"
+            (regenerate)="store.regenerate(question.position)"
+            (retry)="retry(question.position)"
+          />
+        } @else {
+          <div
+            class="placeholder"
+            [attr.aria-label]="'Question ' + slot.position + ', not ready yet'"
+          >
+            <span class="spinner" aria-hidden="true"></span>
+            {{
+              slot.rewriting
+                ? 'Question ' + slot.position + ' is being rewritten…'
+                : 'Question ' + slot.position + ' is on its way…'
+            }}
+          </div>
+        }
+      </li>
+    }
+  </ol>
+</ng-template>

@@ -1,4 +1,7 @@
-import type { LlmGenerateRequest } from '../llm/llm.service.js';
+import type {
+  LlmGenerateRequest,
+  LlmStreamRequest,
+} from '../llm/llm.service.js';
 import {
   type GeneratedQuiz,
   quizOutputSchema,
@@ -104,5 +107,42 @@ export function buildRegenerateRequest(
     // "Regenerate" must always produce a new question.
     cache: false,
     correlationId: input.correlationId,
+  };
+}
+
+export const QUIZ_STREAM_PROMPT = { id: 'quiz-stream', version: 1 } as const;
+
+export interface QuizStreamRequestInput {
+  lessonContent: string;
+  settings: QuizSettings;
+  model: string;
+  correlationId: string;
+  signal: AbortSignal;
+  timeoutMs: number;
+}
+
+/**
+ * The LlmService stream request for a quiz written as JSON Lines. No schema
+ * or rules here: each line is validated on its own as it arrives (see
+ * QuizStreamService), with the same schema and per-question rules.
+ */
+export function buildQuizStreamRequest(
+  input: QuizStreamRequestInput,
+): LlmStreamRequest {
+  return {
+    feature: 'quiz-generation-stream',
+    promptId: QUIZ_STREAM_PROMPT.id,
+    promptVersion: QUIZ_STREAM_PROMPT.version,
+    variables: {
+      count: input.settings.count,
+      difficulty: input.settings.difficulty,
+      types: input.settings.types.join(', '),
+      lesson: input.lessonContent,
+    },
+    model: input.model,
+    maxTokens: QUIZ_MAX_TOKENS,
+    correlationId: input.correlationId,
+    signal: input.signal,
+    timeoutMs: input.timeoutMs,
   };
 }

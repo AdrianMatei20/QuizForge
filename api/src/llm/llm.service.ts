@@ -20,6 +20,7 @@ import {
   LlmProviderError,
   type LlmRequest,
   type LlmResponse,
+  type LlmStopReason,
   type LlmUsage,
 } from './llm-client.js';
 import {
@@ -81,6 +82,44 @@ export interface LlmGenerateResult<T> {
   /** Provider calls made, retries and the repair call included. 0 on a cache hit. */
   attempts: number;
 }
+
+/**
+ * A streamed call: free text, chunk by chunk. No schema or rules here: the
+ * caller decides what a valid piece of the stream is (e.g. one JSON line),
+ * because only it knows where one piece ends.
+ */
+export interface LlmStreamRequest {
+  feature: string;
+  promptId: string;
+  promptVersion: number;
+  variables: PromptVariables;
+  /** Defaults to LLM_MODEL. */
+  model?: string;
+  maxTokens: number;
+  correlationId?: string;
+  /** Aborts the provider stream (e.g. a generation timeout). */
+  signal?: AbortSignal;
+  /** Per provider request; defaults to LLM_TIMEOUT_MS. A long stream may need more. */
+  timeoutMs?: number;
+}
+
+export type LlmServiceStreamEvent =
+  | { type: 'text'; text: string }
+  | {
+      type: 'done';
+      usage: LlmUsage & { costUsd: string };
+      stopReason: LlmStopReason;
+      model: string;
+      promptVersion: number;
+      attempts: number;
+      latencyMs: number;
+    };
+
+/** What record() needs to know about the request, generate() or stream(). */
+type RecordedRequest = Pick<
+  LlmGenerateRequest<unknown>,
+  'feature' | 'promptId' | 'promptVersion' | 'correlationId'
+>;
 
 export interface LlmServiceOptions {
   defaultModel: string;
@@ -196,6 +235,130 @@ export class LlmService {
           `model=${tally.model} attempts=${tally.attempts} code=${errorCode ?? status}`,
       );
       throw error;
+    }
+  }
+
+  /**
+   * Streams the model's text as it arrives. Same guarantees as generate():
+   * the budget guard runs before any provider call, the prompt comes from
+   * the registry, and exactly one llm_calls row is recorded, also when the
+   * stream fails, is aborted, or the consumer stops reading early.
+   *
+   * Retries (429, 5xx, timeouts) only happen before the first chunk: once
+   * text has been handed out it cannot be taken back. A refusal throws
+   * LlmRefusalError at the end; hitting maxTokens does not throw, because the
+   * text so far may still be useful (stopReason says so).
+   */
+  async *stream(
+    request: LlmStreamRequest,
+  ): AsyncGenerator<LlmServiceStreamEvent> {
+    const startedAt = performance.now();
+    const tally: CallTally = {
+      model: request.model ?? this.options.defaultModel,
+      usage: { inputTokens: 0, outputTokens: 0 },
+      attempts: 0,
+    };
+    const finish = async (status: LlmCallStatus, errorCode?: string) => {
+      const latencyMs = Math.round(performance.now() - startedAt);
+      const costUsd = this.pricing.costUsd(tally.model, tally.usage);
+      await this.record(request, tally, {
+        status,
+        latencyMs,
+        costUsd,
+        ...(errorCode === undefined ? {} : { errorCode }),
+      });
+      return { latencyMs, costUsd };
+    };
+    let recorded = false;
+
+    try {
+      await this.assertWithinBudget();
+      const prompt = this.prompts.render(
+        request.promptId,
+        request.promptVersion,
+        request.variables,
+      );
+      const providerRequest: LlmRequest = {
+        promptId: request.promptId,
+        model: tally.model,
+        ...(prompt.system === undefined ? {} : { system: prompt.system }),
+        messages: [{ role: 'user', content: prompt.user }],
+        maxTokens: request.maxTokens,
+        timeoutMs: request.timeoutMs ?? this.options.timeoutMs,
+        ...(request.signal ? { signal: request.signal } : {}),
+      };
+
+      let stopReason: LlmStopReason = 'other';
+      for (let attempt = 1; ; attempt++) {
+        request.signal?.throwIfAborted();
+        tally.attempts++;
+        let started = false;
+        try {
+          for await (const event of this.client.stream(providerRequest)) {
+            request.signal?.throwIfAborted();
+            if (event.type === 'text') {
+              started = true;
+              yield { type: 'text', text: event.text };
+            } else {
+              tally.usage.inputTokens += event.usage.inputTokens;
+              tally.usage.outputTokens += event.usage.outputTokens;
+              stopReason = event.stopReason;
+            }
+          }
+          break;
+        } catch (error) {
+          if (!(error instanceof LlmProviderError)) {
+            throw error;
+          }
+          if (started || !isRetryable(error) || attempt >= MAX_ATTEMPTS) {
+            throw toLlmError(error);
+          }
+          await this.options.sleep(
+            retryDelayMs(
+              attempt,
+              error.retryAfterSeconds,
+              this.options.random,
+              {
+                ...this.options.backoff,
+                maxRetryAfterMs: this.options.maxRetryAfterMs,
+              },
+            ),
+          );
+        }
+      }
+
+      if (stopReason === 'refusal') {
+        throw new LlmRefusalError();
+      }
+      recorded = true;
+      const { latencyMs, costUsd } = await finish(
+        stopReason === 'max_tokens' ? 'truncated' : 'ok',
+      );
+      yield {
+        type: 'done',
+        usage: { ...tally.usage, costUsd },
+        stopReason,
+        model: tally.model,
+        promptVersion: request.promptVersion,
+        attempts: tally.attempts,
+        latencyMs,
+      };
+    } catch (error) {
+      if (!recorded) {
+        recorded = true;
+        const { status, errorCode } = describeFailure(error);
+        await finish(status, errorCode);
+        this.logger.warn(
+          `LLM stream failed: feature=${request.feature} prompt=${request.promptId}@v${request.promptVersion} ` +
+            `model=${tally.model} attempts=${tally.attempts} code=${errorCode ?? status}`,
+        );
+      }
+      throw error;
+    } finally {
+      // The consumer stopped reading early (break / return): still one row.
+      if (!recorded) {
+        await finish('error', 'aborted');
+      }
     }
   }
 
@@ -379,8 +542,8 @@ export class LlmService {
    * Never throws. A failed insert must not turn a successful (and paid for)
    * generation into an error, or replace the real error on a failed one.
    */
-  private async record<T>(
-    request: LlmGenerateRequest<T>,
+  private async record(
+    request: RecordedRequest,
     tally: CallTally,
     outcome: {
       status: LlmCallStatus;

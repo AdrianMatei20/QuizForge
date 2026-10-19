@@ -95,6 +95,16 @@ describe('validateEnv', () => {
     ).toContain('API_DOCS_ENABLED');
   });
 
+  it('defaults the quiz generation timeout to 3 minutes and the stuck-quiz sweep to 5', () => {
+    const env = validateEnv(validEnv);
+
+    expect(env.QUIZ_GENERATION_TIMEOUT_MS).toBe(180_000);
+    expect(env.QUIZ_STUCK_SWEEP_INTERVAL_MS).toBe(300_000);
+    expect(
+      errorMessageFor({ ...validEnv, QUIZ_GENERATION_TIMEOUT_MS: '10' }),
+    ).toContain('QUIZ_GENERATION_TIMEOUT_MS');
+  });
+
   it('rejects a timeout that is not a positive integer', () => {
     expect(errorMessageFor({ ...validEnv, LLM_TIMEOUT_MS: '0' })).toContain(
       'LLM_TIMEOUT_MS',
