@@ -30,6 +30,11 @@ export const baseEnvSchema = z.object({
     .string()
     .regex(USD_AMOUNT, 'must be a decimal USD amount such as "5.00"'),
   LLM_CACHE_TTL_SECONDS: z.coerce.number().int().min(0),
+  LLM_TIMEOUT_MS: z.coerce.number().int().min(1).default(60_000),
+  // The longest a provider's Retry-After header can make a retry wait.
+  LLM_RETRY_AFTER_MAX_MS: z.coerce.number().int().min(0).default(10_000),
+  // Relative paths resolve against the working directory (api/ for npm scripts).
+  LLM_PRICING_FILE: z.string().min(1).default('config/llm-pricing.json'),
 });
 
 export const envSchema = baseEnvSchema.refine(

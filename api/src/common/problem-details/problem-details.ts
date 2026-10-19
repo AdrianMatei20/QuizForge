@@ -1,8 +1,11 @@
 import { HttpException } from '@nestjs/common';
 
-/** One entry per broken rule; `pointer` is a JSON Pointer into the request body. */
+/**
+ * One entry per broken rule. `pointer` is a JSON Pointer to the offending
+ * field; it is absent when the rule is about the document as a whole.
+ */
 export interface ProblemFieldError {
-  pointer: string;
+  pointer?: string;
   detail: string;
 }
 
@@ -19,6 +22,30 @@ export interface Problem {
 /** RFC 9457 problem details as sent to the client. */
 export interface ProblemDetails extends Problem {
   instance: string;
+}
+
+/** What a ProblemConvertible error contributes to the HTTP response. */
+export interface ProblemResponse {
+  problem: Problem;
+  headers?: Record<string, string>;
+}
+
+/**
+ * Implemented by domain errors that know how they should look to a client.
+ * They stay plain Errors (not HttpExceptions), so code outside HTTP, such as
+ * background jobs, can throw them too. The global filter calls toProblem().
+ */
+export interface ProblemConvertible {
+  toProblem(): ProblemResponse;
+}
+
+export function isProblemConvertible(
+  value: unknown,
+): value is ProblemConvertible {
+  return (
+    value instanceof Error &&
+    typeof (value as Partial<ProblemConvertible>).toProblem === 'function'
+  );
 }
 
 export const PROBLEM_TYPES = {

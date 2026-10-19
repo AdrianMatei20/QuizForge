@@ -9,6 +9,7 @@ import {
 import type { Request, Response } from 'express';
 import { STATUS_CODES } from 'node:http';
 import {
+  isProblemConvertible,
   PROBLEM_TYPES,
   type ProblemDetails,
   ProblemException,
@@ -17,16 +18,37 @@ import {
 const GENERIC_SERVER_ERROR_DETAIL =
   'An unexpected error occurred. Please try again later.';
 
+export interface ResolvedProblem {
+  problem: ProblemDetails;
+  headers: Record<string, string>;
+}
+
 /**
- * Maps any thrown value to RFC 9457 problem details:
+ * Maps any thrown value to RFC 9457 problem details plus response headers:
  * - ProblemException: used as-is (the thrower chose what to expose).
+ * - ProblemConvertible error: whatever its toProblem() returns, headers included.
  * - Other HttpException below 500: its message becomes `detail`.
  * - Anything else: a generic 500. The real error is only logged.
  */
+export function resolveProblem(
+  exception: unknown,
+  instance: string,
+): ResolvedProblem {
+  if (isProblemConvertible(exception)) {
+    const { problem, headers = {} } = exception.toProblem();
+    return { problem: { ...problem, instance }, headers };
+  }
+  return { problem: toProblemDetails(exception, instance), headers: {} };
+}
+
 export function toProblemDetails(
   exception: unknown,
   instance: string,
 ): ProblemDetails {
+  if (isProblemConvertible(exception)) {
+    return { ...exception.toProblem().problem, instance };
+  }
+
   if (exception instanceof ProblemException) {
     return { ...exception.problem, instance };
   }
@@ -67,9 +89,13 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     const request = http.getRequest<Request>();
     const response = http.getResponse<Response>();
 
-    const problem = toProblemDetails(exception, request.originalUrl);
+    const { problem, headers } = resolveProblem(exception, request.originalUrl);
 
-    if (problem.status >= 500 && !(exception instanceof ProblemException)) {
+    // ProblemExceptions and ProblemConvertible errors are expected failures
+    // that their owners already describe (and log); only log the surprises.
+    const isExpected =
+      exception instanceof ProblemException || isProblemConvertible(exception);
+    if (problem.status >= 500 && !isExpected) {
       this.logger.error(
         `${request.method} ${request.originalUrl} failed`,
         exception instanceof Error ? exception.stack : String(exception),
@@ -77,6 +103,7 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     }
 
     response
+      .set(headers)
       .status(problem.status)
       .type('application/problem+json')
       .json(problem);

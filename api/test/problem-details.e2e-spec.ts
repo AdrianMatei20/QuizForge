@@ -18,6 +18,7 @@ import {
 import request from 'supertest';
 import type { App } from 'supertest/types.js';
 import { configureApp } from '../src/app.setup.js';
+import { LlmBudgetExceededError } from '../src/llm/llm.errors.js';
 
 class ProbeOptionDto {
   @IsString()
@@ -52,6 +53,11 @@ class ProbeController {
   @Get('boom')
   boom(): never {
     throw new Error('database password is hunter2');
+  }
+
+  @Get('budget')
+  budget(): never {
+    throw new LlmBudgetExceededError(3600);
   }
 }
 
@@ -145,5 +151,19 @@ describe('Problem details (e2e)', () => {
 
     expect(response.body.title).toBe('Internal Server Error');
     expect(JSON.stringify(response.body)).not.toContain('hunter2');
+  });
+
+  it('sends headers from errors that describe themselves (Retry-After)', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/probe/budget')
+      .expect(429)
+      .expect('Retry-After', '3600')
+      .expect('Content-Type', /application\/problem\+json/);
+
+    expect(response.body).toMatchObject({
+      type: 'urn:quizforge:problem:llm-budget-exceeded',
+      status: 429,
+      instance: '/api/probe/budget',
+    });
   });
 });

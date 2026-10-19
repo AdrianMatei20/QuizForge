@@ -46,6 +46,30 @@ describe('validateEnv', () => {
     expect(env.PORT).toBe(3000);
   });
 
+  it('applies defaults for the LLM timeout and pricing file', () => {
+    const env = validateEnv(validEnv);
+
+    expect(env.LLM_TIMEOUT_MS).toBe(60_000);
+    expect(env.LLM_PRICING_FILE).toBe('config/llm-pricing.json');
+  });
+
+  it('defaults the Retry-After cap to 10 s and accepts 0', () => {
+    expect(validateEnv(validEnv).LLM_RETRY_AFTER_MAX_MS).toBe(10_000);
+    expect(
+      validateEnv({ ...validEnv, LLM_RETRY_AFTER_MAX_MS: '0' })
+        .LLM_RETRY_AFTER_MAX_MS,
+    ).toBe(0);
+    expect(
+      errorMessageFor({ ...validEnv, LLM_RETRY_AFTER_MAX_MS: '-1' }),
+    ).toContain('LLM_RETRY_AFTER_MAX_MS');
+  });
+
+  it('rejects a timeout that is not a positive integer', () => {
+    expect(errorMessageFor({ ...validEnv, LLM_TIMEOUT_MS: '0' })).toContain(
+      'LLM_TIMEOUT_MS',
+    );
+  });
+
   it('accepts the anthropic provider when an API key is set', () => {
     const env = validateEnv({
       ...validEnv,

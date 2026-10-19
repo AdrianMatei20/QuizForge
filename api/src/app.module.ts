@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { type Env, validateEnv } from './config/env.schema.js';
 import { buildDataSourceOptions } from './database/database.options.js';
 import { HealthModule } from './health/health.module.js';
+import { LlmModule } from './llm/llm.module.js';
 
 @Module({
   imports: [
@@ -16,10 +17,14 @@ import { HealthModule } from './health/health.module.js';
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService<Env, true>) =>
-        buildDataSourceOptions(config.get('DATABASE_URL', { infer: true })),
+      useFactory: (config: ConfigService<Env, true>) => ({
+        ...buildDataSourceOptions(config.get('DATABASE_URL', { infer: true })),
+        // Entities come from TypeOrmModule.forFeature() in each module.
+        autoLoadEntities: true,
+      }),
     }),
     HealthModule,
+    LlmModule,
   ],
 })
 export class AppModule {}

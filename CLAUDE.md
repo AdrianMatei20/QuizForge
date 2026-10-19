@@ -20,8 +20,9 @@ Infrastructure (repo root):
 api/ (run from `api/`; copy `.env.example` to `.env` first):
 - `npm run start:dev`: run the API on http://localhost:3000 in watch mode
 - `npm run build` / `npm run start:prod`: compile to `dist/` / run the compiled app
-- `npm test`: unit tests (`src/**/*.spec.ts`)
-- `npm run test:e2e`: e2e tests (`test/**/*.e2e-spec.ts`); needs docker compose running, reads `.env.test`
+- `npm test`: unit tests (`src/**/*.spec.ts`); the Nest logger is silenced, set `DEBUG=1` to see it
+- `npm run test:e2e`: e2e tests (`test/**/*.e2e-spec.ts`); needs docker compose running, reads `.env.test`, migrates the test database first
+- `LLM_LIVE_TESTS=1 npm run test:live`: live smoke test against the real provider (`test/**/*.live-spec.ts`, costs money); reads `LLM_API_KEY` and `LLM_MODEL` from the environment or `.env.live.local` (see `.env.live.example`); skipped without the flag
 - `npm run lint`: oxlint with type-aware rules
 - `npm run typecheck`: `tsc --noEmit` over src and test
 - `npm run format`: Prettier
@@ -40,7 +41,7 @@ web/ (run from `web/`):
 - All LLM access goes through LlmModule in api/src/llm. No other module imports a provider SDK.
 - LLM output schemas are zod schemas. HTTP DTOs use class-validator.
 - LLM output is never trusted until it passes its zod schema AND its rule checks.
-- Prompts are files in api/prompts/<feature>/v<n>.md. Every stored LLM result records prompt_version and model.
+- Prompts are files in api/prompts/<promptId>/v<n>.md. Every stored LLM result records prompt_id, prompt_version and model.
 - Untrusted text (lessons, user input) is always wrapped in delimiters, and the system prompt says it is data, not instructions.
 - Money is stored as numeric/decimal, never as a float.
 - All errors are RFC 9457 problem details, produced by one global exception filter.

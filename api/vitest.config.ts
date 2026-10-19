@@ -8,5 +8,7 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.spec.ts'],
+    // Silences the Nest logger unless DEBUG is set.
+    setupFiles: ['./test/setup-unit.ts'],
   },
 });

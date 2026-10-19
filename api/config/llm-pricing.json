@@ -1,0 +1,12 @@
+{
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+  "checkedOn": "2026-10-06",
+  "currency": "USD",
+  "models": {
+    "claude-opus-5-5": { "inputPerMillionTokens": "4.00", "outputPerMillionTokens": "20.00" },
+    "claude-sonnet-5-5": { "inputPerMillionTokens": "2.00", "outputPerMillionTokens": "10.00" },
+    "claude-haiku-5-5": { "inputPerMillionTokens": "0.10", "outputPerMillionTokens": "0.50" },
+    "fake-model": { "inputPerMillionTokens": "0", "outputPerMillionTokens": "0" },
+    "fake-judge-model": { "inputPerMillionTokens": "0", "outputPerMillionTokens": "0" }
+  }
+}
