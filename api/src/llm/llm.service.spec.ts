@@ -55,6 +55,7 @@ describe('LlmService.generate', () => {
           cacheHit: false,
           attempts: 1,
           errorCode: null,
+          correlationId: null,
         }),
       ]);
     });
@@ -542,6 +543,78 @@ describe('LlmService.generate', () => {
     });
   });
 
+  describe('correlation id', () => {
+    it('records the correlation id on a successful call', async () => {
+      const { service, store } = createTestLlmService();
+
+      await service.generate(quizRequest({ correlationId: 'quiz-1' }));
+
+      expect(store.rows[0]?.correlationId).toBe('quiz-1');
+    });
+
+    it('records it on a cache hit and on a failed call too', async () => {
+      const { service, client, store } = createTestLlmService();
+      await service.generate(quizRequest({ correlationId: 'quiz-1' }));
+      await service.generate(quizRequest({ correlationId: 'quiz-2' }));
+      client.nextRefusal();
+
+      await expect(
+        service.generate(
+          quizRequest({ correlationId: 'quiz-3', cache: false }),
+        ),
+      ).rejects.toBeInstanceOf(LlmRefusalError);
+
+      expect(
+        store.rows.map(({ correlationId, cacheHit, status }) => ({
+          correlationId,
+          cacheHit,
+          status,
+        })),
+      ).toEqual([
+        { correlationId: 'quiz-1', cacheHit: false, status: 'ok' },
+        { correlationId: 'quiz-2', cacheHit: true, status: 'ok' },
+        { correlationId: 'quiz-3', cacheHit: false, status: 'refused' },
+      ]);
+    });
+
+    it('sums usage per correlation id, ignoring other ids and uncorrelated calls', async () => {
+      const { service, client } = createTestLlmService();
+      client
+        .respondNext(VALID_ONE_QUESTION, {
+          inputTokens: 1_000,
+          outputTokens: 500,
+        })
+        .respondNext('not json', { inputTokens: 100, outputTokens: 10 })
+        .respondNext(VALID_ONE_QUESTION, { inputTokens: 200, outputTokens: 20 })
+        .respondNext(VALID_ONE_QUESTION, { inputTokens: 7, outputTokens: 7 });
+      const request = (correlationId?: string) =>
+        quizRequest({
+          cache: false,
+          ...(correlationId === undefined ? {} : { correlationId }),
+        });
+
+      await service.generate(request('quiz-1'));
+      await service.generate(request('quiz-1')); // repaired: 2 attempts
+      await service.generate(request());
+
+      // test-model: $2 / M input, $10 / M output.
+      expect(await service.getUsage('quiz-1')).toEqual({
+        calls: 2,
+        attempts: 3,
+        inputTokens: 1_300,
+        outputTokens: 530,
+        costUsd: '0.007900',
+      });
+      expect(await service.getUsage('unknown')).toEqual({
+        calls: 0,
+        attempts: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        costUsd: '0.000000',
+      });
+    });
+  });
+
   describe('budget', () => {
     it('throws LlmBudgetExceededError without calling the client', async () => {
       const { service, client, store } = createTestLlmService({
@@ -603,6 +676,7 @@ describe('LlmService.generate', () => {
         cacheHit: false,
         attempts: 1,
         errorCode: null,
+        correlationId: null,
         createdAt: new Date('2026-10-18T23:59:59.999Z'),
       });
 

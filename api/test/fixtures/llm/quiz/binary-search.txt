@@ -1,0 +1,44 @@
+{
+  "questions": [
+    {
+      "type": "true_false",
+      "stem": "Binary search works on unsorted lists.",
+      "options": ["True", "False"],
+      "correctIndex": 1,
+      "explanation": "The list must be sorted first; binary search does not work on unsorted data.",
+      "sourceQuote": "binary search does not work on unsorted data"
+    },
+    {
+      "type": "multiple_choice",
+      "stem": "Which element does binary search look at in each step?",
+      "options": ["The first element", "The middle element", "The last element", "A random element"],
+      "correctIndex": 1,
+      "explanation": "The algorithm compares the target with the middle element.",
+      "sourceQuote": "The algorithm looks at the middle element."
+    },
+    {
+      "type": "multiple_choice",
+      "stem": "If the target is smaller than the middle element, where does the search continue?",
+      "options": ["In the right half", "In the left half", "At the start of the list", "Nowhere; the search stops"],
+      "correctIndex": 1,
+      "explanation": "A smaller target can only be in the left half of a sorted list.",
+      "sourceQuote": "If the target is smaller, the search continues in the left half"
+    },
+    {
+      "type": "multiple_choice",
+      "stem": "About how many comparisons does binary search need for a sorted list of one million elements?",
+      "options": ["About 20", "About 1,000", "About 500,000", "About one million"],
+      "correctIndex": 0,
+      "explanation": "Each step halves the remaining elements, so about log2(1,000,000), roughly 20, steps are needed.",
+      "sourceQuote": "Searching a sorted list of one million elements takes at most about 20 comparisons."
+    },
+    {
+      "type": "true_false",
+      "stem": "Linear search may need n comparisons for a list of n elements.",
+      "options": ["True", "False"],
+      "correctIndex": 0,
+      "explanation": "Linear search checks the elements one by one, so in the worst case it checks all n.",
+      "sourceQuote": "linear search checks the elements one by one and may need n comparisons"
+    }
+  ]
+}

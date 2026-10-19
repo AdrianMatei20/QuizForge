@@ -8,7 +8,11 @@ import {
 } from './clock.js';
 import { buildCacheKey, LLM_CACHE, type LlmCache } from './llm-cache.js';
 import type { LlmCallStatus } from './llm-call.entity.js';
-import { LLM_CALL_STORE, type LlmCallStore } from './llm-call.store.js';
+import {
+  LLM_CALL_STORE,
+  type LlmCallStore,
+  type LlmUsageTotals,
+} from './llm-call.store.js';
 import {
   LLM_CLIENT,
   type LlmClient,
@@ -34,7 +38,7 @@ import { type ParseOutcome, parseModelOutput } from './output-parser.js';
 import { LlmPricing } from './pricing.js';
 import { PromptRegistry, type PromptVariables } from './prompt-registry.js';
 import {
-  DEFAULT_BACKOFF,
+  type BackoffOptions,
   isRetryable,
   MAX_ATTEMPTS,
   retryDelayMs,
@@ -58,6 +62,11 @@ export interface LlmGenerateRequest<T> {
   maxTokens: number;
   /** Defaults to true. Set to false to always call the provider (e.g. "regenerate"). */
   cache?: boolean;
+  /**
+   * Recorded on the llm_calls row so a caller can group and total its calls
+   * (see getUsage). An opaque string to this module, e.g. a quiz id.
+   */
+  correlationId?: string;
   signal?: AbortSignal;
 }
 
@@ -80,6 +89,8 @@ export interface LlmServiceOptions {
   timeoutMs: number;
   /** Cap for a provider's Retry-After header (LLM_RETRY_AFTER_MAX_MS). */
   maxRetryAfterMs: number;
+  /** Full-jitter backoff between retries (LLM_RETRY_BASE_DELAY_MS, LLM_RETRY_MAX_DELAY_MS). */
+  backoff: BackoffOptions;
   /** In [0, 1), for backoff jitter. Injected so tests are deterministic. */
   random: () => number;
   sleep: (ms: number) => Promise<void>;
@@ -188,6 +199,11 @@ export class LlmService {
     }
   }
 
+  /** Calls, tokens and cost of every generate() call recorded with this correlation id. */
+  getUsage(correlationId: string): Promise<LlmUsageTotals> {
+    return this.store.sumUsageByCorrelationId(correlationId);
+  }
+
   /**
    * First call, then at most one repair call. Throws LlmInvalidOutputError if
    * both are invalid, and LlmRefusalError / LlmOutputTruncatedError as soon
@@ -291,7 +307,7 @@ export class LlmService {
         }
         await this.options.sleep(
           retryDelayMs(attempt, error.retryAfterSeconds, this.options.random, {
-            ...DEFAULT_BACKOFF,
+            ...this.options.backoff,
             maxRetryAfterMs: this.options.maxRetryAfterMs,
           }),
         );
@@ -388,6 +404,7 @@ export class LlmService {
         cacheHit: outcome.cacheHit ?? false,
         attempts: tally.attempts,
         errorCode: outcome.errorCode ?? null,
+        correlationId: request.correlationId ?? null,
       });
     } catch (error) {
       this.logger.error(

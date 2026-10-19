@@ -1,0 +1,49 @@
+{
+  "questions": [
+    {
+      "type": "multiple_choice",
+      "stem": "Which header does a server use to control caching?",
+      "options": ["Content-Type", "Cache-Control", "Authorization", "Accept"],
+      "correctIndex": 1,
+      "explanation": "The lesson says the server controls caching with the Cache-Control header.",
+      "sourceQuote": "A server controls caching with the Cache-Control header."
+    },
+    {
+      "type": "multiple_choice",
+      "stem": "What does the max-age directive specify?",
+      "options": [
+        "How many seconds a response stays fresh",
+        "The largest response size the browser may cache",
+        "How many times a response may be reused",
+        "The age of the server"
+      ],
+      "correctIndex": 0,
+      "explanation": "max-age tells the browser how long, in seconds, the response stays fresh.",
+      "sourceQuote": "The max-age directive tells the browser how many seconds a response stays fresh."
+    },
+    {
+      "type": "true_false",
+      "stem": "The no-store directive suits sensitive data such as bank statements.",
+      "options": ["True", "False"],
+      "correctIndex": 0,
+      "explanation": "no-store tells the browser not to keep a copy, which suits sensitive data.",
+      "sourceQuote": "which suits sensitive data such as bank statements"
+    },
+    {
+      "type": "multiple_choice",
+      "stem": "Which header carries the ETag when the browser revalidates a stale response?",
+      "options": ["If-None-Match", "If-Modified-Since", "Cache-Control", "ETag-Check"],
+      "correctIndex": 0,
+      "explanation": "The browser sends the response's ETag in an If-None-Match header.",
+      "sourceQuote": "It sends the response's ETag in an If-None-Match header."
+    },
+    {
+      "type": "true_false",
+      "stem": "A 304 Not Modified response contains the full content again.",
+      "options": ["True", "False"],
+      "correctIndex": 1,
+      "explanation": "The server replies with 304 Not Modified and an empty body.",
+      "sourceQuote": "the server replies with 304 Not Modified and an empty body"
+    }
+  ]
+}

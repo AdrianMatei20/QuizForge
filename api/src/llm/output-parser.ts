@@ -44,7 +44,12 @@ export function parseModelOutput<T>(
       ok: false,
       violations: result.error.issues.map((issue) => ({
         pointer: toJsonPointer(issue.path),
-        message: issue.message,
+        // zod's message for unknown keys quotes the key names, which come from
+        // the model's output, so it is replaced with one that does not.
+        message:
+          issue.code === 'unrecognized_keys'
+            ? 'Contains properties that are not allowed.'
+            : issue.message,
       })),
     };
   }

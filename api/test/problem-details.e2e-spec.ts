@@ -1,10 +1,5 @@
-import {
-  Body,
-  Controller,
-  Get,
-  type INestApplication,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { Type } from 'class-transformer';
 import {
@@ -16,7 +11,6 @@ import {
   ValidateNested,
 } from 'class-validator';
 import request from 'supertest';
-import type { App } from 'supertest/types.js';
 import { configureApp } from '../src/app.setup.js';
 import { LlmBudgetExceededError } from '../src/llm/llm.errors.js';
 
@@ -62,13 +56,15 @@ class ProbeController {
 }
 
 describe('Problem details (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: NestExpressApplication;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       controllers: [ProbeController],
     }).compile();
-    app = moduleRef.createNestApplication({ logger: false });
+    app = moduleRef.createNestApplication<NestExpressApplication>({
+      logger: false,
+    });
     configureApp(app);
     await app.init();
   });

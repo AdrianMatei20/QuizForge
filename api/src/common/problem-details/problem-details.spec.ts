@@ -145,6 +145,38 @@ describe('toProblemDetails', () => {
     });
   });
 
+  it('maps an exposed 4xx http-errors object (e.g. body too large) to its status', () => {
+    // What the Express JSON body parser throws for a body over its limit.
+    const error = Object.assign(new Error('request entity too large'), {
+      status: 413,
+      statusCode: 413,
+      expose: true,
+      type: 'entity.too.large',
+    });
+
+    expect(toProblemDetails(error, instance)).toEqual({
+      type: 'about:blank',
+      title: 'Payload Too Large',
+      status: 413,
+      detail: 'request entity too large',
+      instance,
+    });
+  });
+
+  it('keeps a generic 500 for errors with a status that are not marked as exposed', () => {
+    const error = Object.assign(new Error('internal detail'), { status: 400 });
+    const serverError = Object.assign(new Error('db down'), {
+      status: 503,
+      expose: true,
+    });
+
+    expect(toProblemDetails(error, instance).status).toBe(500);
+    expect(toProblemDetails(serverError, instance)).toMatchObject({
+      status: 500,
+      detail: 'An unexpected error occurred. Please try again later.',
+    });
+  });
+
   it('handles thrown values that are not errors', () => {
     expect(toProblemDetails('a string', instance).status).toBe(500);
   });

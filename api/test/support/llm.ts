@@ -6,6 +6,7 @@ import type { LlmCache } from '../../src/llm/llm-cache.js';
 import type {
   LlmCallRecord,
   LlmCallStore,
+  LlmUsageTotals,
 } from '../../src/llm/llm-call.store.js';
 import {
   type LlmGenerateRequest,
@@ -15,6 +16,7 @@ import {
 import { formatUsd, parseUsd } from '../../src/llm/money.js';
 import { LlmPricing } from '../../src/llm/pricing.js';
 import { PROMPTS_DIR, PromptRegistry } from '../../src/llm/prompt-registry.js';
+import { DEFAULT_BACKOFF } from '../../src/llm/retry.js';
 
 export const TEST_PROMPTS_DIR = join(
   import.meta.dirname,
@@ -68,6 +70,19 @@ export class InMemoryLlmCallStore implements LlmCallStore {
       .reduce((sum, row) => sum + parseUsd(row.costUsd), 0n);
     return Promise.resolve(formatUsd(total));
   }
+
+  sumUsageByCorrelationId(correlationId: string): Promise<LlmUsageTotals> {
+    const rows = this.rows.filter((row) => row.correlationId === correlationId);
+    return Promise.resolve({
+      calls: rows.length,
+      attempts: rows.reduce((sum, row) => sum + row.attempts, 0),
+      inputTokens: rows.reduce((sum, row) => sum + row.inputTokens, 0),
+      outputTokens: rows.reduce((sum, row) => sum + row.outputTokens, 0),
+      costUsd: formatUsd(
+        rows.reduce((sum, row) => sum + parseUsd(row.costUsd), 0n),
+      ),
+    });
+  }
 }
 
 export class InMemoryLlmCache implements LlmCache {
@@ -118,6 +133,7 @@ export function createTestLlmService(options: Partial<LlmServiceOptions> = {}) {
       cacheTtlSeconds: 60,
       timeoutMs: 5_000,
       maxRetryAfterMs: 5_000,
+      backoff: DEFAULT_BACKOFF,
       random: () => 0.5,
       sleep: () => Promise.resolve(),
       ...options,

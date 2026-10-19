@@ -64,6 +64,27 @@ describe('validateEnv', () => {
     ).toContain('LLM_RETRY_AFTER_MAX_MS');
   });
 
+  it('defaults the sourceQuote minimum to 5 words and rejects 0', () => {
+    expect(validateEnv(validEnv).QUIZ_SOURCE_QUOTE_MIN_WORDS).toBe(5);
+    expect(
+      validateEnv({ ...validEnv, QUIZ_SOURCE_QUOTE_MIN_WORDS: '8' })
+        .QUIZ_SOURCE_QUOTE_MIN_WORDS,
+    ).toBe(8);
+    expect(
+      errorMessageFor({ ...validEnv, QUIZ_SOURCE_QUOTE_MIN_WORDS: '0' }),
+    ).toContain('QUIZ_SOURCE_QUOTE_MIN_WORDS');
+  });
+
+  it('defaults the retry backoff to 500 ms base and 8 s max', () => {
+    const env = validateEnv(validEnv);
+
+    expect(env.LLM_RETRY_BASE_DELAY_MS).toBe(500);
+    expect(env.LLM_RETRY_MAX_DELAY_MS).toBe(8_000);
+    expect(
+      errorMessageFor({ ...validEnv, LLM_RETRY_BASE_DELAY_MS: '-5' }),
+    ).toContain('LLM_RETRY_BASE_DELAY_MS');
+  });
+
   it('rejects a timeout that is not a positive integer', () => {
     expect(errorMessageFor({ ...validEnv, LLM_TIMEOUT_MS: '0' })).toContain(
       'LLM_TIMEOUT_MS',
@@ -102,6 +123,13 @@ describe('validateEnv', () => {
     const message = errorMessageFor({ ...validEnv, LLM_PROVIDER: 'openai' });
 
     expect(message).toContain('LLM_PROVIDER');
+  });
+
+  it('accepts a daily budget of 0, which blocks every LLM call', () => {
+    expect(
+      validateEnv({ ...validEnv, LLM_DAILY_BUDGET_USD: '0' })
+        .LLM_DAILY_BUDGET_USD,
+    ).toBe('0');
   });
 
   it('rejects a budget that is not a decimal amount', () => {

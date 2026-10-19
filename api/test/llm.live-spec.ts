@@ -5,16 +5,18 @@ import { LlmService } from '../src/llm/llm.service.js';
 import { parseUsd } from '../src/llm/money.js';
 import { LlmPricing, loadPricingFile } from '../src/llm/pricing.js';
 import { PROMPTS_DIR, PromptRegistry } from '../src/llm/prompt-registry.js';
+import { DEFAULT_BACKOFF } from '../src/llm/retry.js';
 import {
   InMemoryLlmCache,
   InMemoryLlmCallStore,
   TEST_PROMPTS_DIR,
 } from './support/llm.js';
+import { readLiveEnv } from './support/live-env.js';
 
 /**
  * One tiny real call to the provider, end to end through LlmService:
  * structured output, usage and pricing. Runs only with LLM_LIVE_TESTS=1;
- * reads LLM_API_KEY and LLM_MODEL from the environment or .env.live.local.
+ * reads LLM_API_KEY and LLM_MODEL via readLiveEnv (environment, .env.live.local, .env).
  * No database or Redis needed: storage and cache are in memory.
  */
 const live = process.env.LLM_LIVE_TESTS === '1';
@@ -37,6 +39,7 @@ describe.skipIf(!live)('LLM live smoke test', () => {
         cacheTtlSeconds: 0,
         timeoutMs: 60_000,
         maxRetryAfterMs: 10_000,
+        backoff: DEFAULT_BACKOFF,
         random: Math.random,
         sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
       },
@@ -64,26 +67,3 @@ describe.skipIf(!live)('LLM live smoke test', () => {
     ).toBeGreaterThan(0n);
   });
 });
-
-function readLiveEnv() {
-  try {
-    // Does not override variables already set in the real environment.
-    process.loadEnvFile('.env.live.local');
-  } catch {
-    // No file: rely on the real environment.
-  }
-  const result = z
-    .object({
-      LLM_API_KEY: z.string().min(1, 'is required'),
-      LLM_MODEL: z.string().min(1, 'is required'),
-    })
-    .safeParse(process.env);
-  if (!result.success) {
-    // Names only, never values: one of them is a secret.
-    const names = result.error.issues.map((issue) => issue.path.join('.'));
-    throw new Error(
-      `Live tests need ${names.join(' and ')} (set them in .env.live.local or the environment)`,
-    );
-  }
-  return result.data;
-}

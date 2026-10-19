@@ -22,7 +22,7 @@ api/ (run from `api/`; copy `.env.example` to `.env` first):
 - `npm run build` / `npm run start:prod`: compile to `dist/` / run the compiled app
 - `npm test`: unit tests (`src/**/*.spec.ts`); the Nest logger is silenced, set `DEBUG=1` to see it
 - `npm run test:e2e`: e2e tests (`test/**/*.e2e-spec.ts`); needs docker compose running, reads `.env.test`, migrates the test database first
-- `LLM_LIVE_TESTS=1 npm run test:live`: live smoke test against the real provider (`test/**/*.live-spec.ts`, costs money); reads `LLM_API_KEY` and `LLM_MODEL` from the environment or `.env.live.local` (see `.env.live.example`); skipped without the flag
+- `LLM_LIVE_TESTS=1 npm run test:live`: live tests against the real provider (`test/**/*.live-spec.ts`, costs money): a smoke test, and one quiz per sample lesson with a printed report. Reads `LLM_API_KEY` and `LLM_MODEL` from the environment, then `.env.live.local` (see `.env.live.example`), then `.env`; skipped without the flag. Add a path (e.g. `test/quiz.live-spec.ts`) to run one file
 - `npm run lint`: oxlint with type-aware rules
 - `npm run typecheck`: `tsc --noEmit` over src and test
 - `npm run format`: Prettier

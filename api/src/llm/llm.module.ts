@@ -17,6 +17,29 @@ import {
 import { LlmPricing, loadPricingFile } from './pricing.js';
 import { PROMPTS_DIR, PromptRegistry } from './prompt-registry.js';
 
+/**
+ * LlmService settings from validated config. Exported so a test can start
+ * from the real values and override one (e.g. a budget of 0): config is
+ * validated once per process, so changing env vars later has no effect.
+ */
+export function llmServiceOptionsFromConfig(
+  config: ConfigService<Env, true>,
+): LlmServiceOptions {
+  return {
+    defaultModel: config.get('LLM_MODEL', { infer: true }),
+    dailyBudgetUsd: config.get('LLM_DAILY_BUDGET_USD', { infer: true }),
+    cacheTtlSeconds: config.get('LLM_CACHE_TTL_SECONDS', { infer: true }),
+    timeoutMs: config.get('LLM_TIMEOUT_MS', { infer: true }),
+    maxRetryAfterMs: config.get('LLM_RETRY_AFTER_MAX_MS', { infer: true }),
+    backoff: {
+      baseMs: config.get('LLM_RETRY_BASE_DELAY_MS', { infer: true }),
+      capMs: config.get('LLM_RETRY_MAX_DELAY_MS', { infer: true }),
+    },
+    random: Math.random,
+    sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  };
+}
+
 /** All LLM access goes through this module; feature modules import it and use LlmService. */
 @Module({
   imports: [TypeOrmModule.forFeature([LlmCall]), RedisModule],
@@ -56,15 +79,7 @@ import { PROMPTS_DIR, PromptRegistry } from './prompt-registry.js';
     {
       provide: LLM_SERVICE_OPTIONS,
       inject: [ConfigService],
-      useFactory: (config: ConfigService<Env, true>): LlmServiceOptions => ({
-        defaultModel: config.get('LLM_MODEL', { infer: true }),
-        dailyBudgetUsd: config.get('LLM_DAILY_BUDGET_USD', { infer: true }),
-        cacheTtlSeconds: config.get('LLM_CACHE_TTL_SECONDS', { infer: true }),
-        timeoutMs: config.get('LLM_TIMEOUT_MS', { infer: true }),
-        maxRetryAfterMs: config.get('LLM_RETRY_AFTER_MAX_MS', { infer: true }),
-        random: Math.random,
-        sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-      }),
+      useFactory: llmServiceOptionsFromConfig,
     },
     LlmService,
   ],

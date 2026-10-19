@@ -72,6 +72,19 @@ describe('parseModelOutput', () => {
     ]);
   });
 
+  it('does not quote unknown key names from the output', () => {
+    const strict = z.strictObject({ name: z.string() });
+
+    const outcome = parseModelOutput('{"name":"a","SECRET_KEY":1}', strict);
+
+    expect(outcome).toEqual({
+      ok: false,
+      violations: [
+        { pointer: '#', message: 'Contains properties that are not allowed.' },
+      ],
+    });
+  });
+
   it('keeps zod transforms out of the raw JSON', () => {
     const trimmed = z.object({ name: z.string().transform((s) => s.trim()) });
 

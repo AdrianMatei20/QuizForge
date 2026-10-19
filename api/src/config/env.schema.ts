@@ -33,8 +33,13 @@ export const baseEnvSchema = z.object({
   LLM_TIMEOUT_MS: z.coerce.number().int().min(1).default(60_000),
   // The longest a provider's Retry-After header can make a retry wait.
   LLM_RETRY_AFTER_MAX_MS: z.coerce.number().int().min(0).default(10_000),
+  // Full-jitter backoff between retries: up to base * 2^(attempt - 1), capped at max.
+  LLM_RETRY_BASE_DELAY_MS: z.coerce.number().int().min(0).default(500),
+  LLM_RETRY_MAX_DELAY_MS: z.coerce.number().int().min(0).default(8_000),
   // Relative paths resolve against the working directory (api/ for npm scripts).
   LLM_PRICING_FILE: z.string().min(1).default('config/llm-pricing.json'),
+  // A generated question's sourceQuote must have at least this many words.
+  QUIZ_SOURCE_QUOTE_MIN_WORDS: z.coerce.number().int().min(1).default(5),
 });
 
 export const envSchema = baseEnvSchema.refine(

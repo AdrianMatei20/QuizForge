@@ -9,14 +9,12 @@ import {
 import type { Request, Response } from 'express';
 import { STATUS_CODES } from 'node:http';
 import {
+  GENERIC_SERVER_ERROR_DETAIL,
   isProblemConvertible,
   PROBLEM_TYPES,
   type ProblemDetails,
   ProblemException,
 } from './problem-details.js';
-
-const GENERIC_SERVER_ERROR_DETAIL =
-  'An unexpected error occurred. Please try again later.';
 
 export interface ResolvedProblem {
   problem: ProblemDetails;
@@ -67,6 +65,17 @@ export function toProblemDetails(
     };
   }
 
+  const clientError = asExposedClientError(exception);
+  if (clientError) {
+    return {
+      type: PROBLEM_TYPES.httpStatus,
+      title: STATUS_CODES[clientError.status] ?? 'Error',
+      status: clientError.status,
+      detail: clientError.message,
+      instance,
+    };
+  }
+
   const status =
     exception instanceof HttpException
       ? exception.getStatus()
@@ -78,6 +87,30 @@ export function toProblemDetails(
     detail: GENERIC_SERVER_ERROR_DETAIL,
     instance,
   };
+}
+
+/**
+ * Express middleware such as the JSON body parser throws `http-errors`
+ * objects, not HttpExceptions (e.g. 413 for a body over the size limit).
+ * By that convention, `expose: true` marks the message as safe for clients;
+ * only 4xx errors set it.
+ */
+function asExposedClientError(
+  exception: unknown,
+): { status: number; message: string } | undefined {
+  if (!(exception instanceof Error)) {
+    return undefined;
+  }
+  const { status, expose } = exception as Error & {
+    status?: unknown;
+    expose?: unknown;
+  };
+  return typeof status === 'number' &&
+    status >= 400 &&
+    status < 500 &&
+    expose === true
+    ? { status, message: exception.message }
+    : undefined;
 }
 
 @Catch()

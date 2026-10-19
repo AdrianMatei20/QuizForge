@@ -34,6 +34,7 @@ describe('LLM persistence (e2e)', () => {
     cacheHit: false,
     attempts: 1,
     errorCode: null,
+    correlationId: null,
     ...overrides,
   });
 
@@ -111,6 +112,33 @@ describe('LLM persistence (e2e)', () => {
 
     it('returns 0 when there are no rows', async () => {
       expect(await store.sumCostSince(new Date(0))).toBe('0');
+    });
+
+    it('sums usage for one correlation id only, with cost kept exact', async () => {
+      await store.record(
+        row({ correlationId: 'quiz-a', costUsd: '0.100000', attempts: 2 }),
+      );
+      await store.record(row({ correlationId: 'quiz-a', costUsd: '0.200000' }));
+      await store.record(row({ correlationId: 'quiz-b', costUsd: '5.000000' }));
+      await store.record(row({ costUsd: '7.000000' }));
+
+      expect(await store.sumUsageByCorrelationId('quiz-a')).toEqual({
+        calls: 2,
+        attempts: 3,
+        inputTokens: 20,
+        outputTokens: 40,
+        costUsd: '0.300000',
+      });
+    });
+
+    it('returns zero usage for a correlation id with no calls', async () => {
+      expect(await store.sumUsageByCorrelationId('nobody')).toEqual({
+        calls: 0,
+        attempts: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        costUsd: '0.000000',
+      });
     });
 
     it('rejects an unknown status (CHECK constraint)', async () => {

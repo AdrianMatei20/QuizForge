@@ -4,7 +4,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { type Env, validateEnv } from './config/env.schema.js';
 import { buildDataSourceOptions } from './database/database.options.js';
 import { HealthModule } from './health/health.module.js';
+import { LessonsModule } from './lessons/lessons.module.js';
 import { LlmModule } from './llm/llm.module.js';
+import { QuizModule } from './quiz/quiz.module.js';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { LlmModule } from './llm/llm.module.js';
     }),
     HealthModule,
     LlmModule,
+    LessonsModule,
+    QuizModule,
   ],
 })
 export class AppModule {}

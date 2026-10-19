@@ -48,6 +48,10 @@ export function isProblemConvertible(
   );
 }
 
+/** What clients see for any unexpected error; the real error is only logged. */
+export const GENERIC_SERVER_ERROR_DETAIL =
+  'An unexpected error occurred. Please try again later.';
+
 export const PROBLEM_TYPES = {
   // RFC 9457 4.2.1: the problem has no meaning beyond its HTTP status code.
   httpStatus: 'about:blank',

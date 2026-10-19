@@ -6,6 +6,7 @@ import {
   Index,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { checkIn } from '../database/check-in.js';
 
 export const LLM_CALL_STATUSES = [
   'ok',
@@ -26,10 +27,7 @@ export type LlmCallStatus = (typeof LLM_CALL_STATUSES)[number];
 @Entity('llm_calls')
 // A CHECK constraint instead of a Postgres enum: adding a status later is a
 // one-line migration, while altering an enum type is awkward.
-@Check(
-  'CHK_llm_calls_status',
-  `"status" IN (${LLM_CALL_STATUSES.map((status) => `'${status}'`).join(', ')})`,
-)
+@Check('CHK_llm_calls_status', checkIn('status', LLM_CALL_STATUSES))
 export class LlmCall {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -70,6 +68,20 @@ export class LlmCall {
 
   @Column({ name: 'error_code', type: 'varchar', length: 50, nullable: true })
   errorCode: string | null;
+
+  /**
+   * Groups the calls made for one piece of work, e.g. a quiz id. Opaque to
+   * LlmModule: it never knows what the id refers to. Indexed for the
+   * per-correlation usage query.
+   */
+  @Index('IDX_llm_calls_correlation_id')
+  @Column({
+    name: 'correlation_id',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
+  correlationId: string | null;
 
   // Indexed for the budget query: WHERE created_at >= <UTC midnight>.
   @Index('IDX_llm_calls_created_at')
