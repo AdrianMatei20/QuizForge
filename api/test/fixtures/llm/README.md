@@ -29,3 +29,8 @@ JSON Lines answers to the streaming prompt (`api/prompts/quiz-stream/v1.md`): on
 - `with-invalid-line.txt` is the same questions wrapped in code fences, with a blank line, no final newline, and
   line 3's `sourceQuote` replaced by a sentence that is not in the lesson. It exercises the parser, the rejection of
   one line, and the repair step (which uses `quiz-regenerate/default.txt`).
+
+## judge
+
+- `default.txt` is one canned verdict (answer correct, answerable, does not test understanding) that the fake judge gives
+  every question in an eval dry run.

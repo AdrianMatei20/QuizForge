@@ -281,6 +281,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/evals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List eval runs
+         * @description Newest first, with their headline metrics. Dry runs are left out unless includeDryRuns=true.
+         */
+        get: operations["EvalsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/evals/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Compare two eval runs
+         * @description Every compared metric for run a and run b, b minus a, and whether that is better or worse.
+         */
+        get: operations["EvalsController_compare"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -911,6 +951,82 @@ export interface components {
             totals: components["schemas"]["UsageBucketResponse"];
             /** @description One entry per day and feature that had calls, by day then feature. */
             days: components["schemas"]["UsageDayResponse"][];
+        };
+        EvalRunSummaryResponse: {
+            /** Format: uuid */
+            id: string;
+            /** @example quiz */
+            promptId: string;
+            /** @example 2 */
+            promptVersion: number;
+            /** @example claude-haiku-5-5 */
+            model: string;
+            /** @example claude-sonnet-5-5 */
+            judgeModel: string;
+            /**
+             * @description null: the provider's default.
+             * @example null
+             * @enum {string|null}
+             */
+            effort: "low" | "medium" | "high" | null;
+            /** @description A fake-provider dry run: its numbers mean nothing. */
+            dryRun: boolean;
+            /** @example 10 */
+            lessonCount: number;
+            /** @example 0 */
+            lessonsFailed: number;
+            /**
+             * @description The Markdown report, relative to api/.
+             * @example evals/results/2026-10-19T151500Z-v2.md
+             */
+            reportFile: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** @example 0.9 */
+            rulePassBeforeRepairRate: number | null;
+            /** @example 0.1 */
+            repairRate: number | null;
+            /** @example 0.2 */
+            quoteCopyRate: number | null;
+            /** @example 0.95 */
+            answerCorrectRate: number | null;
+            /** @example 0.7 */
+            testsUnderstandingRate: number | null;
+            /**
+             * @description USD, a decimal string.
+             * @example 0.412300
+             */
+            totalCostUsd: string;
+        };
+        EvalRunListResponse: {
+            /** @description Newest first. */
+            items: components["schemas"]["EvalRunSummaryResponse"][];
+        };
+        ComparedMetricResponse: {
+            /** @example quoteCopyRate */
+            key: string;
+            /** @example Quote copy */
+            label: string;
+            /** @enum {string} */
+            format: "rate" | "count" | "usd" | "ms";
+            /**
+             * @description Which way is an improvement.
+             * @enum {string}
+             */
+            direction: "higher" | "lower" | "neutral";
+            /** @description A number; a decimal string for USD; null when there was nothing to measure. */
+            a: (number | string) | null;
+            /** @description A number; a decimal string for USD; null when there was nothing to measure. */
+            b: (number | string) | null;
+            /** @description b minus a; for rates, in percentage points. */
+            delta: (number | string) | null;
+            /** @enum {string} */
+            verdict: "better" | "worse" | "same" | "n/a";
+        };
+        EvalComparisonResponse: {
+            a: components["schemas"]["EvalRunSummaryResponse"];
+            b: components["schemas"]["EvalRunSummaryResponse"];
+            metrics: components["schemas"]["ComparedMetricResponse"][];
         };
     };
     responses: never;
@@ -1746,6 +1862,98 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ValidationProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. The details are logged, never returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    EvalsController_list: {
+        parameters: {
+            query?: {
+                limit?: number;
+                /** @description Include --dry-run runs, whose numbers mean nothing. Default false. */
+                includeDryRuns?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalRunListResponse"];
+                };
+            };
+            /** @description Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. The details are logged, never returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    EvalsController_compare: {
+        parameters: {
+            query: {
+                /** @description The baseline run. */
+                a: string;
+                /** @description The run compared with the baseline. */
+                b: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalComparisonResponse"];
+                };
+            };
+            /** @description Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblemDetailsDto"];
+                };
+            };
+            /** @description No such resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
             /** @description Unexpected error. The details are logged, never returned. */

@@ -7,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { checkIn } from '../database/check-in.js';
+import { LLM_EFFORTS, type LlmEffort } from './llm-client.js';
 
 export const LLM_CALL_STATUSES = [
   'ok',
@@ -28,6 +29,8 @@ export type LlmCallStatus = (typeof LLM_CALL_STATUSES)[number];
 // A CHECK constraint instead of a Postgres enum: adding a status later is a
 // one-line migration, while altering an enum type is awkward.
 @Check('CHK_llm_calls_status', checkIn('status', LLM_CALL_STATUSES))
+// NULL passes a CHECK, so an unset effort needs no special case.
+@Check('CHK_llm_calls_effort', checkIn('effort', LLM_EFFORTS))
 export class LlmCall {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -77,6 +80,10 @@ export class LlmCall {
    */
   @Column({ name: 'usage_estimated', type: 'boolean', default: false })
   usageEstimated: boolean;
+
+  /** The effort the call asked for; null means the provider's default. */
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  effort: LlmEffort | null;
 
   /**
    * Groups the calls made for one piece of work, e.g. a quiz id. Opaque to

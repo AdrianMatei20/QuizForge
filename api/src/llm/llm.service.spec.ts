@@ -18,6 +18,145 @@ import type { LlmServiceStreamEvent, LlmStreamRequest } from './llm.service.js';
 const VALID_ONE_QUESTION =
   '{"questions":[{"text":"What is the powerhouse of the cell?","answer":"Mitochondria"}]}';
 
+describe('LlmService effort and validation reports', () => {
+  it('sends effort to the provider and records it on the llm_calls row', async () => {
+    const { service, client, store } = createTestLlmService();
+
+    await service.generate(quizRequest({ effort: 'low' }));
+    await service.generate(quizRequest({ cache: false }));
+
+    expect(client.requests.map((request) => request.effort)).toEqual([
+      'low',
+      undefined,
+    ]);
+    expect(store.rows.map((row) => row.effort)).toEqual(['low', null]);
+  });
+
+  it('makes effort part of the cache key, so another effort level is a miss', async () => {
+    const { service, client } = createTestLlmService();
+    await service.generate(quizRequest({ effort: 'low' }));
+
+    const sameEffort = await service.generate(quizRequest({ effort: 'low' }));
+    const otherEffort = await service.generate(quizRequest({ effort: 'high' }));
+
+    expect(sameEffort.cacheHit).toBe(true);
+    expect(otherEffort.cacheHit).toBe(false);
+    expect(client.requests).toHaveLength(2);
+  });
+
+  it('keeps cache keys made without effort unchanged', () => {
+    const parts = {
+      feature: 'f',
+      promptId: 'p',
+      promptVersion: 1,
+      model: 'm',
+      variables: { a: 1 },
+    };
+    expect(buildCacheKey(parts)).toBe(
+      buildCacheKey({ ...parts, effort: undefined }),
+    );
+    expect(buildCacheKey(parts)).not.toBe(
+      buildCacheKey({ ...parts, effort: 'low' }),
+    );
+  });
+
+  it('passes effort through on a stream', async () => {
+    const { service, client, store } = createTestLlmService();
+
+    const events = service.stream({
+      feature: 'test-stream',
+      promptId: 'test-quiz',
+      promptVersion: 1,
+      variables: { count: 2, lesson: 'Plants turn sunlight into energy.' },
+      maxTokens: 1024,
+      effort: 'high',
+    });
+    for await (const _event of events) {
+      // Read to the end, so the call is recorded.
+    }
+
+    expect(client.requests[0]?.effort).toBe('high');
+    expect(store.rows[0]?.effort).toBe('high');
+  });
+
+  it('reports the first answer as valid when no repair was needed', async () => {
+    const { service } = createTestLlmService();
+    const checks: unknown[] = [];
+
+    await service.generate(
+      quizRequest({ onValidation: (check) => checks.push(check) }),
+    );
+
+    expect(checks).toEqual([
+      {
+        attempt: 'first',
+        schemaValid: true,
+        data: expect.objectContaining({ questions: expect.any(Array) }),
+        violations: [],
+      },
+    ]);
+  });
+
+  it('reports a first answer that failed the schema, then the repair', async () => {
+    const { service, client } = createTestLlmService();
+    client.nextOffSchema().respondNext(VALID_ONE_QUESTION);
+    const checks: { attempt: string; schemaValid: boolean; data?: unknown }[] =
+      [];
+
+    await service.generate(
+      quizRequest({ onValidation: (check) => checks.push(check) }),
+    );
+
+    expect(
+      checks.map(({ attempt, schemaValid }) => [attempt, schemaValid]),
+    ).toEqual([
+      ['first', false],
+      ['repair', true],
+    ]);
+    expect(checks[0]?.data).toBeUndefined();
+  });
+
+  it('reports the parsed data with the rule violations, also when the call then fails', async () => {
+    const { service } = createTestLlmService();
+    const checks: { attempt: string; data?: unknown; violations: string[] }[] =
+      [];
+
+    await expect(
+      service.generate(
+        quizRequest({
+          rules: () => ['question 1: too easy'],
+          onValidation: (check) => checks.push(check),
+        }),
+      ),
+    ).rejects.toBeInstanceOf(LlmInvalidOutputError);
+
+    expect(checks).toHaveLength(2);
+    expect(checks[0]).toMatchObject({
+      attempt: 'first',
+      violations: ['question 1: too easy'],
+    });
+    expect(checks[0]?.data).toBeDefined();
+  });
+
+  it('does not report a cache hit, and survives a callback that throws', async () => {
+    const { service } = createTestLlmService();
+    const throwing = () => {
+      throw new Error('observer bug');
+    };
+    await expect(
+      service.generate(quizRequest({ onValidation: throwing })),
+    ).resolves.toBeDefined();
+
+    const checks: unknown[] = [];
+    const cached = await service.generate(
+      quizRequest({ onValidation: (check) => checks.push(check) }),
+    );
+
+    expect(cached.cacheHit).toBe(true);
+    expect(checks).toEqual([]);
+  });
+});
+
 describe('LlmService.generate', () => {
   describe('successful generation', () => {
     it('returns typed data and records usage and cost', async () => {
@@ -827,6 +966,7 @@ describe('LlmService.generate', () => {
         errorCode: null,
         correlationId: null,
         usageEstimated: false,
+        effort: null,
         createdAt: new Date('2026-10-18T23:59:59.999Z'),
       });
 

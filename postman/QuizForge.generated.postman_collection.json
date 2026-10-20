@@ -4314,6 +4314,505 @@
           }
         }
       ]
+    },
+    {
+      "name": "evals",
+      "description": "",
+      "item": [
+        {
+          "name": "List eval runs",
+          "request": {
+            "name": "List eval runs",
+            "description": {
+              "content": "Newest first, with their headline metrics. Dry runs are left out unless includeDryRuns=true.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "evals"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "Include --dry-run runs, whose numbers mean nothing. Default false.",
+                    "type": "text/plain"
+                  },
+                  "key": "includeDryRuns",
+                  "value": "false"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "body": {},
+            "auth": null
+          },
+          "response": [
+            {
+              "name": "200",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "evals"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "",
+                        "type": "text/plain"
+                      },
+                      "key": "limit",
+                      "value": "50"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "Include --dry-run runs, whose numbers mean nothing. Default false.",
+                        "type": "text/plain"
+                      },
+                      "key": "includeDryRuns",
+                      "value": "false"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"items\": [\n    {\n      \"id\": \"5832444a-62c8-7025-f698-619a8051afe7\",\n      \"promptId\": \"quiz\",\n      \"promptVersion\": 2,\n      \"model\": \"claude-haiku-5-5\",\n      \"judgeModel\": \"claude-sonnet-5-5\",\n      \"effort\": \"low\",\n      \"dryRun\": true,\n      \"lessonCount\": 10,\n      \"lessonsFailed\": 0,\n      \"reportFile\": \"evals/results/2026-10-19T151500Z-v2.md\",\n      \"createdAt\": \"1976-11-08T05:55:33.678Z\",\n      \"rulePassBeforeRepairRate\": 0.9,\n      \"repairRate\": 0.1,\n      \"quoteCopyRate\": 0.2,\n      \"answerCorrectRate\": 0.95,\n      \"testsUnderstandingRate\": 0.7,\n      \"totalCostUsd\": \"0.412300\"\n    },\n    {\n      \"id\": \"1e85d855-d3e6-245b-875b-f1f416a685be\",\n      \"promptId\": \"quiz\",\n      \"promptVersion\": 2,\n      \"model\": \"claude-haiku-5-5\",\n      \"judgeModel\": \"claude-sonnet-5-5\",\n      \"effort\": \"medium\",\n      \"dryRun\": false,\n      \"lessonCount\": 10,\n      \"lessonsFailed\": 0,\n      \"reportFile\": \"evals/results/2026-10-19T151500Z-v2.md\",\n      \"createdAt\": \"2008-07-15T16:14:24.656Z\",\n      \"rulePassBeforeRepairRate\": 0.9,\n      \"repairRate\": 0.1,\n      \"quoteCopyRate\": 0.2,\n      \"answerCorrectRate\": 0.95,\n      \"testsUnderstandingRate\": 0.7,\n      \"totalCostUsd\": \"0.412300\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "evals"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "",
+                        "type": "text/plain"
+                      },
+                      "key": "limit",
+                      "value": "50"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "Include --dry-run runs, whose numbers mean nothing. Default false.",
+                        "type": "text/plain"
+                      },
+                      "key": "includeDryRuns",
+                      "value": "false"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:quizforge:problem:quiz-published\",\n  \"title\": \"Quiz is published\",\n  \"status\": 409,\n  \"detail\": \"A published quiz and its questions can no longer be changed.\",\n  \"instance\": \"/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n  \"errors\": [\n    {\n      \"detail\": \"question 2: options 1 and 2 are identical\",\n      \"pointer\": \"#/options/3\",\n      \"parameter\": \"limit\"\n    },\n    {\n      \"detail\": \"question 2: options 1 and 2 are identical\",\n      \"pointer\": \"#/options/3\",\n      \"parameter\": \"limit\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Unexpected error. The details are logged, never returned.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "evals"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "",
+                        "type": "text/plain"
+                      },
+                      "key": "limit",
+                      "value": "50"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "Include --dry-run runs, whose numbers mean nothing. Default false.",
+                        "type": "text/plain"
+                      },
+                      "key": "includeDryRuns",
+                      "value": "false"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:quizforge:problem:quiz-published\",\n  \"title\": \"Quiz is published\",\n  \"status\": 409,\n  \"detail\": \"A published quiz and its questions can no longer be changed.\",\n  \"instance\": \"/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "name": "Compare two eval runs",
+          "request": {
+            "name": "Compare two eval runs",
+            "description": {
+              "content": "Every compared metric for run a and run b, b minus a, and whether that is better or worse.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "evals",
+                "compare"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) The baseline run.",
+                    "type": "text/plain"
+                  },
+                  "key": "a",
+                  "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) The run compared with the baseline.",
+                    "type": "text/plain"
+                  },
+                  "key": "b",
+                  "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "body": {},
+            "auth": null
+          },
+          "response": [
+            {
+              "name": "200",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "evals",
+                    "compare"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) The baseline run.",
+                        "type": "text/plain"
+                      },
+                      "key": "a",
+                      "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) The run compared with the baseline.",
+                        "type": "text/plain"
+                      },
+                      "key": "b",
+                      "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"a\": {\n    \"id\": \"c3ae46fd-1852-3682-5073-0aff3c83e010\",\n    \"promptId\": \"quiz\",\n    \"promptVersion\": 2,\n    \"model\": \"claude-haiku-5-5\",\n    \"judgeModel\": \"claude-sonnet-5-5\",\n    \"effort\": \"medium\",\n    \"dryRun\": true,\n    \"lessonCount\": 10,\n    \"lessonsFailed\": 0,\n    \"reportFile\": \"evals/results/2026-10-19T151500Z-v2.md\",\n    \"createdAt\": \"2022-02-21T22:32:10.100Z\",\n    \"rulePassBeforeRepairRate\": 0.9,\n    \"repairRate\": 0.1,\n    \"quoteCopyRate\": 0.2,\n    \"answerCorrectRate\": 0.95,\n    \"testsUnderstandingRate\": 0.7,\n    \"totalCostUsd\": \"0.412300\"\n  },\n  \"b\": {\n    \"id\": \"07291911-4912-bd77-c1f1-89915ab58bfa\",\n    \"promptId\": \"quiz\",\n    \"promptVersion\": 2,\n    \"model\": \"claude-haiku-5-5\",\n    \"judgeModel\": \"claude-sonnet-5-5\",\n    \"effort\": \"high\",\n    \"dryRun\": false,\n    \"lessonCount\": 10,\n    \"lessonsFailed\": 0,\n    \"reportFile\": \"evals/results/2026-10-19T151500Z-v2.md\",\n    \"createdAt\": \"1959-05-18T17:58:39.151Z\",\n    \"rulePassBeforeRepairRate\": 0.9,\n    \"repairRate\": 0.1,\n    \"quoteCopyRate\": 0.2,\n    \"answerCorrectRate\": 0.95,\n    \"testsUnderstandingRate\": 0.7,\n    \"totalCostUsd\": \"0.412300\"\n  },\n  \"metrics\": [\n    {\n      \"key\": \"quoteCopyRate\",\n      \"label\": \"Quote copy\",\n      \"format\": \"rate\",\n      \"direction\": \"neutral\",\n      \"a\": 9266.935184132308,\n      \"b\": 6654.4657573103905,\n      \"delta\": 6850.505322217941,\n      \"verdict\": \"n/a\"\n    },\n    {\n      \"key\": \"quoteCopyRate\",\n      \"label\": \"Quote copy\",\n      \"format\": \"count\",\n      \"direction\": \"lower\",\n      \"a\": 358.1771836616099,\n      \"b\": 622.5844379514456,\n      \"delta\": 1662.5202586874366,\n      \"verdict\": \"worse\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "evals",
+                    "compare"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) The baseline run.",
+                        "type": "text/plain"
+                      },
+                      "key": "a",
+                      "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) The run compared with the baseline.",
+                        "type": "text/plain"
+                      },
+                      "key": "b",
+                      "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:quizforge:problem:quiz-published\",\n  \"title\": \"Quiz is published\",\n  \"status\": 409,\n  \"detail\": \"A published quiz and its questions can no longer be changed.\",\n  \"instance\": \"/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n  \"errors\": [\n    {\n      \"detail\": \"question 2: options 1 and 2 are identical\",\n      \"pointer\": \"#/options/3\",\n      \"parameter\": \"limit\"\n    },\n    {\n      \"detail\": \"question 2: options 1 and 2 are identical\",\n      \"pointer\": \"#/options/3\",\n      \"parameter\": \"limit\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "No such resource.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "evals",
+                    "compare"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) The baseline run.",
+                        "type": "text/plain"
+                      },
+                      "key": "a",
+                      "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) The run compared with the baseline.",
+                        "type": "text/plain"
+                      },
+                      "key": "b",
+                      "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:quizforge:problem:quiz-published\",\n  \"title\": \"Quiz is published\",\n  \"status\": 409,\n  \"detail\": \"A published quiz and its questions can no longer be changed.\",\n  \"instance\": \"/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Unexpected error. The details are logged, never returned.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "evals",
+                    "compare"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) The baseline run.",
+                        "type": "text/plain"
+                      },
+                      "key": "a",
+                      "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) The run compared with the baseline.",
+                        "type": "text/plain"
+                      },
+                      "key": "b",
+                      "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:quizforge:problem:quiz-published\",\n  \"title\": \"Quiz is published\",\n  \"status\": 409,\n  \"detail\": \"A published quiz and its questions can no longer be changed.\",\n  \"instance\": \"/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ]
     }
   ],
   "event": [],

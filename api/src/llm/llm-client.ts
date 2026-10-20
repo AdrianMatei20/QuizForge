@@ -19,6 +19,14 @@ export interface LlmMessage {
   content: string;
 }
 
+/**
+ * How much the model may think before answering: the provider's effort
+ * setting. Unset means the provider's default (medium on current Claude
+ * models). Lower effort means fewer output tokens, so lower cost and latency.
+ */
+export const LLM_EFFORTS = ['low', 'medium', 'high'] as const;
+export type LlmEffort = (typeof LLM_EFFORTS)[number];
+
 export interface LlmRequest {
   /** Which prompt this call renders. Providers ignore it; the fake uses it to pick fixtures. */
   promptId: string;
@@ -30,6 +38,7 @@ export interface LlmRequest {
   outputSchema?: z.ZodType;
   timeoutMs: number;
   signal?: AbortSignal;
+  effort?: LlmEffort;
 }
 
 export interface LlmUsage {

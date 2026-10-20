@@ -1,0 +1,104 @@
+:host {
+  display: block;
+}
+
+h1 {
+  margin: 0 0 var(--space-2);
+}
+
+.lead {
+  margin: 0 0 var(--space-5);
+  color: var(--color-text-muted);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+  margin-bottom: var(--space-4);
+
+  .hint {
+    margin: 0;
+    flex: 1 1 14rem;
+  }
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 400;
+}
+
+// A wide table scrolls inside its box, never the page.
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.runs {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+
+  th,
+  td {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  thead th {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    vertical-align: bottom;
+  }
+
+  tbody th {
+    font-weight: 400;
+    min-width: 13rem;
+  }
+
+  tbody tr:last-child > * {
+    border-bottom: none;
+  }
+
+  .number {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  // Long metric names wrap, so the table fits the page at desktop width.
+  thead .number {
+    white-space: normal;
+  }
+
+  tr.selected {
+    background: var(--color-surface-muted);
+  }
+}
+
+.run-name {
+  display: block;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.meta {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+}
+
+td .meta {
+  display: inline;
+}
+
+.dry-run {
+  margin-top: var(--space-1);
+}

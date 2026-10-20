@@ -19,6 +19,8 @@ export interface CacheKeyParts {
   promptVersion: number;
   model: string;
   variables: PromptVariables;
+  /** Left out when unset, so keys made before effort existed stay valid. */
+  effort?: string;
 }
 
 /**

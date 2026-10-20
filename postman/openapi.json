@@ -1160,6 +1160,145 @@
           "usage"
         ]
       }
+    },
+    "/api/evals": {
+      "get": {
+        "description": "Newest first, with their headline metrics. Dry runs are left out unless includeDryRuns=true.",
+        "operationId": "EvalsController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "includeDryRuns",
+            "required": false,
+            "in": "query",
+            "description": "Include --dry-run runs, whose numbers mean nothing. Default false.",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalRunListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List eval runs",
+        "tags": [
+          "evals"
+        ]
+      }
+    },
+    "/api/evals/compare": {
+      "get": {
+        "description": "Every compared metric for run a and run b, b minus a, and whether that is better or worse.",
+        "operationId": "EvalsController_compare",
+        "parameters": [
+          {
+            "name": "a",
+            "required": true,
+            "in": "query",
+            "description": "The baseline run.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "b",
+            "required": true,
+            "in": "query",
+            "description": "The run compared with the baseline.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalComparisonResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Compare two eval runs",
+        "tags": [
+          "evals"
+        ]
+      }
     }
   },
   "info": {
@@ -2330,6 +2469,235 @@
           "to",
           "totals",
           "days"
+        ]
+      },
+      "EvalRunSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "promptId": {
+            "type": "string",
+            "example": "quiz"
+          },
+          "promptVersion": {
+            "type": "number",
+            "example": 2
+          },
+          "model": {
+            "type": "string",
+            "example": "claude-haiku-5-5"
+          },
+          "judgeModel": {
+            "type": "string",
+            "example": "claude-sonnet-5-5"
+          },
+          "effort": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "nullable": true,
+            "description": "null: the provider's default.",
+            "example": null
+          },
+          "dryRun": {
+            "type": "boolean",
+            "description": "A fake-provider dry run: its numbers mean nothing."
+          },
+          "lessonCount": {
+            "type": "number",
+            "example": 10
+          },
+          "lessonsFailed": {
+            "type": "number",
+            "example": 0
+          },
+          "reportFile": {
+            "type": "string",
+            "description": "The Markdown report, relative to api/.",
+            "example": "evals/results/2026-10-19T151500Z-v2.md"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "rulePassBeforeRepairRate": {
+            "type": "number",
+            "nullable": true,
+            "example": 0.9
+          },
+          "repairRate": {
+            "type": "number",
+            "nullable": true,
+            "example": 0.1
+          },
+          "quoteCopyRate": {
+            "type": "number",
+            "nullable": true,
+            "example": 0.2
+          },
+          "answerCorrectRate": {
+            "type": "number",
+            "nullable": true,
+            "example": 0.95
+          },
+          "testsUnderstandingRate": {
+            "type": "number",
+            "nullable": true,
+            "example": 0.7
+          },
+          "totalCostUsd": {
+            "type": "string",
+            "description": "USD, a decimal string.",
+            "example": "0.412300"
+          }
+        },
+        "required": [
+          "id",
+          "promptId",
+          "promptVersion",
+          "model",
+          "judgeModel",
+          "effort",
+          "dryRun",
+          "lessonCount",
+          "lessonsFailed",
+          "reportFile",
+          "createdAt",
+          "rulePassBeforeRepairRate",
+          "repairRate",
+          "quoteCopyRate",
+          "answerCorrectRate",
+          "testsUnderstandingRate",
+          "totalCostUsd"
+        ]
+      },
+      "EvalRunListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Newest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EvalRunSummaryResponse"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ComparedMetricResponse": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "quoteCopyRate"
+          },
+          "label": {
+            "type": "string",
+            "example": "Quote copy"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "rate",
+              "count",
+              "usd",
+              "ms"
+            ]
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "higher",
+              "lower",
+              "neutral"
+            ],
+            "description": "Which way is an improvement."
+          },
+          "a": {
+            "oneOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "nullable": true,
+            "description": "A number; a decimal string for USD; null when there was nothing to measure."
+          },
+          "b": {
+            "oneOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "nullable": true,
+            "description": "A number; a decimal string for USD; null when there was nothing to measure."
+          },
+          "delta": {
+            "oneOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "nullable": true,
+            "description": "b minus a; for rates, in percentage points."
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "better",
+              "worse",
+              "same",
+              "n/a"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "format",
+          "direction",
+          "a",
+          "b",
+          "delta",
+          "verdict"
+        ]
+      },
+      "EvalComparisonResponse": {
+        "type": "object",
+        "properties": {
+          "a": {
+            "$ref": "#/components/schemas/EvalRunSummaryResponse"
+          },
+          "b": {
+            "$ref": "#/components/schemas/EvalRunSummaryResponse"
+          },
+          "metrics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComparedMetricResponse"
+            }
+          }
+        },
+        "required": [
+          "a",
+          "b",
+          "metrics"
         ]
       }
     }

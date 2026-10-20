@@ -1,0 +1,1970 @@
+{
+  "run": {
+    "id": "1b4cf764-7a6d-4ee1-9636-0c897f0187e3",
+    "promptId": "quiz",
+    "promptVersion": 1,
+    "model": "claude-haiku-5-5",
+    "judgeModel": "claude-sonnet-5-5",
+    "judgePromptVersion": 1,
+    "effort": null,
+    "dryRun": false,
+    "createdAt": "2026-10-19T15:52:10.889Z"
+  },
+  "metrics": {
+    "overall": {
+      "lessons": 10,
+      "lessonsFailed": 0,
+      "schemaValidRate": 1,
+      "rulePassBeforeRepairRate": 1,
+      "repairRate": 0,
+      "sourceQuoteFoundRate": 1,
+      "duplicateStemRate": 0,
+      "quoteCopyRate": 0.2807017543859649,
+      "sharedQuoteRate": 0.03508771929824561,
+      "questionsRequested": 57,
+      "questionsSaved": 57,
+      "questionsDropped": 0,
+      "judged": 57,
+      "judgeErrors": 0,
+      "answerCorrectRate": 1,
+      "answerableFromLessonRate": 1,
+      "testsUnderstandingRate": 0.24561403508771928,
+      "generation": {
+        "calls": 10,
+        "inputTokens": 20420,
+        "outputTokens": 21447,
+        "costUsd": "0.012765",
+        "latencyMsTotal": 95264,
+        "latencyMsMax": 17816
+      },
+      "judge": {
+        "calls": 57,
+        "inputTokens": 74552,
+        "outputTokens": 8037,
+        "costUsd": "0.229474",
+        "cacheHits": 0
+      },
+      "totalCostUsd": "0.242239"
+    },
+    "lessons": [
+      {
+        "slug": "01-recursion",
+        "title": "Recursion",
+        "metrics": {
+          "lessons": 1,
+          "lessonsFailed": 0,
+          "schemaValidRate": 1,
+          "rulePassBeforeRepairRate": 1,
+          "repairRate": 0,
+          "sourceQuoteFoundRate": 1,
+          "duplicateStemRate": 0,
+          "quoteCopyRate": 0.2,
+          "sharedQuoteRate": 0,
+          "questionsRequested": 5,
+          "questionsSaved": 5,
+          "questionsDropped": 0,
+          "judged": 5,
+          "judgeErrors": 0,
+          "answerCorrectRate": 1,
+          "answerableFromLessonRate": 1,
+          "testsUnderstandingRate": 0,
+          "generation": {
+            "calls": 1,
+            "inputTokens": 1874,
+            "outputTokens": 1430,
+            "costUsd": "0.000902",
+            "latencyMsTotal": 9605,
+            "latencyMsMax": 9605
+          },
+          "judge": {
+            "calls": 5,
+            "inputTokens": 5535,
+            "outputTokens": 694,
+            "costUsd": "0.018010",
+            "cacheHits": 0
+          },
+          "totalCostUsd": "0.018912"
+        }
+      },
+      {
+        "slug": "02-binary-search",
+        "title": "Binary search",
+        "metrics": {
+          "lessons": 1,
+          "lessonsFailed": 0,
+          "schemaValidRate": 1,
+          "rulePassBeforeRepairRate": 1,
+          "repairRate": 0,
+          "sourceQuoteFoundRate": 1,
+          "duplicateStemRate": 0,
+          "quoteCopyRate": 0.3333333333333333,
+          "sharedQuoteRate": 0,
+          "questionsRequested": 6,
+          "questionsSaved": 6,
+          "questionsDropped": 0,
+          "judged": 6,
+          "judgeErrors": 0,
+          "answerCorrectRate": 1,
+          "answerableFromLessonRate": 1,
+          "testsUnderstandingRate": 0.16666666666666666,
+          "generation": {
+            "calls": 1,
+            "inputTokens": 1862,
+            "outputTokens": 2117,
+            "costUsd": "0.001245",
+            "latencyMsTotal": 8525,
+            "latencyMsMax": 8525
+          },
+          "judge": {
+            "calls": 6,
+            "inputTokens": 6642,
+            "outputTokens": 796,
+            "costUsd": "0.021244",
+            "cacheHits": 0
+          },
+          "totalCostUsd": "0.022489"
+        }
+      },
+      {
+        "slug": "03-http-caching",
+        "title": "HTTP caching",
+        "metrics": {
+          "lessons": 1,
+          "lessonsFailed": 0,
+          "schemaValidRate": 1,
+          "rulePassBeforeRepairRate": 1,
+          "repairRate": 0,
+          "sourceQuoteFoundRate": 1,
+          "duplicateStemRate": 0,
+          "quoteCopyRate": 0,
+          "sharedQuoteRate": 0.4,
+          "questionsRequested": 5,
+          "questionsSaved": 5,
+          "questionsDropped": 0,
+          "judged": 5,
+          "judgeErrors": 0,
+          "answerCorrectRate": 1,
+          "answerableFromLessonRate": 1,
+          "testsUnderstandingRate": 0.8,
+          "generation": {
+            "calls": 1,
+            "inputTokens": 1858,
+            "outputTokens": 2231,
+            "costUsd": "0.001301",
+            "latencyMsTotal": 10465,
+            "latencyMsMax": 10465
+          },
+          "judge": {
+            "calls": 5,
+            "inputTokens": 5715,
+            "outputTokens": 790,
+            "costUsd": "0.019330",
+            "cacheHits": 0
+          },
+          "totalCostUsd": "0.020631"
+        }
+      },
+      {
+        "slug": "04-photosynthesis",
+        "title": "Photosynthesis",
+        "metrics": {
+          "lessons": 1,
+          "lessonsFailed": 0,
+          "schemaValidRate": 1,
+          "rulePassBeforeRepairRate": 1,
+          "repairRate": 0,
+          "sourceQuoteFoundRate": 1,
+          "duplicateStemRate": 0,
+          "quoteCopyRate": 0.16666666666666666,
+          "sharedQuoteRate": 0,
+          "questionsRequested": 6,
+          "questionsSaved": 6,
+          "questionsDropped": 0,
+          "judged": 6,
+          "judgeErrors": 0,
+          "answerCorrectRate": 1,
+          "answerableFromLessonRate": 1,
+          "testsUnderstandingRate": 0,
+          "generation": {
+            "calls": 1,
+            "inputTokens": 2087,
+            "outputTokens": 1696,
+            "costUsd": "0.001057",
+            "latencyMsTotal": 7249,
+            "latencyMsMax": 7249
+          },
+          "judge": {
+            "calls": 6,
+            "inputTokens": 7914,
+            "outputTokens": 787,
+            "costUsd": "0.023698",
+            "cacheHits": 0
+          },
+          "totalCostUsd": "0.024755"
+        }
+      },
+      {
+        "slug": "05-plate-tectonics",
+        "title": "Plate tectonics",
+        "metrics": {
+          "lessons": 1,
+          "lessonsFailed": 0,
+          "schemaValidRate": 1,
+          "rulePassBeforeRepairRate": 1,
+          "repairRate": 0,
+          "sourceQuoteFoundRate": 1,
+          "duplicateStemRate": 0,
+          "quoteCopyRate": 0.2,
+          "sharedQuoteRate": 0,
+          "questionsRequested": 5,
+          "questionsSaved": 5,
+          "questionsDropped": 0,
+          "judged": 5,
+          "judgeErrors": 0,
+          "answerCorrectRate": 1,
+          "answerableFromLessonRate": 1,
+          "testsUnderstandingRate": 0.2,
+          "generation": {
+            "calls": 1,
+            "inputTokens": 2144,
+            "outputTokens": 1893,
+            "costUsd": "0.001161",
+            "latencyMsTotal": 7585,
+            "latencyMsMax": 7585
+          },
+          "judge": {
+            "calls": 5,
+            "inputTokens": 7047,
+            "outputTokens": 714,
+            "costUsd": "0.021234",
+            "cacheHits": 0
+          },
+          "totalCostUsd": "0.022395"
+        }
+      },
+      {
+        "slug": "06-supply-and-demand",
+        "title": "Supply and demand",
+        "metrics": {
+          "lessons": 1,
+          "lessonsFailed": 0,
+          "schemaValidRate": 1,
+          "rulePassBeforeRepairRate": 1,
+          "repairRate": 0,
+          "sourceQuoteFoundRate": 1,
+          "duplicateStemRate": 0,
+          "quoteCopyRate": 0.5714285714285714,
+          "sharedQuoteRate": 0,
+          "questionsRequested": 7,
+          "questionsSaved": 7,
+          "questionsDropped": 0,
+          "judged": 7,
+          "judgeErrors": 0,
+          "answerCorrectRate": 1,
+          "answerableFromLessonRate": 1,
+          "testsUnderstandingRate": 0.42857142857142855,
+          "generation": {
+            "calls": 1,
+            "inputTokens": 2129,
+            "outputTokens": 4118,
+            "costUsd": "0.002272",
+            "latencyMsTotal": 17816,
+            "latencyMsMax": 17816
+          },
+          "judge": {
+            "calls": 7,
+            "inputTokens": 9852,
+            "outputTokens": 1005,
+            "costUsd": "0.029754",
+            "cacheHits": 0
+          },
+          "totalCostUsd": "0.032026"
+        }
+      },
+      {
+        "slug": "07-french-revolution",
+        "title": "Causes of the French Revolution",
+        "metrics": {
+          "lessons": 1,
+          "lessonsFailed": 0,
+          "schemaValidRate": 1,
+          "rulePassBeforeRepairRate": 1,
+          "repairRate": 0,
+          "sourceQuoteFoundRate": 1,
+          "duplicateStemRate": 0,
+          "quoteCopyRate": 0.2,
+          "sharedQuoteRate": 0,
+          "questionsRequested": 5,
+          "questionsSaved": 5,
+          "questionsDropped": 0,
+          "judged": 5,
+          "judgeErrors": 0,
+          "answerCorrectRate": 1,
+          "answerableFromLessonRate": 1,
+          "testsUnderstandingRate": 0,
+          "generation": {
+            "calls": 1,
+            "inputTokens": 2132,
+            "outputTokens": 2498,
+            "costUsd": "0.001462",
+            "latencyMsTotal": 10226,
+            "latencyMsMax": 10226
+          },
+          "judge": {
+            "calls": 5,
+            "inputTokens": 7014,
+            "outputTokens": 670,
+            "costUsd": "0.020728",
+            "cacheHits": 0
+          },
+          "totalCostUsd": "0.022190"
+        }
+      },
+      {
+        "slug": "08-newtons-laws",
+        "title": "Newton's laws of motion",
+        "metrics": {
+          "lessons": 1,
+          "lessonsFailed": 0,
+          "schemaValidRate": 1,
+          "rulePassBeforeRepairRate": 1,
+          "repairRate": 0,
+          "sourceQuoteFoundRate": 1,
+          "duplicateStemRate": 0,
+          "quoteCopyRate": 0.16666666666666666,
+          "sharedQuoteRate": 0,
+          "questionsRequested": 6,
+          "questionsSaved": 6,
+          "questionsDropped": 0,
+          "judged": 6,
+          "judgeErrors": 0,
+          "answerCorrectRate": 1,
+          "answerableFromLessonRate": 1,
+          "testsUnderstandingRate": 0.6666666666666666,
+          "generation": {
+            "calls": 1,
+            "inputTokens": 2122,
+            "outputTokens": 2328,
+            "costUsd": "0.001376",
+            "latencyMsTotal": 9993,
+            "latencyMsMax": 9993
+          },
+          "judge": {
+            "calls": 6,
+            "inputTokens": 8314,
+            "outputTokens": 962,
+            "costUsd": "0.026248",
+            "cacheHits": 0
+          },
+          "totalCostUsd": "0.027624"
+        }
+      },
+      {
+        "slug": "09-immune-system",
+        "title": "The immune system",
+        "metrics": {
+          "lessons": 1,
+          "lessonsFailed": 0,
+          "schemaValidRate": 1,
+          "rulePassBeforeRepairRate": 1,
+          "repairRate": 0,
+          "sourceQuoteFoundRate": 1,
+          "duplicateStemRate": 0,
+          "quoteCopyRate": 0.25,
+          "sharedQuoteRate": 0,
+          "questionsRequested": 8,
+          "questionsSaved": 8,
+          "questionsDropped": 0,
+          "judged": 8,
+          "judgeErrors": 0,
+          "answerCorrectRate": 1,
+          "answerableFromLessonRate": 1,
+          "testsUnderstandingRate": 0.125,
+          "generation": {
+            "calls": 1,
+            "inputTokens": 2158,
+            "outputTokens": 2044,
+            "costUsd": "0.001238",
+            "latencyMsTotal": 8915,
+            "latencyMsMax": 8915
+          },
+          "judge": {
+            "calls": 8,
+            "inputTokens": 11331,
+            "outputTokens": 1120,
+            "costUsd": "0.033862",
+            "cacheHits": 0
+          },
+          "totalCostUsd": "0.035100"
+        }
+      },
+      {
+        "slug": "10-probability",
+        "title": "Basic probability",
+        "metrics": {
+          "lessons": 1,
+          "lessonsFailed": 0,
+          "schemaValidRate": 1,
+          "rulePassBeforeRepairRate": 1,
+          "repairRate": 0,
+          "sourceQuoteFoundRate": 1,
+          "duplicateStemRate": 0,
+          "quoteCopyRate": 0.75,
+          "sharedQuoteRate": 0,
+          "questionsRequested": 4,
+          "questionsSaved": 4,
+          "questionsDropped": 0,
+          "judged": 4,
+          "judgeErrors": 0,
+          "answerCorrectRate": 1,
+          "answerableFromLessonRate": 1,
+          "testsUnderstandingRate": 0,
+          "generation": {
+            "calls": 1,
+            "inputTokens": 2054,
+            "outputTokens": 1092,
+            "costUsd": "0.000751",
+            "latencyMsTotal": 4885,
+            "latencyMsMax": 4885
+          },
+          "judge": {
+            "calls": 4,
+            "inputTokens": 5188,
+            "outputTokens": 499,
+            "costUsd": "0.015366",
+            "cacheHits": 0
+          },
+          "totalCostUsd": "0.016117"
+        }
+      }
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "01-recursion",
+      "title": "Recursion",
+      "count": 5,
+      "difficulty": "easy",
+      "status": "ok",
+      "firstAnswer": {
+        "schemaValid": true,
+        "rulesPassed": true,
+        "questions": 5,
+        "sourceQuoteFound": 5,
+        "duplicateStems": 0
+      },
+      "repaired": false,
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "stem": "What does every recursive function need?",
+          "options": [
+            "A base case",
+            "A loop counter",
+            "A global variable",
+            "A return type declaration"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson states that every recursive function needs a base case, a condition where the function returns a result without calling itself.",
+          "sourceQuote": "Every recursive function needs a base case, which is a condition where the function returns a result without calling itself.",
+          "number": 1,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "Weakest point: the lesson says almost verbatim 'Every recursive function needs a base case', so a student can match 'every recursive function' and 'need' to that sentence without understanding it. The answer A is correct and the only correct option, and the lesson supports it."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "What happens to a recursive function that has no base case?",
+          "options": [
+            "It returns 0 immediately",
+            "It calls itself forever",
+            "It returns the factorial of n",
+            "It stores its results in a tree"
+          ],
+          "correctIndex": 1,
+          "explanation": "The lesson says that without a base case, the function would call itself forever.",
+          "sourceQuote": "Without a base case, the function would call itself forever.",
+          "number": 2,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The question's wording closely mirrors the lesson sentence 'Without a base case, the function would call itself forever,' so a student could match it without real understanding. The answer B is correct and the only valid option, and the distractors are clearly wrong. The question is answerable from the lesson, but it only tests direct recall of that sentence."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "In the factorial example, what does the function return when n is 0?",
+          "options": [
+            "0",
+            "1",
+            "n",
+            "n minus 1"
+          ],
+          "correctIndex": 1,
+          "explanation": "The lesson says the factorial function returns 1 when n is 0; otherwise it returns n multiplied by the factorial of n minus 1.",
+          "sourceQuote": "a function that computes the factorial of n returns 1 when n is 0",
+          "number": 3,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The weakest point is that the question only needs direct recall: the lesson says the factorial function 'returns 1 when n is 0', and the question repeats that wording almost exactly, so a student can match it without understanding base cases. The marked answer B is correct, it is the only correct option, and the lesson fully supports it."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "If recursion goes too deep, the call stack can run out of space and cause a stack overflow error.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson explains that when recursion goes too deep, the call stack runs out of space and the program fails with a stack overflow error.",
+          "sourceQuote": "If the recursion goes too deep, the call stack runs out of space and the program fails with a stack overflow error.",
+          "number": 4,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The weakest point is that the question restates the lesson's sentence almost word for word as a true/false statement, so a student can answer by matching wording without understanding. The marked answer A (True) is correct and the only correct option, and the lesson supports it directly."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "Recursion is always faster and uses less memory than a loop.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 1,
+          "explanation": "The lesson says a loop is often faster and uses less memory than recursion, so recursion is not always faster or lighter.",
+          "sourceQuote": "A loop is often faster and uses less memory",
+          "number": 5,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The marked answer B (False) is correct: the lesson says a loop is often faster and uses less memory than recursion, so recursion is not always faster or lighter. However, the weakest point is that the question is a true/false claim that directly reverses a sentence in the lesson, so a student could answer by matching words ('faster', 'less memory', 'loop') without understanding recursion."
+          }
+        }
+      ],
+      "generation": {
+        "calls": 1,
+        "inputTokens": 1874,
+        "outputTokens": 1430,
+        "costUsd": "0.000902",
+        "latencyMs": 9605
+      },
+      "judge": {
+        "calls": 5,
+        "inputTokens": 5535,
+        "outputTokens": 694,
+        "costUsd": "0.018010",
+        "cacheHits": 0
+      }
+    },
+    {
+      "slug": "02-binary-search",
+      "title": "Binary search",
+      "count": 6,
+      "difficulty": "medium",
+      "status": "ok",
+      "firstAnswer": {
+        "schemaValid": true,
+        "rulesPassed": true,
+        "questions": 6,
+        "sourceQuoteFound": 6,
+        "duplicateStems": 0
+      },
+      "repaired": false,
+      "questions": [
+        {
+          "type": "true_false",
+          "stem": "Binary search can be applied directly to an unsorted list without sorting it first.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 1,
+          "explanation": "The lesson says the list must be sorted first and binary search does not work on unsorted data.",
+          "sourceQuote": "The list must be sorted first; binary search does not work on unsorted data.",
+          "number": 1,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The answer B (False) is correct and answerable, since the lesson says the list must be sorted first. However, the question closely restates the lesson sentence 'binary search does not work on unsorted data', so a student could answer it by matching wording without real understanding."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "A sorted list is being searched for the value 10, and the middle element is 25. Where does the search continue?",
+          "options": [
+            "In the left half",
+            "In the right half",
+            "The search is done because the target was found",
+            "The whole list is discarded"
+          ],
+          "correctIndex": 0,
+          "explanation": "Since 10 is smaller than the middle element 25, the lesson says the search continues in the left half.",
+          "sourceQuote": "If the target is smaller, the search continues in the left half; if it is larger, the search continues in the right half.",
+          "number": 2,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": true,
+            "reason": "Since 10 is smaller than the middle element 25, the lesson says the search continues in the left half, so A is correct and the other options are wrong. The question uses a concrete example and requires applying the rule rather than copying a sentence, though it is a fairly easy application of one rule."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "Why does binary search take about log2(n) steps for a list of n elements?",
+          "options": [
+            "Each step discards half of the remaining elements",
+            "Each step doubles the size of the list",
+            "Each step checks every element once",
+            "Each step sorts the list again"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson explains that each step discards half of the remaining elements, which produces roughly log2(n) steps.",
+          "sourceQuote": "Because each step discards half of the remaining elements, binary search takes about log2(n) steps for a list of n elements.",
+          "number": 3,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The weakest point is that the correct option A nearly copies the lesson's sentence 'each step discards half of the remaining elements', so a student can match wording without understanding why halving gives log2(n). The answer itself is correct and unique, since B, C and D contradict the lesson, and the question is answerable from the lesson."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "On large sorted lists, linear search is faster than binary search.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 1,
+          "explanation": "The lesson states that binary search is much faster on large sorted lists, so linear search is not faster there.",
+          "sourceQuote": "binary search is much faster on large sorted lists.",
+          "number": 4,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The weakest point is that the question only negates the lesson's closing sentence ('binary search is much faster on large sorted lists'), so a student can answer by matching words without understanding. The marked answer B (False) is correct and the only correct option, and the lesson fully supports it."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "According to the lesson, about how many comparisons at most does binary search need to search a sorted list of one million elements?",
+          "options": [
+            "About 20",
+            "About 1,000",
+            "About 500,000",
+            "About 1,000,000"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson says searching a sorted list of one million elements takes at most about 20 comparisons.",
+          "sourceQuote": "Searching a sorted list of one million elements takes at most about 20 comparisons.",
+          "number": 5,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The weakest point is that the question nearly copies the lesson sentence ('sorted list of one million elements takes at most about 20 comparisons'), so a student can answer by matching wording without understanding halving or log2(n). The answer A is correct and is the only correct option, and the lesson states it directly."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "In the worst case, how many comparisons may linear search need on a list of n elements?",
+          "options": [
+            "n",
+            "log2(n)",
+            "n/2",
+            "1"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson says linear search checks elements one by one and may need n comparisons.",
+          "sourceQuote": "By contrast, linear search checks the elements one by one and may need n comparisons.",
+          "number": 6,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The answer A (n) is correct and is the only correct option; the lesson says linear search 'may need n comparisons'. The weakest point is that a student can answer by matching 'linear search' and 'n comparisons' to that sentence, without needing to understand the algorithms, so the question only checks recall."
+          }
+        }
+      ],
+      "generation": {
+        "calls": 1,
+        "inputTokens": 1862,
+        "outputTokens": 2117,
+        "costUsd": "0.001245",
+        "latencyMs": 8525
+      },
+      "judge": {
+        "calls": 6,
+        "inputTokens": 6642,
+        "outputTokens": 796,
+        "costUsd": "0.021244",
+        "cacheHits": 0
+      }
+    },
+    {
+      "slug": "03-http-caching",
+      "title": "HTTP caching",
+      "count": 5,
+      "difficulty": "hard",
+      "status": "ok",
+      "firstAnswer": {
+        "schemaValid": true,
+        "rulesPassed": true,
+        "questions": 5,
+        "sourceQuoteFound": 5,
+        "duplicateStems": 0
+      },
+      "repaired": false,
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "stem": "A server sends a response with max-age=60. Thirty seconds later the user loads the same page. What does the browser do?",
+          "options": [
+            "Sends a request to the server and downloads the page again",
+            "Sends an If-None-Match header to the server before showing the page",
+            "Uses its cached copy without contacting the server",
+            "Discards the cached copy and waits for a new ETag"
+          ],
+          "correctIndex": 2,
+          "explanation": "After 30 seconds the response is still fresh because max-age is 60 seconds, so the browser uses its cached copy without contacting the server.",
+          "sourceQuote": "While a response is fresh, the browser uses its cached copy without contacting the server.",
+          "number": 1,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": true,
+            "reason": "Option C is correct and the only correct one: at 30 seconds the response is still fresh (max-age=60), so the browser uses the cached copy without contacting the server. A and B describe behavior that applies only after staleness, and D is not described in the lesson. The question requires applying max-age to a concrete timing scenario rather than matching a sentence, though the lesson's phrasing is close to option C, which makes it a fairly easy application."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "A response marked no-store can still be revalidated later with an If-None-Match header and reused after a 304 reply.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 1,
+          "explanation": "The no-store directive tells the browser not to keep a copy at all, so there is no stored copy to revalidate or reuse.",
+          "sourceQuote": "The no-store directive tells the browser not to keep a copy at all, which suits sensitive data such as bank statements.",
+          "number": 2,
+          "quoteCopy": false,
+          "sharedQuote": true,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": true,
+            "reason": "The lesson says no-store means the browser keeps no copy at all, so there is nothing to revalidate or reuse after a 304; B (False) is correct and A is not. The question needs the student to connect no-store with the revalidation process, which the lesson never links directly, so it requires inference rather than sentence matching."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "A browser revalidates a stale response using its ETag, and the content has not changed. Which outcome follows from the lesson?",
+          "options": [
+            "The server sends the full page again, and the browser replaces its copy",
+            "The server replies 304 Not Modified with an empty body, and the browser keeps using its copy",
+            "The browser deletes its copy and requests the page from a different server",
+            "The browser shows the page without checking whether it changed"
+          ],
+          "correctIndex": 1,
+          "explanation": "When content is unchanged, the server replies 304 Not Modified with an empty body, and the browser keeps using its existing copy.",
+          "sourceQuote": "If the content has not changed, the server replies with 304 Not Modified and an empty body, and the browser keeps using its copy.",
+          "number": 3,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "Option B is correct and the only option matching the lesson. However, the weakest point is that B nearly restates the lesson's last sentence (304 Not Modified, empty body, browser keeps its copy), so a student could match the wording without understanding revalidation."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "The browser revalidates a response while that response is still fresh, by sending its ETag in an If-None-Match header.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 1,
+          "explanation": "The lesson says revalidation happens when a cached response becomes stale, not while it is still fresh.",
+          "sourceQuote": "When a cached response becomes stale, the browser can revalidate it.",
+          "number": 4,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": true,
+            "reason": "The lesson says a fresh response is used from cache without contacting the server, and revalidation happens only once the response is stale, so the statement is false and B is correct. The student must grasp the fresh-versus-stale distinction rather than match a phrase, since the question swaps 'stale' for 'fresh'. The weakest point is that this is a fairly simple true/false item, but it still tests understanding."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "A website wants public pages to load quickly from the browser cache, but bank statements must never be kept on the user's device. Which setup best meets both goals?",
+          "options": [
+            "Use no-store on public pages and max-age on bank statements",
+            "Use max-age on public pages and no-store on bank statements",
+            "Use max-age on both, so the browser never contacts the server",
+            "Use no-store on both, so the browser revalidates every page with an ETag"
+          ],
+          "correctIndex": 1,
+          "explanation": "Max-age lets the browser reuse public pages while they are fresh, and no-store stops the browser from keeping a copy of sensitive bank statements.",
+          "sourceQuote": "The no-store directive tells the browser not to keep a copy at all, which suits sensitive data such as bank statements.",
+          "number": 5,
+          "quoteCopy": false,
+          "sharedQuote": true,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": true,
+            "reason": "B is correct and the only option meeting both goals: max-age keeps public pages fresh in cache, and no-store suits sensitive data like bank statements. A reverses the directives, C would cache bank statements, and D misuses no-store since it keeps no copy to revalidate. The question is a scenario application that needs understanding of both directives rather than matching a sentence, though the lesson's bank statement example makes it fairly easy."
+          }
+        }
+      ],
+      "generation": {
+        "calls": 1,
+        "inputTokens": 1858,
+        "outputTokens": 2231,
+        "costUsd": "0.001301",
+        "latencyMs": 10465
+      },
+      "judge": {
+        "calls": 5,
+        "inputTokens": 5715,
+        "outputTokens": 790,
+        "costUsd": "0.019330",
+        "cacheHits": 0
+      }
+    },
+    {
+      "slug": "04-photosynthesis",
+      "title": "Photosynthesis",
+      "count": 6,
+      "difficulty": "easy",
+      "status": "ok",
+      "firstAnswer": {
+        "schemaValid": true,
+        "rulesPassed": true,
+        "questions": 6,
+        "sourceQuoteFound": 6,
+        "duplicateStems": 0
+      },
+      "repaired": false,
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "stem": "Where does photosynthesis take place mainly in a plant?",
+          "options": [
+            "roots",
+            "stems",
+            "leaves",
+            "flowers"
+          ],
+          "correctIndex": 2,
+          "explanation": "The lesson says photosynthesis takes place mainly in the leaves, inside chloroplasts.",
+          "sourceQuote": "It takes place mainly in the leaves, inside small structures called chloroplasts.",
+          "number": 1,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The answer 'leaves' is correct and the only right option, and the lesson states it directly. However, the question nearly copies the lesson's sentence ('takes place mainly in the leaves'), so a student can answer by matching words without understanding the process."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "What is the name of the green pigment found in chloroplasts?",
+          "options": [
+            "glucose",
+            "chlorophyll",
+            "starch",
+            "cellulose"
+          ],
+          "correctIndex": 1,
+          "explanation": "The lesson states that chloroplasts contain a green pigment called chlorophyll.",
+          "sourceQuote": "Chloroplasts contain a green pigment called chlorophyll.",
+          "number": 2,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The answer B (chlorophyll) is correct and the only pigment among the options, and the lesson states it directly. However, the question nearly copies the lesson's sentence ('green pigment called chlorophyll'), so a student could match the wording without understanding; the distractors are also sugars/carbohydrates, not pigments."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "Oxygen is released as a by-product of photosynthesis.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson says oxygen is released as a by-product and leaves the plant through the stomata.",
+          "sourceQuote": "Oxygen is released as a by-product and leaves the plant through the stomata.",
+          "number": 3,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The weakest point is that the statement copies the lesson's sentence almost word for word (\"Oxygen is released as a by-product\"), so a student can answer True by matching wording without understanding. The marked answer A (True) is correct and the only correct option, and the lesson supports it."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "Which gas does the plant take in from the air through stomata?",
+          "options": [
+            "oxygen",
+            "nitrogen",
+            "methane",
+            "carbon dioxide"
+          ],
+          "correctIndex": 3,
+          "explanation": "The lesson says the plant takes in carbon dioxide from the air through tiny pores called stomata.",
+          "sourceQuote": "The plant takes in carbon dioxide from the air through tiny pores on its leaves called stomata",
+          "number": 4,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The lesson states directly that the plant takes in carbon dioxide through stomata, so D is correct and the only correct option. However, the question mirrors that sentence almost word for word, so a student could answer by matching words without understanding the process."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "Which substance does the plant link glucose molecules into to store energy?",
+          "options": [
+            "cellulose",
+            "chlorophyll",
+            "starch",
+            "oxygen"
+          ],
+          "correctIndex": 2,
+          "explanation": "The lesson says glucose molecules can be linked together into starch to store energy.",
+          "sourceQuote": "It can link many glucose molecules together into starch to store energy",
+          "number": 5,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The weakest point is that the question closely mirrors the lesson sentence ('link many glucose molecules together into starch to store energy'), so a student can match the wording without understanding. Answer C is correct and the only valid option, since cellulose is for cell walls, and the lesson covers all of this."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "Leaves look green because chlorophyll absorbs green light.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 1,
+          "explanation": "The lesson says chlorophyll absorbs mostly red and blue light and reflects green light, which is why leaves look green.",
+          "sourceQuote": "Chlorophyll absorbs mostly red and blue light and reflects green light",
+          "number": 6,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "Marked answer B (False) is correct, since the lesson says chlorophyll reflects green light and absorbs mostly red and blue. The weakest point is that the statement is a near-verbatim reversal of one lesson sentence, so a student can answer by matching it to that sentence without needing to understand the process."
+          }
+        }
+      ],
+      "generation": {
+        "calls": 1,
+        "inputTokens": 2087,
+        "outputTokens": 1696,
+        "costUsd": "0.001057",
+        "latencyMs": 7249
+      },
+      "judge": {
+        "calls": 6,
+        "inputTokens": 7914,
+        "outputTokens": 787,
+        "costUsd": "0.023698",
+        "cacheHits": 0
+      }
+    },
+    {
+      "slug": "05-plate-tectonics",
+      "title": "Plate tectonics",
+      "count": 5,
+      "difficulty": "medium",
+      "status": "ok",
+      "firstAnswer": {
+        "schemaValid": true,
+        "rulesPassed": true,
+        "questions": 5,
+        "sourceQuoteFound": 5,
+        "duplicateStems": 0
+      },
+      "repaired": false,
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "stem": "What happens at a divergent boundary?",
+          "options": [
+            "Molten rock rises to fill the gap and cools into new crust",
+            "Crust is destroyed as one plate sinks under another",
+            "Plates slide past each other without causing earthquakes",
+            "Continental plates crumple into mountain ranges"
+          ],
+          "correctIndex": 0,
+          "explanation": "At a divergent boundary the plates move apart, and molten rock rises from below to fill the gap and cools into new crust.",
+          "sourceQuote": "Molten rock rises from below to fill the gap and cools into new crust.",
+          "number": 1,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "Option A is correct and the only correct option, and the lesson supports it. However, the question is nearly a verbatim match to the lesson sentence ('Molten rock rises from below to fill the gap and cools into new crust'), so a student could answer by word matching without understanding the boundaries."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "Subduction happens when the denser ocean plate sinks beneath a continental plate at a convergent boundary.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson says that when an ocean plate meets a continental plate, the denser ocean plate sinks beneath the other one in a process called subduction.",
+          "sourceQuote": "the denser ocean plate sinks beneath the other one in a process called subduction",
+          "number": 2,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The statement closely paraphrases the lesson's sentence about ocean-continental convergence and subduction, so the marked answer 'True' is correct and answerable. However, a student could answer by matching words to that sentence without understanding, and the true/false format makes it a low-effort recall check."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "Which process explains how the Himalayas were formed?",
+          "options": [
+            "An ocean plate sinking beneath a continental plate",
+            "Two continental plates colliding, which pushes the crust up",
+            "Two plates sliding sideways and slipping suddenly",
+            "Molten rock filling a gap between separating plates"
+          ],
+          "correctIndex": 1,
+          "explanation": "When two continental plates collide, neither sinks easily, so the crust crumples and is pushed up into high mountain ranges such as the Himalayas.",
+          "sourceQuote": "When two continental plates collide, neither sinks easily, so the crust crumples and is pushed up into high mountain ranges such as the Himalayas.",
+          "number": 3,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": true,
+            "reason": "The lesson says the Himalayas formed where two continental plates collided and crumpled upward, so B is correct and the other options describe subduction, transform and divergent boundaries. The weakest point is that the question is close to a direct recall of one sentence, but the options are paraphrased and the student must tell the three boundary types apart, so it still tests understanding."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "New crust is created at transform boundaries where plates slide past each other.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 1,
+          "explanation": "The lesson states that crust is neither created nor destroyed at transform boundaries; the plates slide past each other and can cause earthquakes instead.",
+          "sourceQuote": "Crust is neither created nor destroyed there",
+          "number": 4,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The marked answer B (False) is correct, since the lesson says crust is neither created nor destroyed at transform boundaries. However, the weakest point is that a student can match the statement against the lesson sentence 'Crust is neither created nor destroyed there' without real understanding, and the true/false format makes guessing easy."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "Why do places far from any plate boundary usually have few earthquakes?",
+          "options": [
+            "Their rock is hotter and softer than elsewhere",
+            "The plates in those places move faster than average",
+            "Earthquakes only occur at divergent boundaries",
+            "Most earthquakes and volcanoes happen where plates interact, which is near boundaries"
+          ],
+          "correctIndex": 3,
+          "explanation": "The lesson says most earthquakes and volcanoes happen near plate boundaries because that is where plates interact, so places far from boundaries usually have few.",
+          "sourceQuote": "Most earthquakes and volcanoes happen near plate boundaries, because that is where plates interact.",
+          "number": 5,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "Option D is correct and the only correct option, and the lesson supports it. However, the correct option nearly copies the lesson sentence ('Most earthquakes and volcanoes happen near plate boundaries, because that is where plates interact'), so a student could match wording without understanding; the distractors are also clearly wrong and easy to dismiss."
+          }
+        }
+      ],
+      "generation": {
+        "calls": 1,
+        "inputTokens": 2144,
+        "outputTokens": 1893,
+        "costUsd": "0.001161",
+        "latencyMs": 7585
+      },
+      "judge": {
+        "calls": 5,
+        "inputTokens": 7047,
+        "outputTokens": 714,
+        "costUsd": "0.021234",
+        "cacheHits": 0
+      }
+    },
+    {
+      "slug": "06-supply-and-demand",
+      "title": "Supply and demand",
+      "count": 7,
+      "difficulty": "hard",
+      "status": "ok",
+      "firstAnswer": {
+        "schemaValid": true,
+        "rulesPassed": true,
+        "questions": 7,
+        "sourceQuoteFound": 7,
+        "duplicateStems": 0
+      },
+      "repaired": false,
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "stem": "If demand increases and supply stays the same, what happens to the equilibrium price and the quantity sold?",
+          "options": [
+            "Both the price and the quantity sold rise",
+            "The price falls and the quantity sold rises",
+            "The price rises and the quantity sold falls",
+            "Both the price and the quantity sold fall"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson states that when demand increases and supply stays the same, both the equilibrium price and the quantity sold rise.",
+          "sourceQuote": "When demand increases and supply stays the same, both the equilibrium price and the quantity sold rise.",
+          "number": 1,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The answer A is correct and is the only correct option, and the lesson states it directly. However, the question nearly copies the lesson's sentence ('demand increases and supply stays the same'), so a student could match the wording without understanding supply and demand."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "If the price is above equilibrium, buyers want more than sellers offer, so prices rise.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 1,
+          "explanation": "Above equilibrium, sellers offer more than buyers want, creating a surplus, so sellers lower prices. The statement describes the shortage case, which happens below equilibrium.",
+          "sourceQuote": "If the price is above equilibrium, sellers offer more than buyers want, which creates a surplus, and sellers lower their prices to sell their stock.",
+          "number": 2,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The marked answer B (False) is correct: above equilibrium sellers offer more than buyers want, creating a surplus and falling prices, so the statement reverses the lesson. The weakest point is that the statement is a near-verbatim swap of the lesson's sentence on shortage, so a student could answer by matching wording without understanding the mechanism."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "If the price of coffee rises, buyers want more tea. Which best explains this using the lesson's ideas?",
+          "options": [
+            "The demand curve for tea shifts because the price of a related good changed",
+            "The supply curve for tea shifts because production costs changed",
+            "Tea buyers move along their existing demand curve because of a price change in tea",
+            "Tea sellers move along their existing supply curve because coffee became more profitable"
+          ],
+          "correctIndex": 0,
+          "explanation": "Demand shifts when the prices of related goods change. Tea is a substitute for coffee, so a rise in coffee's price increases demand for tea, shifting the whole curve.",
+          "sourceQuote": "if the price of coffee rises, demand for tea, a substitute, increases",
+          "number": 3,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": true,
+            "reason": "Weakest point: the scenario closely mirrors the lesson's coffee/tea example, so some recall is possible, but the student must still tell a curve shift from movement along a curve and demand from supply. A is correct (the price of a related good shifts the tea demand curve), and B, C and D each misidentify the mechanism, so A is the only correct option."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "Demand for basic medicines is elastic because buyers keep buying even when the price rises.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 1,
+          "explanation": "The lesson says demand for goods with few substitutes, such as basic medicines, is inelastic. The elastic case applies to goods with many substitutes.",
+          "sourceQuote": "Demand for goods with few substitutes, such as basic medicines, is inelastic: buyers keep buying even when the price rises.",
+          "number": 4,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The marked answer B (False) is correct: the lesson says demand for basic medicines is inelastic, not elastic. However, the statement is a near-copy of the lesson sentence with one word swapped, so a student could answer by matching wording and spotting 'elastic' vs 'inelastic' without deeper understanding of elasticity."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "A new technology lowers production costs and more sellers enter the market, while demand stays the same. What happens to the equilibrium price and the quantity sold?",
+          "options": [
+            "The price rises and the quantity sold falls",
+            "The price rises and the quantity sold rises",
+            "The price falls and the quantity sold falls",
+            "The price falls and the quantity sold rises"
+          ],
+          "correctIndex": 3,
+          "explanation": "Lower costs and more sellers mean supply increases. With demand unchanged, the lesson says the equilibrium price falls and the quantity sold rises.",
+          "sourceQuote": "When supply increases and demand stays the same, the equilibrium price falls and the quantity sold rises.",
+          "number": 5,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": true,
+            "reason": "Technology and more sellers are supply-shift factors named in the lesson, so supply increases with demand unchanged, giving a lower price and higher quantity (D); no other option fits. The question applies the lesson's rule to a new scenario with different wording, so it requires understanding rather than sentence matching, though it is fairly easy."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "The price of a good falls, and buyers want more of it while nothing else changes. Which best describes this change?",
+          "options": [
+            "The demand curve shifts to the right",
+            "The supply curve shifts to the left",
+            "Buyers move along their existing demand curve",
+            "The equilibrium price stays the same"
+          ],
+          "correctIndex": 2,
+          "explanation": "A change in price moves buyers along their existing demand curve. Only changes other than price, such as income or tastes, shift the whole curve.",
+          "sourceQuote": "A change in price moves buyers and sellers along their existing demand and supply curves.",
+          "number": 6,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": true,
+            "reason": "The lesson says a change in price moves buyers along the existing demand curve, while other factors shift the curve, so C is correct and A, B and D do not fit. The student must tell a movement along the curve from a shift, and the question's wording differs from the lesson's, so it can't be answered by matching phrases alone."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "The price of a good is set below its equilibrium. What happens next according to the lesson?",
+          "options": [
+            "Buyers want more than is offered, so prices rise",
+            "Sellers offer more than buyers want, so prices fall",
+            "Buyers want less than is offered, so prices fall",
+            "Sellers reduce supply, so the surplus grows"
+          ],
+          "correctIndex": 0,
+          "explanation": "Below equilibrium, buyers want more than is offered, which creates a shortage, and prices rise.",
+          "sourceQuote": "If the price is below equilibrium, buyers want more than is offered, which creates a shortage, and prices rise.",
+          "number": 7,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The marked answer A is correct and is the only correct option, and the lesson covers it directly. But the question is a near-verbatim match to the lesson sentence ('below equilibrium, buyers want more than is offered... prices rise'), so a student could match wording without understanding. The distractors are simple inversions of that sentence."
+          }
+        }
+      ],
+      "generation": {
+        "calls": 1,
+        "inputTokens": 2129,
+        "outputTokens": 4118,
+        "costUsd": "0.002272",
+        "latencyMs": 17816
+      },
+      "judge": {
+        "calls": 7,
+        "inputTokens": 9852,
+        "outputTokens": 1005,
+        "costUsd": "0.029754",
+        "cacheHits": 0
+      }
+    },
+    {
+      "slug": "07-french-revolution",
+      "title": "Causes of the French Revolution",
+      "count": 5,
+      "difficulty": "medium",
+      "status": "ok",
+      "firstAnswer": {
+        "schemaValid": true,
+        "rulesPassed": true,
+        "questions": 5,
+        "sourceQuoteFound": 5,
+        "duplicateStems": 0
+      },
+      "repaired": false,
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "stem": "Why did the Third Estate object to voting by estate at the Estates-General?",
+          "options": [
+            "Because the first two estates could always outvote the Third Estate",
+            "Because the Third Estate paid no taxes",
+            "Because the king had no vote at all",
+            "Because the nobility wanted voting by head"
+          ],
+          "correctIndex": 0,
+          "explanation": "Each estate had one vote, so the clergy and nobility together could always outvote the Third Estate.",
+          "sourceQuote": "Each estate had one vote, so the first two estates could always outvote the Third Estate.",
+          "number": 1,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "Option A is correct and the only one consistent with the lesson (B is false since the Third Estate bore the tax burden; C and D are unsupported). However, the question is answerable by matching 'each estate had one vote, so the first two estates could always outvote the Third Estate' almost verbatim, so it needs little understanding."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "Why did bad harvests in 1788 cause such anger among the poor?",
+          "options": [
+            "They raised bread prices, and families spent most of their income on bread",
+            "They ended the king's court spending",
+            "They lowered taxes on the nobility",
+            "They closed the Bastille prison"
+          ],
+          "correctIndex": 0,
+          "explanation": "Bread was the main food of the poor and became very expensive, so many families spent most of their income on it and grew angry at the government.",
+          "sourceQuote": "Many families spent most of their income on bread, and hunger made people angry with the government.",
+          "number": 2,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "Weakest point: the correct option closely copies the lesson's wording (bread expensive, families spent most income on bread), and the distractors are clearly unrelated, so a student could match words without understanding. The marked answer A is correct and the only valid option, and the lesson supports it fully."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "The tax burden fell mainly on the Third Estate because the first two estates paid almost no taxes.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson states that the first two estates paid almost no taxes, so the tax burden fell on the Third Estate.",
+          "sourceQuote": "The first two estates paid almost no taxes, so the tax burden fell on the Third Estate.",
+          "number": 3,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "Weakest point: the statement nearly copies the lesson sentence ('The first two estates paid almost no taxes, so the tax burden fell on the Third Estate'), so a student can answer by matching words without understanding. The marked answer 'True' is correct and answerable from the lesson."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "According to Enlightenment writers such as Rousseau and Montesquieu, what should be true of power?",
+          "options": [
+            "It should come from the people and be limited by laws",
+            "It should belong to the clergy alone",
+            "It should be absolute and held by the king",
+            "It should be inherited by the nobility"
+          ],
+          "correctIndex": 0,
+          "explanation": "These writers argued that power should come from the people and that government should be limited by laws, which challenged the king's absolute power.",
+          "sourceQuote": "argued that power should come from the people and that government should be limited by laws",
+          "number": 4,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "Option A is correct and the only one consistent with the lesson, and the lesson states it directly. However, the question nearly copies the lesson sentence ('power should come from the people and... government should be limited by laws'), so a student could match the wording without understanding; the distractors are also implausible."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "Which combination best explains why the French government was deep in debt by the 1780s?",
+          "options": [
+            "Heavy spending on wars and an expensive royal court",
+            "Large payments to the Third Estate",
+            "Unpaid taxes from rich merchants only",
+            "Building the Bastille prison"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson says the government spent heavily on wars, including support for the American War of Independence, and the royal court was expensive to run.",
+          "sourceQuote": "It had spent heavily on wars, including its support for the American War of Independence, and the court of King Louis XVI was expensive to run.",
+          "number": 5,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The weakest point is that the correct option nearly copies the lesson's sentence about heavy spending on wars and the expensive court, so a student could match the wording without understanding. The answer A is correct and is the only option the lesson supports, and the distractors are clearly unsupported."
+          }
+        }
+      ],
+      "generation": {
+        "calls": 1,
+        "inputTokens": 2132,
+        "outputTokens": 2498,
+        "costUsd": "0.001462",
+        "latencyMs": 10226
+      },
+      "judge": {
+        "calls": 5,
+        "inputTokens": 7014,
+        "outputTokens": 670,
+        "costUsd": "0.020728",
+        "cacheHits": 0
+      }
+    },
+    {
+      "slug": "08-newtons-laws",
+      "title": "Newton's laws of motion",
+      "count": 6,
+      "difficulty": "hard",
+      "status": "ok",
+      "firstAnswer": {
+        "schemaValid": true,
+        "rulesPassed": true,
+        "questions": 6,
+        "sourceQuoteFound": 6,
+        "duplicateStems": 0
+      },
+      "repaired": false,
+      "questions": [
+        {
+          "type": "true_false",
+          "stem": "Two people pushing a box with equal force in opposite directions will make the box accelerate.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 1,
+          "explanation": "The lesson says the net force is zero in this case, so the box does not accelerate.",
+          "sourceQuote": "If two people push a box with equal force in opposite directions, the net force is zero and the box does not accelerate.",
+          "number": 1,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The weakest point is that the question nearly copies the lesson's box example (equal force, opposite directions, no acceleration), so a student can answer by matching wording and negating it without understanding net force. The marked answer B (False) is correct and the only correct option, and the lesson fully supports it."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "If an object's force is doubled and its mass is doubled at the same time, how does its acceleration change?",
+          "options": [
+            "It stays the same",
+            "It doubles",
+            "It is halved",
+            "It quadruples"
+          ],
+          "correctIndex": 0,
+          "explanation": "Acceleration equals force divided by mass, so doubling both leaves the ratio unchanged.",
+          "sourceQuote": "The second law says that the acceleration of an object is equal to the net force on it divided by its mass.",
+          "number": 2,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": true,
+            "reason": "By F = m × a, a = F/m, so doubling both force and mass leaves acceleration unchanged; A is correct and the others are wrong. The lesson states that doubling force doubles acceleration and doubling mass halves it, so the student can combine the two effects. The question is not a direct sentence match, since it requires combining both relationships.}"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "A swimmer pushes water backwards and the water pushes the swimmer forwards with an equal force. Why does this push not cancel out to zero?",
+          "options": [
+            "The two forces act on different objects",
+            "The water is moving more slowly than the swimmer",
+            "The swimmer's force is larger than the water's",
+            "Friction removes the water's force"
+          ],
+          "correctIndex": 0,
+          "explanation": "The third law forces act on different objects, so they do not cancel each other out.",
+          "sourceQuote": "The two forces act on different objects, so they do not cancel each other out.",
+          "number": 3,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The answer A is correct and unique, and the lesson supports it. However, the lesson says nearly verbatim 'The two forces act on different objects, so they do not cancel each other out,' using the same swimmer example, so a student could match wording without understanding. The distractors are also clearly wrong (the forces are stated to be equal), which further reduces the demand for understanding."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "A ball rolling on grass stops because moving objects naturally slow down when no force acts on them.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 1,
+          "explanation": "The lesson says friction causes the ball to stop, and by the first law the ball would keep moving without friction.",
+          "sourceQuote": "It is the reason a ball rolling on grass eventually stops, which can make it look as if moving objects naturally slow down, even though, by the first law, they would keep moving without it.",
+          "number": 4,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": true,
+            "reason": "The marked answer B (False) is correct: the lesson says friction stops the ball and that by the first law objects would keep moving without it, so the claim is a misconception. Weakest point: the question's wording overlaps with the lesson's phrase about objects appearing to 'naturally slow down', but the student must grasp the first law and friction to reject the claim, not just match words."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "A box is already sliding across a floor at constant speed in a straight line when two equal and opposite pushes act on it. What happens to the box?",
+          "options": [
+            "It keeps sliding at constant speed in a straight line",
+            "It slows down steadily until it stops",
+            "It speeds up in the direction of the first push",
+            "It immediately reverses direction"
+          ],
+          "correctIndex": 0,
+          "explanation": "The net force is zero, so by the first law the box keeps moving in a straight line at constant speed.",
+          "sourceQuote": "an object stays at rest, or keeps moving in a straight line at a constant speed, unless a net force acts on it.",
+          "number": 5,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": true,
+            "reason": "Two equal and opposite pushes give zero net force, so by the first law the box keeps moving at constant speed in a straight line; A is correct and the others contradict the lesson. The question mentions no friction, so the idealisation is reasonable. It is answerable from the lesson and requires combining the net force idea with the first law in a new scenario, not matching a sentence.  The weakest point is the unstated friction, but it does not create a second correct option."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "An object with a mass of 4 kilograms experiences a net force of 12 newtons. What is its acceleration?",
+          "options": [
+            "3 metres per second squared",
+            "8 metres per second squared",
+            "0.33 metres per second squared",
+            "48 metres per second squared"
+          ],
+          "correctIndex": 0,
+          "explanation": "Using F = m × a, the acceleration is 12 divided by 4, which is 3 metres per second squared.",
+          "sourceQuote": "It is often written as F = m × a.",
+          "number": 6,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": true,
+            "reason": "Using a = F/m from the lesson, 12 N / 4 kg = 3 m/s², so A is correct and the distractors (8, 0.33, 48) come from wrong operations. The lesson gives the formula but no worked numbers, so the student must apply it rather than match a sentence; the 'metres per second squared' unit is a slight extension of the lesson's 'metre per second every second' but is equivalent."
+          }
+        }
+      ],
+      "generation": {
+        "calls": 1,
+        "inputTokens": 2122,
+        "outputTokens": 2328,
+        "costUsd": "0.001376",
+        "latencyMs": 9993
+      },
+      "judge": {
+        "calls": 6,
+        "inputTokens": 8314,
+        "outputTokens": 962,
+        "costUsd": "0.026248",
+        "cacheHits": 0
+      }
+    },
+    {
+      "slug": "09-immune-system",
+      "title": "The immune system",
+      "count": 8,
+      "difficulty": "medium",
+      "status": "ok",
+      "firstAnswer": {
+        "schemaValid": true,
+        "rulesPassed": true,
+        "questions": 8,
+        "sourceQuoteFound": 8,
+        "duplicateStems": 0
+      },
+      "repaired": false,
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "stem": "Why is the adaptive immune response much faster and stronger when the same pathogen enters the body a second time?",
+          "options": [
+            "The skin becomes thinner after the first infection",
+            "Memory cells recognise the pathogen and respond quickly",
+            "Phagocytes stop engulfing microbes",
+            "Stomach acid becomes stronger"
+          ],
+          "correctIndex": 1,
+          "explanation": "After an infection, some B and T cells remain as memory cells, which recognise the same pathogen if it returns, making the response faster and stronger.",
+          "sourceQuote": "the memory cells recognise it and the adaptive response is much faster and stronger",
+          "number": 1,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The marked answer B is correct and is the only option the lesson supports, and the lesson states it directly. However, the distractors (thinner skin, phagocytes stopping, stronger stomach acid) are implausible, and the question's wording closely mirrors the lesson sentence about memory cells recognising the pathogen, so a student could match words without real understanding."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "Antibiotics can be used to kill viruses.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 1,
+          "explanation": "The lesson states that antibiotics kill bacteria or stop them growing, but they do not work against viruses.",
+          "sourceQuote": "but they do not work against viruses.",
+          "number": 2,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The weakest point is that the question closely restates the lesson's final sentence ('do not work against viruses'), so a student could match the wording without understanding. The answer B (False) is correct and the only correct option, and the lesson states it directly."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "How does a vaccine give the body immunity without the person first catching the disease?",
+          "options": [
+            "It replaces the body's white blood cells",
+            "It introduces a harmless form or part of a pathogen so memory cells form",
+            "It kills all bacteria in the bloodstream",
+            "It makes the skin block all microbes"
+          ],
+          "correctIndex": 1,
+          "explanation": "A vaccine contains a harmless form or part of a pathogen, which the immune system responds to, creating memory cells without a real infection.",
+          "sourceQuote": "The immune system responds to it and makes memory cells, without the person having to catch the disease first.",
+          "number": 3,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": true,
+            "reason": "Option B matches the lesson's account of vaccines (a harmless form or part of a pathogen leads to memory cells), and options A, C and D are clearly wrong. The weakest point is that B closely paraphrases the lesson sentence, but the distractors are plausible and the student must grasp the mechanism rather than match keywords, so it still tests understanding."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "The innate immune system responds differently to each type of invader it meets.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 1,
+          "explanation": "The lesson says the innate immune system responds the same way to every invader; it is the adaptive system that is specific to a pathogen.",
+          "sourceQuote": "it responds the same way to every invader",
+          "number": 4,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The lesson says the innate system 'responds the same way to every invader', so marking False is correct and it is the only correct option. However, the statement is a near-direct negation of a lesson sentence, so a student could answer by matching words ('same way' vs 'differently') without needing to understand the innate/adaptive distinction."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "Why does an infected area of skin become red, warm and swollen?",
+          "options": [
+            "Antibodies are destroying the skin's barrier",
+            "Damaged tissue releases chemicals that bring more blood and white blood cells to the area",
+            "The skin is blocking microbes from leaving the body",
+            "Lymphocytes are multiplying in the nose"
+          ],
+          "correctIndex": 1,
+          "explanation": "Damaged tissue releases inflammatory chemicals, and the inflamed area becomes red, warm and swollen as more blood and white blood cells arrive.",
+          "sourceQuote": "the area becomes red, warm and swollen as more blood and white blood cells arrive",
+          "number": 5,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "Option B is correct and the only one that fits the lesson, which says damaged tissue releases chemicals causing inflammation as more blood and white blood cells arrive. The weakest point is that B nearly copies the lesson sentence, so a student could match wording without understanding, and the distractors are clearly unrelated."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "Which cells find and destroy the body's own cells that have been infected?",
+          "options": [
+            "B cells",
+            "Phagocytes",
+            "Mucus cells",
+            "T cells"
+          ],
+          "correctIndex": 3,
+          "explanation": "The lesson states that T cells find and destroy the body's own cells that have been infected.",
+          "sourceQuote": "T cells find and destroy the body's own cells that have been infected.",
+          "number": 6,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The question nearly copies the lesson sentence 'T cells find and destroy the body's own cells that have been infected', so a student could match the wording without understanding. The marked answer D is correct and the only correct option, and the lesson fully supports it."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "What is the role of antibodies in the adaptive immune system?",
+          "options": [
+            "They engulf and digest whole microbes",
+            "They attach to a particular antigen and mark the pathogen for destruction",
+            "They trap microbes in mucus",
+            "They release chemicals that cause inflammation"
+          ],
+          "correctIndex": 1,
+          "explanation": "B cells make antibodies, which are proteins that attach to a particular antigen and mark the pathogen for destruction.",
+          "sourceQuote": "B cells make antibodies, which are proteins that attach to a particular antigen, a molecule on the surface of the pathogen, and mark the pathogen for destruction",
+          "number": 7,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The weakest point is that option B nearly copies the lesson's sentence on antibodies ('attach to a particular antigen... mark the pathogen for destruction'), so a student could pick it by word-matching alone. The answer is correct and the only valid option, since the other options describe phagocytes, mucus and damaged tissue, and the lesson supports it fully."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "Acid in the stomach kills many of the microbes that are swallowed.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson describes stomach acid as a barrier that kills many of the microbes that are swallowed.",
+          "sourceQuote": "acid in the stomach kills many of those that are swallowed",
+          "number": 8,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The statement copies the lesson sentence almost word for word ('acid in the stomach kills many of those that are swallowed'), so a student could answer True by matching wording without understanding. The marked answer A (True) is correct and the lesson supports it, so only the understanding criterion fails."
+          }
+        }
+      ],
+      "generation": {
+        "calls": 1,
+        "inputTokens": 2158,
+        "outputTokens": 2044,
+        "costUsd": "0.001238",
+        "latencyMs": 8915
+      },
+      "judge": {
+        "calls": 8,
+        "inputTokens": 11331,
+        "outputTokens": 1120,
+        "costUsd": "0.033862",
+        "cacheHits": 0
+      }
+    },
+    {
+      "slug": "10-probability",
+      "title": "Basic probability",
+      "count": 4,
+      "difficulty": "easy",
+      "status": "ok",
+      "firstAnswer": {
+        "schemaValid": true,
+        "rulesPassed": true,
+        "questions": 4,
+        "sourceQuoteFound": 4,
+        "duplicateStems": 0
+      },
+      "repaired": false,
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "stem": "In probability, what does a value of 0 mean?",
+          "options": [
+            "The event is impossible",
+            "The event is certain",
+            "The event is equally likely",
+            "The event happens half the time"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson says probability runs from 0 to 1, where 0 means the event is impossible and 1 means it is certain.",
+          "sourceQuote": "It is a number from 0 to 1, where 0 means the event is impossible and 1 means it is certain.",
+          "number": 1,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The answer A is correct and unique, and the lesson states it directly. However, the question is pure recall that can be answered by matching 'value of 0' to the lesson sentence 'where 0 means the event is impossible', so it does not require understanding."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "What is the probability of rolling a 4 on a fair six-sided die?",
+          "options": [
+            "1 divided by 4",
+            "1 divided by 6",
+            "3 divided by 6",
+            "4 divided by 1"
+          ],
+          "correctIndex": 1,
+          "explanation": "A fair die has six equally likely outcomes, and only one of them is a 4, so the probability is 1 divided by 6.",
+          "sourceQuote": "the probability of rolling a 4 is 1 divided by 6",
+          "number": 2,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The weakest point is that the question repeats the lesson's own example almost word for word (\"the probability of rolling a 4 is 1 divided by 6\"), so a student can match the wording without understanding. B is correct and the only right option, and the lesson fully supports it."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "The probability of an event and the probability of its complement always add up to 1.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson states that an event and its complement always have probabilities that add up to 1.",
+          "sourceQuote": "The probability of an event and the probability of its complement always add up to 1.",
+          "number": 3,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The marked answer A (True) is correct and is the only correct option. The weakest point is that the question copies the lesson sentence almost word for word ('always add up to 1'), so a student could answer by matching wording without understanding complements."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "After five heads in a row, what is the probability of heads on the next toss of a fair coin?",
+          "options": [
+            "One half",
+            "Greater than one half",
+            "Less than one half",
+            "Certain"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson explains that past results do not change the probability of independent events, so the chance of heads remains one half.",
+          "sourceQuote": "After five heads in a row, the probability of heads on the next toss of a fair coin is still one half.",
+          "number": 4,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The marked answer A is correct and unique, and the lesson supports it. However, the question nearly copies the lesson's sentence ('After five heads in a row, the probability of heads on the next toss of a fair coin is still one half'), so a student could match wording without understanding independence or the gambler's fallacy."
+          }
+        }
+      ],
+      "generation": {
+        "calls": 1,
+        "inputTokens": 2054,
+        "outputTokens": 1092,
+        "costUsd": "0.000751",
+        "latencyMs": 4885
+      },
+      "judge": {
+        "calls": 4,
+        "inputTokens": 5188,
+        "outputTokens": 499,
+        "costUsd": "0.015366",
+        "cacheHits": 0
+      }
+    }
+  ]
+}

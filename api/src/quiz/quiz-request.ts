@@ -1,3 +1,4 @@
+import type { LlmEffort } from '../llm/llm-client.js';
 import type {
   LlmGenerateRequest,
   LlmStreamRequest,
@@ -27,6 +28,11 @@ export interface QuizRequestInput {
   minQuoteWords: number;
   /** Recorded on the llm_calls row; QuizService passes the quiz id. */
   correlationId?: string;
+  /** Defaults to QUIZ_PROMPT.version. The eval harness compares versions. */
+  promptVersion?: number;
+  /** Defaults to "quiz-generation"; the eval harness records its own feature. */
+  feature?: string;
+  effort?: LlmEffort;
 }
 
 /**
@@ -40,9 +46,9 @@ export function buildQuizRequest(
   const { lessonContent, settings, model, minQuoteWords, correlationId } =
     input;
   return {
-    feature: 'quiz-generation',
+    feature: input.feature ?? 'quiz-generation',
     promptId: QUIZ_PROMPT.id,
-    promptVersion: QUIZ_PROMPT.version,
+    promptVersion: input.promptVersion ?? QUIZ_PROMPT.version,
     variables: {
       count: settings.count,
       difficulty: settings.difficulty,
@@ -56,6 +62,7 @@ export function buildQuizRequest(
     // A teacher asking again wants new questions, not a cached copy.
     cache: false,
     ...(correlationId === undefined ? {} : { correlationId }),
+    ...(input.effort === undefined ? {} : { effort: input.effort }),
   };
 }
 

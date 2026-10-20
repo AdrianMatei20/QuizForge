@@ -84,6 +84,8 @@ export function llmServiceOptionsFromConfig(
     LlmService,
   ],
   // CLOCK too, so /usage and the budget guard agree on what "today" is.
-  exports: [LlmService, CLOCK],
+  // PromptRegistry and LlmPricing let the eval harness check a prompt
+  // version and the models' prices before it spends anything.
+  exports: [LlmService, CLOCK, PromptRegistry, LlmPricing],
 })
 export class LlmModule {}

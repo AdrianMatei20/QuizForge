@@ -52,6 +52,10 @@ export class LlmPricing {
 
   constructor(private readonly prices: ModelPrices) {}
 
+  hasPrice(model: string): boolean {
+    return this.prices[model] !== undefined;
+  }
+
   /** Called at startup with the configured models; warns (once each) about any without a price. */
   warnIfUnpriced(models: string[]): void {
     for (const model of models) {

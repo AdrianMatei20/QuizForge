@@ -29,6 +29,11 @@ export type UsageReport = Schemas['UsageReportResponse'];
 export type UsageBucket = Schemas['UsageBucketResponse'];
 export type UsageDay = Schemas['UsageDayResponse'];
 
+export type EvalRunSummary = Schemas['EvalRunSummaryResponse'];
+export type EvalRunList = Schemas['EvalRunListResponse'];
+export type EvalComparison = Schemas['EvalComparisonResponse'];
+export type ComparedMetric = Schemas['ComparedMetricResponse'];
+
 export type QuestionType = QuestionResponse['type'];
 export type QuestionStatus = QuestionResponse['status'];
 export type QuizStatus = QuizResponse['status'];

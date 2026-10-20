@@ -2,7 +2,7 @@
 
 QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a teacher approves, edits, rejects or regenerates them, and an eval harness measures prompt quality.
 
-> Status: Phase 7 (lesson and quiz history). In the browser, a teacher finds earlier lessons and their quizzes, writes a lesson and watches the quiz's questions appear one by one as the model writes them, then reviews every question (approve, reject, edit, regenerate) and publishes it. LLM calls, tokens and cost are visible on a /usage page, in Prometheus and Grafana, and as OpenTelemetry traces.
+> Status: Phase 8 (eval harness). In the browser, a teacher finds earlier lessons and their quizzes, writes a lesson and watches the quiz's questions appear one by one as the model writes them, then reviews every question (approve, reject, edit, regenerate) and publishes it. LLM calls, tokens and cost are visible on a /usage page, in Prometheus and Grafana, and as OpenTelemetry traces. An eval harness measures the quality of the quiz prompt's questions, with a second model as judge, and compares prompt versions.
 
 ## Roadmap
 
@@ -14,6 +14,7 @@ QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a t
 - [x] Phase 5: Streaming with JSON Lines over SSE (questions validated and saved as they arrive, one repair step for gaps, replay on reconnect, stuck-quiz cleanup, live review board)
 - [x] Phase 6: Metrics, tracing and usage (Prometheus metrics, OpenTelemetry traces, `GET /api/usage` and a /usage page, estimated usage for aborted streams, rate limiting on generation, a Prometheus, Grafana and Tempo stack in Docker Compose)
 - [x] Phase 7: Lesson and quiz history (`GET /api/lessons` with quiz counts by status, question counts in a lesson's quiz list, a lessons list and a lesson page in the web app)
+- [x] Phase 8: Eval harness (10 eval lessons, `npm run eval` with metrics and an LLM judge, Markdown and JSON reports, `eval_runs`, run comparison, a human-agreement check, the provider effort setting, quiz prompt v2, an /evals page)
 
 ## Repository layout
 
@@ -28,6 +29,8 @@ QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a t
 | `api/src/metrics/`   | Prometheus metrics for LLM calls, served at `GET /metrics`         |
 | `api/src/usage/`     | `GET /api/usage`: LLM usage per day and feature                    |
 | `api/src/telemetry.ts` | OpenTelemetry setup, loaded before the app when tracing is on    |
+| `api/src/evals/`     | The eval harness: runner, metrics, judge, reports, comparison, command-line tools |
+| `api/evals/`         | Eval lessons (`lessons/`), committed reports (`results/`) and human-labelled samples (`samples/`) |
 | `api/fixtures/`      | Sample lessons (recursion, binary search, HTTP caching)            |
 | `web/`               | Angular app (standalone components, signals, Signal Forms)         |
 | `web/src/app/core/`  | Typed API client (types generated from the OpenAPI spec), errors   |
@@ -109,6 +112,8 @@ All feature routes are under `/api`. Interactive docs (Swagger UI) are at http:/
 | `POST /api/quizzes/:id/publish` | Publishes a draft quiz with at least one approved question; returns it with only the approved questions |
 | `GET /api/quizzes/:id/review-stats` | `{ quizId, total, byStatus, regenerated, editRate, rejectRate, missRate }` |
 | `GET /api/usage`                | `?from=YYYY-MM-DD&to=YYYY-MM-DD` (UTC days, inclusive; default the last 7 days, at most 366). LLM usage totals plus one bucket per day and feature (see [Usage](#usage)) |
+| `GET /api/evals`                | `?limit=1-200` (default 50) `&includeDryRuns=true`. Eval runs newest first, with their headline metrics; dry runs are left out by default |
+| `GET /api/evals/compare`        | `?a=<run id>&b=<run id>`: every compared metric of both runs, `b - a`, and whether that is better or worse |
 | `GET /metrics`                  | Prometheus metrics (outside `/api`, like `/health`)                            |
 
 Starting a quiz (`POST /api/lessons/:id/quizzes`) and regenerating a question share one rate limit per client IP: `THROTTLE_GENERATE_LIMIT` requests (default 10) per `THROTTLE_GENERATE_TTL_MS` (default 60,000). Over it, they return 429 problem details (`urn:quizforge:problem:too-many-requests`) with `Retry-After`. Other endpoints are not limited.
@@ -259,6 +264,69 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 npm run start:traced
 
 Open http://localhost:3030 (Grafana, no login locally). The home dashboard, **QuizForge LLM**, shows LLM request rate, p95 latency, tokens and cost by feature, and error rate. Prometheus scrapes the API at `host.docker.internal:3000/metrics` every 15 seconds, so it works with `npm run start:dev` too. For traces, open **Explore**, choose **Tempo** and search with TraceQL, e.g. `{ name = "llm.generate" }`. `docker compose --profile observability stop` stops the stack and leaves PostgreSQL and Redis running.
 
+## Evals
+
+The eval harness measures how good the quiz prompt's questions are, so a prompt change is judged by numbers rather than by a few examples. It lives in `api/src/evals/`.
+
+```bash
+cd api
+npm run eval -- --prompt v2 --judge-model claude-sonnet-5-5   # all 10 lessons, about $0.25
+npm run eval -- --prompt v1 --limit 2                         # the first 2 lessons only
+npm run eval -- --prompt v1 --dry-run                         # fake provider: free, checks the pipeline only
+npm run eval:compare -- <runA> <runB>                         # run ids, or unique prefixes of 6+ characters
+npm run eval:sample -- <run>                                  # 20 judged questions to a CSV for you to label
+npm run eval:agreement -- evals/samples/<run>-sample.csv      # how often you agreed with the judge
+```
+
+Options of `npm run eval`: `--prompt v<n>` (required), `--model` (default `LLM_MODEL`), `--judge-model` (default `LLM_JUDGE_MODEL`), `--effort low|medium|high` (the provider's effort setting for generation; default the provider's), `--limit N`, `--dry-run`.
+
+**What a run does.** It runs as a standalone Nest application context (no HTTP server, and not `AppModule`, whose stuck-quiz sweep could interfere with a running API):
+
+1. Loads the lessons in `api/evals/lessons/*.md`. Each has front matter with `title`, `count` and `difficulty`; every quiz asks for both question types. Three are the sample lessons; replace any of them with your own.
+2. Generates one quiz per lesson with the chosen prompt version, through `LlmService`, exactly as production does (same schema, rules and repair step), with the cache off. Up to 4 calls run at once.
+3. Judges every final question with `api/prompts/judge/v1.md`. The judge sees the lesson and the question with its marked answer (not the explanation or `sourceQuote`, so it has to find support in the lesson itself) and returns `{ answerCorrect, answerableFromLesson, testsUnderstanding, reason }`. Judge calls keep the cache on, so an unchanged question is never paid for twice.
+4. Writes `api/evals/results/<time>-v<n>.md` (summary, one row per lesson, the 10 weakest questions with the judge's reasons) and the same data as `.json`, and saves an `eval_runs` row with the numbers (no question text).
+
+Every LLM call is recorded in `llm_calls` as usual, with features `eval-quiz-generation` and `eval-judge` (so `/usage` keeps eval spend apart) and correlation ids `<run id>/gen/<lesson>` and `<run id>/judge/<lesson>`, from which each lesson's cost is read back, failed calls and repairs included. Eval spend counts towards `LLM_DAILY_BUDGET_USD`; if the budget runs out, the remaining lessons fail with `budget_exceeded` and the report says the run is incomplete.
+
+With `LLM_PROVIDER=fake`, `npm run eval` refuses to run unless `--dry-run` is given: the fake answers every lesson with the recursion quiz, so its numbers would look real and mean nothing. `--dry-run` forces the fake provider through the environment (which wins over `.env`), so it can never spend money; its reports go to the gitignored `api/evals/results/dry-run/`, start with a warning, and are hidden on the /evals page unless you tick Show dry runs.
+
+**Metrics.** Lesson-level rates count lessons; the others count questions.
+
+| Metric | What it measures | Over |
+| ------ | ---------------- | ---- |
+| Schema-valid | The first answer matched the JSON schema | Lessons with a first answer |
+| Rule-pass before repair | The first answer passed the schema and every quiz rule | Lessons with a first answer |
+| Repair rate | The repair call was needed | Lessons with a first answer |
+| sourceQuote found | The quote appears in the lesson | First-answer questions (after repair it is 100% by the rules) |
+| Duplicate stems | The stem repeats an earlier one in the quiz | First-answer questions |
+| Quote copy | The stem shares 6 or more consecutive words with its own quote | Final questions |
+| Shared quote | The quote overlaps another question's quote in the quiz (6+ shared words, or contained) | Final questions |
+| Questions dropped | Requested minus saved in the final quiz | |
+| Judge rates | answerCorrect, answerableFromLesson, testsUnderstanding | Judged questions |
+| Tokens, cost, latency | Generation and judging, separately; cost summed exactly | |
+
+The first-answer numbers come from an `onValidation` callback on `LlmGenerateRequest`, which reports each validation (the first answer and the repair) to the caller, with the parsed data but never the raw model text.
+
+**Results so far** (`claude-haiku-5-5`, provider-default effort, judged by `claude-sonnet-5-5`, 10 lessons and 57 questions per run; reports in `api/evals/results/`):
+
+| | v1, run 1 | v1, run 2 | v2, run 1 | v2, run 2 |
+| --- | --- | --- | --- | --- |
+| Quote copy | 28.1% | 22.8% | 3.5% | 0% |
+| Judge: tests understanding | 24.6% | 22.8% | 59.6% | 61.4% |
+| Judge: answer correct | 100% | 98.2% | 94.7% | 96.5% |
+| Shared quote | 3.5% | 3.5% | 10.5% | 3.5% |
+| Generation output tokens | 21,447 | 21,842 | 25,885 | 25,622 |
+| Total cost | $0.2422 | $0.2390 | $0.2552 | $0.2573 |
+
+Every run passed the schema and the rules on the first answer. Between repeats of the same prompt, the judge rates moved by 1.8 points (one question in 57) and quote copy by up to 5.3 points; v2's changes are far larger: quote copy down by about 24 points and tests understanding up by about 37. The price is about 19% more output tokens and slightly more wrong answer keys (2 to 3 in 57 instead of 0 to 1), which is worth watching: questions that apply an idea are harder to key correctly than recall questions.
+
+**Prompt v2** (`api/prompts/quiz/v2.md`) is v1 with one change, aimed at the two weakest numbers above: stems must be written in the model's own words instead of copying the source quote, and medium and hard questions must apply an idea to a new case instead of recalling a sentence. The app still uses v1; switching is a one-line change to `QUIZ_PROMPT`, left to a later phase.
+
+**Checking the judge.** An LLM judge is a measuring instrument and needs checking too. `npm run eval:sample -- <run>` writes 20 random judged questions to `api/evals/samples/<run id>-sample.csv` (UTF-8 with a byte-order mark, so Excel opens it correctly); fill in `my_verdict` with pass or fail for each. `npm run eval:agreement -- <file>` then reports percent agreement, the 2×2 table, Cohen's kappa (agreement corrected for chance, which matters when most questions pass) and every disagreement with the judge's reason. It reads files saved with `,` or `;` (Excel uses `;` in locales with a decimal comma). The judge passes a question only when all three checks pass.
+
+**Effort.** `--effort` sets the provider's effort for quiz generation (Anthropic's `output_config.effort`), so runs at different levels can be compared on quality and cost. It is recorded in `llm_calls.effort` and `eval_runs.effort`, and is part of the LLM cache key.
+
 ## Tests
 
 ```bash
@@ -295,6 +363,8 @@ Without `LLM_LIVE_TESTS=1` it is skipped.
 | `/quizzes/:id/review` | Review board: one card per question, counts and edit rate in the header, Publish |
 | `/quizzes/:id/published` | The published quiz, read-only |
 | `/usage` | LLM usage for a date range (default the last 7 UTC days): cost, calls, tokens, cache-hit and error rates, counts by status, and a daily cost-by-feature chart with a data table view |
+| `/evals` | Eval runs, newest first, with their headline metrics (dry runs hidden unless Show dry runs is ticked); select two and Compare |
+| `/evals/compare?a=&b=` | Two runs side by side: every metric, the change from A (the older run, the baseline) to B, and a worded verdict (better, worse, same) |
 
 - **Lesson page:** each quiz shows a status badge (with its name, not only a colour), its questions against the requested count ("4 of 5 questions"), its settings and date. Draft and generating quizzes link to the review board, where a generating quiz picks up its live stream; published ones link to the published view; a failed one says why in a sentence ("Failed because the AI service took too long."), never as a code. Generate another quiz uses the same settings fields as the lesson editor (`QuizSettingsFields`, with one shared validation schema) and opens the new quiz's review board.
 - **API client:** `LessonsApi`, `QuizzesApi` and `QuestionsApi` use types generated from `postman/openapi.json`. After an API change, run `npm run openapi:export` in `api/`, then `npm run api:types` in `web/`.
@@ -329,6 +399,9 @@ An invalid-output response lists the violations in `errors` but never includes t
 - **OpenTelemetry directly, not `@nestjs/observe`.** `@nestjs/observe` (0.3.13 when evaluated in October 2026) is an agent for a hosted service, NestJS Observe, which needs an account, an app key and secret, and sends data in its own format rather than OTLP. It is also pre-1.0 and was releasing several times a week. The OpenTelemetry SDK is vendor-neutral: the same OTLP export works with the local Collector and Tempo here, or any other backend.
 - **A Nest tracing interceptor instead of the Nest auto-instrumentation.** `@opentelemetry/instrumentation-nestjs-core` does not support `@nestjs/core` 12 yet, so `TracingInterceptor` (`api/src/common/tracing/`) makes the span for each controller handler. HTTP and PostgreSQL still use the official instrumentations. When the official one supports Nest 12, the interceptor can go.
 - **Metrics and the span are recorded in `LlmService`**, next to the `llm_calls` row, so the database, Prometheus and the trace always agree, and a new feature gets them without any extra code.
+- **The eval harness calls the production pipeline, not a copy of it.** It sends `buildQuizRequest()` through `LlmService`, so it measures the same schema, rules and repair step a teacher gets. To see the first answer before repair, `LlmService` gained an `onValidation` callback; returning that information in the result instead would lose it whenever the call fails.
+- **The judge does not see the explanation or the source quote**, only the lesson and the question with its marked answer, so it checks the answer against the lesson rather than against the generator's own justification.
+- **Eval runs keep their questions in files, and only numbers in the database.** `eval_runs.metrics` (jsonb) is enough for the list and the comparison; the Markdown and JSON reports, committed to the repository, are what a reviewer reads.
 - **The rate limit is one counter per IP across both endpoints.** `@nestjs/throttler` counts each handler separately by default, which would allow 10 quizzes and 10 regenerations a minute. Both cost LLM calls, so they share one budget.
 
 ## Known limitations
@@ -337,4 +410,5 @@ An invalid-output response lists the violations in `errors` but never includes t
 - **Rate-limit counts are in memory, per instance.** With several API instances, each one counts on its own, so a client gets the limit once per instance. `@nestjs/throttler` supports a Redis storage, which would make the limit shared.
 
 - **One API instance for live streaming.** Live stream events are kept in the memory of the process that runs the generation. With several API instances behind a load balancer, a client connected to another instance would still get the replay of saved questions and the final `done` or `problem`, but not the live events in between. Fanning them out through Redis pub/sub (Redis is already part of the stack) would remove that limit.
-- **The fake provider only knows the recursion lesson.** With `LLM_PROVIDER=fake`, other lessons fail the source-quote rule, because the fake always answers with the recursion questions.
+- **The fake provider only knows the recursion lesson.** With `LLM_PROVIDER=fake`, other lessons fail the source-quote rule, because the fake always answers with the recursion questions. An eval dry run therefore fails 9 of its 10 lessons.
+- **Eval numbers come from 10 lessons.** One question is about 1.8 percentage points of a judge rate, and one lesson is 10 points of a lesson-level rate, so repeat a run before trusting a small difference. The judge is one model's opinion; `eval:agreement` measures how far it can be trusted.

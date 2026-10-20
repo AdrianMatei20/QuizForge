@@ -25,6 +25,10 @@ api/ (run from `api/`; copy `.env.example` to `.env` first):
 - `npm test`: unit tests (`src/**/*.spec.ts`); the Nest logger is silenced, set `DEBUG=1` to see it
 - `npm run test:e2e`: e2e tests (`test/**/*.e2e-spec.ts`); needs docker compose running, reads `.env.test`, migrates the test database first
 - `LLM_LIVE_TESTS=1 npm run test:live`: live tests against the real provider (`test/**/*.live-spec.ts`, costs money): a smoke test, and one quiz per sample lesson with a printed report. Reads `LLM_API_KEY` and `LLM_MODEL` from the environment, then `.env.live.local` (see `.env.live.example`), then `.env`; skipped without the flag. Add a path (e.g. `test/quiz.live-spec.ts`) to run one file
+- `npm run eval -- --prompt v1 [--model X] [--judge-model Y] [--effort low|medium|high] [--limit N] [--dry-run]`: build, then run the eval harness on `evals/lessons/*.md`; writes `evals/results/<time>-v<n>.md` and `.json` and an `eval_runs` row. Costs money unless `--dry-run` (fake provider, forced through the environment; reports go to the gitignored `evals/results/dry-run/`). Refuses `LLM_PROVIDER=fake` without `--dry-run`
+- `npm run eval:compare -- <runA> <runB>`: print two eval runs side by side (run ids or unique prefixes of 6+ characters)
+- `npm run eval:sample -- <run>`: write 20 random judged questions to `evals/samples/<run id>-sample.csv` with an empty `my_verdict` column
+- `npm run eval:agreement -- <file.csv>`: agreement and Cohen's kappa between `my_verdict` and the judge
 - `npm run lint`: oxlint with type-aware rules (src, test, scripts)
 - `npm run typecheck`: `tsc --noEmit` over src, test and scripts
 - `npm run format`: Prettier

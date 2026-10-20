@@ -109,9 +109,22 @@ function toParams(request: LlmRequest): MessageCreateParamsNonStreaming {
     max_tokens: request.maxTokens,
     messages: request.messages,
     ...(request.system === undefined ? {} : { system: request.system }),
-    ...(request.outputSchema
-      ? { output_config: { format: zodOutputFormat(request.outputSchema) } }
-      : {}),
+    ...outputConfig(request),
+  };
+}
+
+/** Structured output format and effort share one output_config object. */
+function outputConfig(request: LlmRequest) {
+  if (!request.outputSchema && request.effort === undefined) {
+    return {};
+  }
+  return {
+    output_config: {
+      ...(request.outputSchema
+        ? { format: zodOutputFormat(request.outputSchema) }
+        : {}),
+      ...(request.effort === undefined ? {} : { effort: request.effort }),
+    },
   };
 }
 

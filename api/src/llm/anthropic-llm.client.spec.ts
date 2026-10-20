@@ -112,6 +112,32 @@ describe('AnthropicLlmClient', () => {
       expect(body).not.toHaveProperty('temperature');
     });
 
+    it('sends effort in output_config, next to the format', async () => {
+      const { client, calls } = clientReturning(() =>
+        jsonResponse(200, message),
+      );
+
+      await client.generate({ ...request, effort: 'low' });
+
+      expect(sentBody(calls)).toMatchObject({
+        output_config: { effort: 'low', format: { type: 'json_schema' } },
+      });
+    });
+
+    it('sends effort alone when there is no output schema', async () => {
+      const { client, calls } = clientReturning(() =>
+        jsonResponse(200, message),
+      );
+      const { outputSchema: _schema, ...plain } = request;
+
+      await client.generate({ ...plain, effort: 'high' });
+
+      expect(sentBody(calls)).toMatchObject({
+        output_config: { effort: 'high' },
+      });
+      expect(sentBody(calls)).not.toHaveProperty('output_config.format');
+    });
+
     it('omits output_config and system when they are not set', async () => {
       const { client, calls } = clientReturning(() =>
         jsonResponse(200, message),

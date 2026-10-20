@@ -1,0 +1,2 @@
+# Test snapshots must stay byte for byte what the code renders
+src/**/__snapshots__/

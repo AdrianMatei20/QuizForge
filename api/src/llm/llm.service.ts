@@ -25,6 +25,7 @@ import {
   type LlmResponse,
   type LlmStopReason,
   type LlmUsage,
+  type LlmEffort,
 } from './llm-client.js';
 import {
   LlmBudgetExceededError,
@@ -66,12 +67,30 @@ export interface LlmGenerateRequest<T> {
   maxTokens: number;
   /** Defaults to true. Set to false to always call the provider (e.g. "regenerate"). */
   cache?: boolean;
+  /** The provider's effort setting; unset means its default. Part of the cache key. */
+  effort?: LlmEffort;
+  /**
+   * Called after each validation, the first answer's and the repair's, also
+   * when the call then fails. For measuring the pipeline (the eval harness):
+   * how often the first answer was already valid. It gets the parsed data
+   * when the schema passed, never the raw model text.
+   */
+  onValidation?: (check: LlmValidationCheck<T>) => void;
   /**
    * Recorded on the llm_calls row so a caller can group and total its calls
    * (see getUsage). An opaque string to this module, e.g. a quiz id.
    */
   correlationId?: string;
   signal?: AbortSignal;
+}
+
+export interface LlmValidationCheck<T> {
+  attempt: 'first' | 'repair';
+  schemaValid: boolean;
+  /** Present when the schema passed, even if rules then failed. */
+  data?: T;
+  /** Schema or rule violations; empty when the answer was valid. */
+  violations: string[];
 }
 
 export interface LlmGenerateResult<T> {
@@ -104,6 +123,7 @@ export interface LlmStreamRequest {
   signal?: AbortSignal;
   /** Per provider request; defaults to LLM_TIMEOUT_MS. A long stream may need more. */
   timeoutMs?: number;
+  effort?: LlmEffort;
 }
 
 export type LlmServiceStreamEvent =
@@ -121,7 +141,7 @@ export type LlmServiceStreamEvent =
 /** What record() needs to know about the request, generate() or stream(). */
 type RecordedRequest = Pick<
   LlmGenerateRequest<unknown>,
-  'feature' | 'promptId' | 'promptVersion' | 'correlationId'
+  'feature' | 'promptId' | 'promptVersion' | 'correlationId' | 'effort'
 >;
 
 export interface LlmServiceOptions {
@@ -200,6 +220,9 @@ export class LlmService {
           'llm.prompt_id': request.promptId,
           'llm.prompt_version': request.promptVersion,
           'llm.streamed': streamed,
+          ...(request.effort === undefined
+            ? {}
+            : { 'llm.effort': request.effort }),
         },
       }),
     };
@@ -245,6 +268,7 @@ export class LlmService {
             promptVersion: request.promptVersion,
             model: tally.model,
             variables: request.variables,
+            ...(request.effort === undefined ? {} : { effort: request.effort }),
           })
         : undefined;
 
@@ -342,6 +366,7 @@ export class LlmService {
         maxTokens: request.maxTokens,
         timeoutMs: request.timeoutMs ?? this.options.timeoutMs,
         ...(request.signal ? { signal: request.signal } : {}),
+        ...(request.effort === undefined ? {} : { effort: request.effort }),
       };
 
       let stopReason: LlmStopReason = 'other';
@@ -460,13 +485,14 @@ export class LlmService {
           outputSchema: request.schema,
           timeoutMs: this.options.timeoutMs,
           ...(request.signal ? { signal: request.signal } : {}),
+          ...(request.effort === undefined ? {} : { effort: request.effort }),
         },
         tally,
       );
 
     const first = await call(messages);
     assertUsableStop(first, request.maxTokens);
-    const firstOutcome = this.validate(first.text, request);
+    const firstOutcome = this.validate(first.text, request, 'first');
     if (firstOutcome.ok) {
       return firstOutcome;
     }
@@ -485,7 +511,7 @@ export class LlmService {
       { role: 'user', content: repair.user },
     ]);
     assertUsableStop(second, request.maxTokens);
-    const secondOutcome = this.validate(second.text, request);
+    const secondOutcome = this.validate(second.text, request, 'repair');
     if (secondOutcome.ok) {
       return secondOutcome;
     }
@@ -496,12 +522,23 @@ export class LlmService {
   private validate<T>(
     text: string,
     request: LlmGenerateRequest<T>,
+    /** Unset for a cache entry: not an attempt, so not reported. */
+    attempt?: LlmValidationCheck<T>['attempt'],
   ): ParseOutcome<T> {
     const parsed = parseModelOutput(text, request.schema);
     if (!parsed.ok) {
+      this.reportValidation(request, attempt, {
+        schemaValid: false,
+        violations: parsed.violations.map((violation) => violation.message),
+      });
       return parsed;
     }
     const ruleViolations = request.rules?.(parsed.data) ?? [];
+    this.reportValidation(request, attempt, {
+      schemaValid: true,
+      data: parsed.data,
+      violations: ruleViolations,
+    });
     if (ruleViolations.length > 0) {
       return {
         ok: false,
@@ -509,6 +546,22 @@ export class LlmService {
       };
     }
     return parsed;
+  }
+
+  /** A caller's callback must never break the call it is observing. */
+  private reportValidation<T>(
+    request: LlmGenerateRequest<T>,
+    attempt: LlmValidationCheck<T>['attempt'] | undefined,
+    check: Omit<LlmValidationCheck<T>, 'attempt'>,
+  ): void {
+    if (attempt === undefined) {
+      return;
+    }
+    try {
+      request.onValidation?.({ attempt, ...check });
+    } catch (error) {
+      this.logger.warn(`onValidation callback failed: ${describe(error)}`);
+    }
   }
 
   /**
@@ -636,6 +689,7 @@ export class LlmService {
         errorCode: outcome.errorCode ?? null,
         correlationId: request.correlationId ?? null,
         usageEstimated: tally.usageEstimated,
+        effort: request.effort ?? null,
       });
     } catch (error) {
       this.logger.error(

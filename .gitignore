@@ -20,3 +20,6 @@ coverage/
 .DS_Store
 Thumbs.db
 .idea/
+
+# Eval dry runs: the fake provider makes their numbers meaningless
+api/evals/results/dry-run/

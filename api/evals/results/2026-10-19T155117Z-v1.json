@@ -1,0 +1,426 @@
+{
+  "run": {
+    "id": "0770d38d-8a7e-40ea-a4f9-4814b12187de",
+    "promptId": "quiz",
+    "promptVersion": 1,
+    "model": "claude-haiku-5-5",
+    "judgeModel": "claude-sonnet-5-5",
+    "judgePromptVersion": 1,
+    "effort": null,
+    "dryRun": false,
+    "createdAt": "2026-10-19T15:51:17.998Z"
+  },
+  "metrics": {
+    "overall": {
+      "lessons": 2,
+      "lessonsFailed": 0,
+      "schemaValidRate": 1,
+      "rulePassBeforeRepairRate": 1,
+      "repairRate": 0,
+      "sourceQuoteFoundRate": 1,
+      "duplicateStemRate": 0,
+      "quoteCopyRate": 0.2727272727272727,
+      "sharedQuoteRate": 0,
+      "questionsRequested": 11,
+      "questionsSaved": 11,
+      "questionsDropped": 0,
+      "judged": 11,
+      "judgeErrors": 0,
+      "answerCorrectRate": 0.9090909090909091,
+      "answerableFromLessonRate": 1,
+      "testsUnderstandingRate": 0.09090909090909091,
+      "generation": {
+        "calls": 2,
+        "inputTokens": 3736,
+        "outputTokens": 2539,
+        "costUsd": "0.001643",
+        "latencyMsTotal": 12982,
+        "latencyMsMax": 8738
+      },
+      "judge": {
+        "calls": 11,
+        "inputTokens": 12186,
+        "outputTokens": 1452,
+        "costUsd": "0.038892",
+        "cacheHits": 0
+      },
+      "totalCostUsd": "0.040535"
+    },
+    "lessons": [
+      {
+        "slug": "01-recursion",
+        "title": "Recursion",
+        "metrics": {
+          "lessons": 1,
+          "lessonsFailed": 0,
+          "schemaValidRate": 1,
+          "rulePassBeforeRepairRate": 1,
+          "repairRate": 0,
+          "sourceQuoteFoundRate": 1,
+          "duplicateStemRate": 0,
+          "quoteCopyRate": 0.2,
+          "sharedQuoteRate": 0,
+          "questionsRequested": 5,
+          "questionsSaved": 5,
+          "questionsDropped": 0,
+          "judged": 5,
+          "judgeErrors": 0,
+          "answerCorrectRate": 1,
+          "answerableFromLessonRate": 1,
+          "testsUnderstandingRate": 0,
+          "generation": {
+            "calls": 1,
+            "inputTokens": 1874,
+            "outputTokens": 739,
+            "costUsd": "0.000557",
+            "latencyMsTotal": 4244,
+            "latencyMsMax": 4244
+          },
+          "judge": {
+            "calls": 5,
+            "inputTokens": 5556,
+            "outputTokens": 630,
+            "costUsd": "0.017412",
+            "cacheHits": 0
+          },
+          "totalCostUsd": "0.017969"
+        }
+      },
+      {
+        "slug": "02-binary-search",
+        "title": "Binary search",
+        "metrics": {
+          "lessons": 1,
+          "lessonsFailed": 0,
+          "schemaValidRate": 1,
+          "rulePassBeforeRepairRate": 1,
+          "repairRate": 0,
+          "sourceQuoteFoundRate": 1,
+          "duplicateStemRate": 0,
+          "quoteCopyRate": 0.3333333333333333,
+          "sharedQuoteRate": 0,
+          "questionsRequested": 6,
+          "questionsSaved": 6,
+          "questionsDropped": 0,
+          "judged": 6,
+          "judgeErrors": 0,
+          "answerCorrectRate": 0.8333333333333334,
+          "answerableFromLessonRate": 1,
+          "testsUnderstandingRate": 0.16666666666666666,
+          "generation": {
+            "calls": 1,
+            "inputTokens": 1862,
+            "outputTokens": 1800,
+            "costUsd": "0.001086",
+            "latencyMsTotal": 8738,
+            "latencyMsMax": 8738
+          },
+          "judge": {
+            "calls": 6,
+            "inputTokens": 6630,
+            "outputTokens": 822,
+            "costUsd": "0.021480",
+            "cacheHits": 0
+          },
+          "totalCostUsd": "0.022566"
+        }
+      }
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "01-recursion",
+      "title": "Recursion",
+      "count": 5,
+      "difficulty": "easy",
+      "status": "ok",
+      "firstAnswer": {
+        "schemaValid": true,
+        "rulesPassed": true,
+        "questions": 5,
+        "sourceQuoteFound": 5,
+        "duplicateStems": 0
+      },
+      "repaired": false,
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "stem": "What is a recursive function?",
+          "options": [
+            "A function that calls itself to solve a smaller version of the same problem",
+            "A function that only runs once and never calls other functions",
+            "A function that always uses a loop to repeat its work",
+            "A function that stores its results in a database"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson defines a recursive function as one that calls itself to solve a smaller version of the same problem.",
+          "sourceQuote": "A recursive function is a function that calls itself to solve a smaller version of the same problem",
+          "number": 1,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The weakest point is that option A repeats the lesson's opening definition almost word for word, so a student could match it without understanding recursion. The answer is correct and the only valid option, and the lesson supports it, but the distractors are implausible."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "What does every recursive function need in order to stop calling itself?",
+          "options": [
+            "A base case",
+            "A stack overflow",
+            "A loop counter",
+            "A global variable"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson states that every recursive function needs a base case, a condition where it returns a result without calling itself.",
+          "sourceQuote": "Every recursive function needs a base case, which is a condition where the function returns a result without calling itself",
+          "number": 2,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The weakest point is that the question nearly copies the lesson's wording ('Every recursive function needs a base case'), so a student could match the phrasing without understanding it. The answer A is correct and the only valid option, and the lesson supports it directly; the distractors are clearly wrong."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "Without a base case, a recursive function would call itself forever.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson says that without a base case, the function would call itself forever.",
+          "sourceQuote": "Without a base case, the function would call itself forever.",
+          "number": 3,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The statement copies the lesson's sentence 'Without a base case, the function would call itself forever' almost word for word, so a student can answer True by matching text without understanding. The marked answer A (True) is correct per the lesson and the question is answerable from it."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "In the factorial example, what value does the function return when n is 0?",
+          "options": [
+            "1",
+            "0",
+            "n",
+            "n minus 1"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson says the factorial function returns 1 when n is 0.",
+          "sourceQuote": "a function that computes the factorial of n returns 1 when n is 0",
+          "number": 4,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The weakest point is that the lesson states directly that the factorial function 'returns 1 when n is 0', so a student can match the question's wording to that sentence without understanding recursion. The marked answer A is correct and the only correct option, and the question is fully answerable from the lesson."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "When a recursion goes too deep, the program fails with a stack overflow error.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson explains that if recursion goes too deep, the call stack runs out of space and the program fails with a stack overflow error.",
+          "sourceQuote": "If the recursion goes too deep, the call stack runs out of space and the program fails with a stack overflow error.",
+          "number": 5,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The weakest point is that the statement restates the lesson sentence almost word for word ('If the recursion goes too deep... stack overflow error'), so a student can answer by matching wording without understanding. The answer True is correct and answerable from the lesson, and it is the only correct option."
+          }
+        }
+      ],
+      "generation": {
+        "calls": 1,
+        "inputTokens": 1874,
+        "outputTokens": 739,
+        "costUsd": "0.000557",
+        "latencyMs": 4244
+      },
+      "judge": {
+        "calls": 5,
+        "inputTokens": 5556,
+        "outputTokens": 630,
+        "costUsd": "0.017412",
+        "cacheHits": 0
+      }
+    },
+    {
+      "slug": "02-binary-search",
+      "title": "Binary search",
+      "count": 6,
+      "difficulty": "medium",
+      "status": "ok",
+      "firstAnswer": {
+        "schemaValid": true,
+        "rulesPassed": true,
+        "questions": 6,
+        "sourceQuoteFound": 6,
+        "duplicateStems": 0
+      },
+      "repaired": false,
+      "questions": [
+        {
+          "type": "true_false",
+          "stem": "Binary search can correctly find a value in an unsorted list.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 1,
+          "explanation": "The lesson says the list must be sorted first and that binary search does not work on unsorted data.",
+          "sourceQuote": "binary search does not work on unsorted data",
+          "number": 1,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The answer B (False) is correct and the lesson states directly that binary search does not work on unsorted data. However, the question is a near-verbatim negation of the lesson sentence, so a student could answer by matching wording without understanding why sorting matters."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "During a binary search, the middle element is smaller than the target. Where does the search continue?",
+          "options": [
+            "Search the right half",
+            "Stop and report not found",
+            "Search the left half",
+            "Compare every element"
+          ],
+          "correctIndex": 2,
+          "explanation": "If the target is smaller than the middle element, the lesson says the search continues in the left half.",
+          "sourceQuote": "If the target is smaller, the search continues in the left half",
+          "number": 2,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": false,
+            "answerableFromLesson": true,
+            "testsUnderstanding": true,
+            "reason": "The marked answer C (left half) is wrong: if the middle element is smaller than the target, the target must be larger than the middle, so the search continues in the right half (A). The lesson covers this case, and the question requires reasoning about the direction of comparison rather than matching a sentence, but the wrong key makes it faulty."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "Why does binary search take about log2(n) steps for a list of n elements?",
+          "options": [
+            "Each step discards half of the remaining elements",
+            "Each step doubles the size of the list",
+            "It checks every element exactly once",
+            "It sorts the list again at every step"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson explains that each step discards half of the remaining elements, which produces the logarithmic number of steps.",
+          "sourceQuote": "Because each step discards half of the remaining elements",
+          "number": 3,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "Option A is correct and the only valid choice, and the lesson supports it. However, the lesson says almost verbatim 'each step discards half of the remaining elements, binary search takes about log2(n) steps', so a student can match the wording without understanding; the distractors are also clearly wrong."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "Binary search needs at most about 20 comparisons to search a sorted list of one million elements.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 0,
+          "explanation": "The lesson states that searching a sorted list of one million elements takes at most about 20 comparisons.",
+          "sourceQuote": "Searching a sorted list of one million elements takes at most about 20 comparisons.",
+          "number": 4,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The weakest point is that the statement is copied almost verbatim from the lesson's sentence ('at most about 20 comparisons' for one million elements), so a student can answer by matching wording without understanding why halving gives log2(n). The marked answer A (True) is correct and the only correct option, and the lesson supports it fully."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "stem": "What is an advantage of linear search over binary search?",
+          "options": [
+            "It always runs faster than binary search",
+            "It works on unsorted lists",
+            "It requires the list to be sorted first",
+            "It takes about log2(n) steps"
+          ],
+          "correctIndex": 1,
+          "explanation": "The lesson says linear search is simpler and works on unsorted lists, while binary search requires sorted data.",
+          "sourceQuote": "Linear search is simpler and works on unsorted lists",
+          "number": 5,
+          "quoteCopy": false,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "The answer B is correct and the only valid option, and the lesson supports it directly. However, the weakest point is that the question can be answered by matching 'works on unsorted lists' to a lesson sentence about linear search, and the distractors are clearly wrong (they describe binary search or contradict the lesson), so little understanding is needed."
+          }
+        },
+        {
+          "type": "true_false",
+          "stem": "If the middle element equals the target, binary search keeps dividing the list to look for other matches.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correctIndex": 1,
+          "explanation": "The lesson says that when the middle element equals the target, the search is done.",
+          "sourceQuote": "If the middle element equals the target, the search is done.",
+          "number": 6,
+          "quoteCopy": true,
+          "sharedQuote": false,
+          "verdict": {
+            "answerCorrect": true,
+            "answerableFromLesson": true,
+            "testsUnderstanding": false,
+            "reason": "Weakest point: the question is a near-paraphrase of the lesson's sentence 'If the middle element equals the target, the search is done', so a student can answer by matching wording without understanding. The marked answer B (False) is correct and the lesson supports it, since the search ends on a match."
+          }
+        }
+      ],
+      "generation": {
+        "calls": 1,
+        "inputTokens": 1862,
+        "outputTokens": 1800,
+        "costUsd": "0.001086",
+        "latencyMs": 8738
+      },
+      "judge": {
+        "calls": 6,
+        "inputTokens": 6630,
+        "outputTokens": 822,
+        "costUsd": "0.021480",
+        "cacheHits": 0
+      }
+    }
+  ]
+}

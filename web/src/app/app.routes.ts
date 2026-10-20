@@ -32,5 +32,15 @@ export const routes: Routes = [
     title: 'Usage · QuizForge',
     loadComponent: () => import('./usage/usage.page').then((m) => m.UsagePage),
   },
+  {
+    path: 'evals',
+    title: 'Evals · QuizForge',
+    loadComponent: () => import('./evals/evals.page').then((m) => m.EvalsPage),
+  },
+  {
+    path: 'evals/compare',
+    title: 'Compare eval runs · QuizForge',
+    loadComponent: () => import('./evals/eval-compare.page').then((m) => m.EvalComparePage),
+  },
   { path: '**', redirectTo: '' },
 ];

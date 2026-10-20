@@ -1,0 +1,85 @@
+<p class="back"><a routerLink="/evals">All eval runs</a></p>
+<h1>Compare eval runs</h1>
+
+@if (!a() || !b()) {
+  <div class="notice">
+    <p>Choose two runs to compare on the Evals page.</p>
+    <a routerLink="/evals">Go to the Evals page</a>
+  </div>
+}
+
+@if (loading()) {
+  <p role="status"><span class="spinner" aria-hidden="true"></span> Loading the comparison…</p>
+}
+<app-error-message [error]="error()" [retryable]="true" (retry)="load(a(), b())" />
+
+@if (comparison(); as c) {
+  <dl class="runs">
+    @for (
+      side of [
+        { name: 'A (baseline)', run: c.a },
+        { name: 'B', run: c.b },
+      ];
+      track side.name
+    ) {
+      <div class="run">
+        <dt>{{ side.name }}</dt>
+        <dd>
+          <strong>{{ runLabel(side.run) }}</strong>
+          <span class="meta">
+            judge {{ side.run.judgeModel }} · {{ side.run.lessonCount }} lessons ·
+            <time [attr.datetime]="side.run.createdAt">{{
+              side.run.createdAt | date: 'medium'
+            }}</time>
+          </span>
+          @if (side.run.dryRun) {
+            <span class="badge dry-run">Dry run: meaningless numbers</span>
+          }
+        </dd>
+      </div>
+    }
+  </dl>
+
+  @if (c.a.lessonCount !== c.b.lessonCount) {
+    <p class="notice" role="note">
+      These runs used different numbers of lessons ({{ c.a.lessonCount }} and
+      {{ c.b.lessonCount }}), so they are not directly comparable.
+    </p>
+  }
+
+  <div class="table-wrap">
+    <table class="compare">
+      <caption class="visually-hidden">
+        Every metric of run A and run B, the change from A to B, and whether it is better
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Metric</th>
+          <th scope="col" class="number">A</th>
+          <th scope="col" class="number">B</th>
+          <th scope="col" class="number">Change</th>
+          <th scope="col">Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (metric of c.metrics; track metric.key) {
+          <tr>
+            <th scope="row">{{ metric.label }}</th>
+            <td class="number">{{ value(metric.format, metric.a) }}</td>
+            <td class="number">{{ value(metric.format, metric.b) }}</td>
+            <td class="number">{{ delta(metric.format, metric.delta) }}</td>
+            <td>
+              @if (verdictText[metric.verdict]; as text) {
+                <span class="verdict" [class]="'verdict ' + metric.verdict">{{ text }}</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <p class="hint">
+    Changes in rates are in percentage points (pp). Runs of the same prompt differ by chance too:
+    compare repeated runs before reading much into a small change.
+  </p>
+}

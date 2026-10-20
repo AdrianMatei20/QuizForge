@@ -1,0 +1,1 @@
+{"answerCorrect": true, "answerableFromLesson": true, "testsUnderstanding": false, "reason": "Canned fake verdict: the fake judge gives this answer to every question."}

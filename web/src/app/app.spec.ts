@@ -27,7 +27,7 @@ describe('App', () => {
     const links = [...compiled.querySelectorAll('nav[aria-label="Main"] a')].map((link) =>
       link.textContent?.trim(),
     );
-    expect(links).toEqual(['Lessons', 'Usage']);
+    expect(links).toEqual(['Lessons', 'Usage', 'Evals']);
   });
 
   it('opens the lessons list at the root route', async () => {

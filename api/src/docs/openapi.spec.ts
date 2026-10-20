@@ -31,6 +31,8 @@ describe('OpenAPI document', () => {
     const { paths } = await generateOpenApiDocument();
 
     expect(Object.keys(paths).sort()).toEqual([
+      '/api/evals',
+      '/api/evals/compare',
       '/api/lessons',
       '/api/lessons/{id}',
       '/api/lessons/{lessonId}/quizzes',

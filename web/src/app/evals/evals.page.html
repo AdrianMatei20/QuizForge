@@ -1,0 +1,112 @@
+<h1>Evals</h1>
+<p class="lead">
+  How well each quiz prompt works, measured by <code>npm run eval</code> in <code>api/</code> on a
+  fixed set of lessons, with a second model judging every question.
+</p>
+
+<div class="toolbar">
+  <label class="checkbox">
+    <input type="checkbox" [checked]="showDryRuns()" (change)="showDryRuns.set(!showDryRuns())" />
+    Show dry runs
+  </label>
+  <span class="hint" id="compare-hint">
+    @if (selected().length < 2) {
+      Select two runs to compare them ({{ selected().length }} of 2 selected).
+    } @else {
+      The older run is the baseline (A).
+    }
+  </span>
+  @if (comparison(); as pair) {
+    <a
+      class="button primary"
+      routerLink="/evals/compare"
+      [queryParams]="{ a: pair.a, b: pair.b }"
+      aria-describedby="compare-hint"
+      >Compare</a
+    >
+  } @else {
+    <button type="button" class="button primary" disabled aria-describedby="compare-hint">
+      Compare
+    </button>
+  }
+</div>
+
+@if (loading() && !runs()) {
+  <p role="status"><span class="spinner" aria-hidden="true"></span> Loading eval runs…</p>
+}
+<app-error-message [error]="error()" [retryable]="true" (retry)="load(showDryRuns())" />
+
+@if (runs(); as runs) {
+  @if (runs.length === 0) {
+    <div class="notice empty-state">
+      <p>No eval runs yet.</p>
+      <p>
+        Run <code>npm run eval -- --prompt v1</code> in <code>api/</code>, or add
+        <code>--dry-run</code> to try the pipeline at no cost (then tick Show dry runs).
+      </p>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="runs">
+        <caption class="visually-hidden">
+          Eval runs, newest first, with their headline metrics
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col"><span class="visually-hidden">Select</span></th>
+            <th scope="col">Run</th>
+            <th scope="col">Lessons</th>
+            <th scope="col" class="number">Rule-pass before repair</th>
+            <th scope="col" class="number">Repair rate</th>
+            <th scope="col" class="number">Quote copy</th>
+            <th scope="col" class="number">Answer correct</th>
+            <th scope="col" class="number">Tests understanding</th>
+            <th scope="col" class="number">Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (run of runs; track run.id) {
+            <tr [class.selected]="isSelected(run.id)">
+              <td>
+                <input
+                  type="checkbox"
+                  [id]="'select-' + run.id"
+                  [checked]="isSelected(run.id)"
+                  (change)="toggle(run.id)"
+                />
+              </td>
+              <th scope="row">
+                <label [for]="'select-' + run.id" class="run-name">
+                  {{ run.promptId }} v{{ run.promptVersion }} · {{ run.model }}
+                </label>
+                <span class="meta">
+                  effort {{ run.effort ?? 'default' }} · judge {{ run.judgeModel }} ·
+                  <time [attr.datetime]="run.createdAt">{{ run.createdAt | date: 'medium' }}</time>
+                </span>
+                @if (run.dryRun) {
+                  <span class="badge dry-run">Dry run</span>
+                }
+              </th>
+              <td>
+                {{ run.lessonCount }}
+                @if (run.lessonsFailed > 0) {
+                  <span class="meta">({{ run.lessonsFailed }} failed)</span>
+                }
+              </td>
+              <td class="number">{{ formatRate(run.rulePassBeforeRepairRate) }}</td>
+              <td class="number">{{ formatRate(run.repairRate) }}</td>
+              <td class="number">{{ formatRate(run.quoteCopyRate) }}</td>
+              <td class="number">{{ formatRate(run.answerCorrectRate) }}</td>
+              <td class="number">{{ formatRate(run.testsUnderstandingRate) }}</td>
+              <td class="number">{{ formatCost(run.totalCostUsd) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">
+      Each run's full report, with every lesson and the questions the judge rated weakest, is a
+      Markdown file in <code>api/evals/results/</code>, named by the run's time and prompt version.
+    </p>
+  }
+}
