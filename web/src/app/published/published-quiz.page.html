@@ -1,0 +1,74 @@
+<h1>Published quiz</h1>
+
+@if (loading() && !quiz()) {
+  <p role="status"><span class="spinner" aria-hidden="true"></span> Loading the quiz…</p>
+}
+<app-error-message [error]="error()" [retryable]="true" (retry)="load(id())" />
+
+@if (quiz(); as quiz) {
+  @if (quiz.status === 'published') {
+    <p class="lead">
+      {{ quiz.questions.length }} {{ quiz.questions.length === 1 ? 'question' : 'questions' }} ·
+      {{ quiz.settings.difficulty }}
+    </p>
+
+    <section class="share card" aria-labelledby="share-heading">
+      <h2 id="share-heading" class="card-title">Student link</h2>
+      <p class="hint">Anyone with this link can take the quiz; no account is needed.</p>
+      <div class="share-row">
+        <input
+          id="student-link"
+          type="text"
+          readonly
+          aria-labelledby="share-heading"
+          [value]="studentLink()"
+          #linkInput
+          (focus)="linkInput.select()"
+        />
+        <button type="button" class="button secondary" (click)="copyLink()">Copy</button>
+        <span class="hint" role="status">{{ copied() ? 'Copied' : '' }}</span>
+      </div>
+    </section>
+
+    <section class="attempts" aria-labelledby="attempts-heading">
+      <h2 id="attempts-heading">Student results</h2>
+      @if (stats(); as stats) {
+        @if (stats.attempts === 0) {
+          <p class="hint">
+            No attempts yet. Results per question appear here once students take it.
+          </p>
+        } @else {
+          <p>
+            <strong>{{ stats.attempts }}</strong>
+            {{ stats.attempts === 1 ? 'attempt' : 'attempts' }} · average score
+            <strong>{{ percent(stats.averageScore) }}</strong>
+          </p>
+          <p class="hint">
+            A question is flagged as possibly too easy above
+            {{ percent(stats.thresholds.tooEasyAbove) }} correct, and as possibly wrong or unclear
+            below {{ percent(stats.thresholds.possiblyWrongBelow) }}, once it has
+            {{ stats.thresholds.minAttempts }} attempts.
+          </p>
+        }
+      }
+      <app-error-message [error]="statsError()" [retryable]="true" (retry)="loadStats(id())" />
+    </section>
+
+    <ol class="question-list">
+      @for (question of quiz.questions; track question.id; let i = $index) {
+        <li class="card">
+          <h2 class="card-title">Question {{ i + 1 }}</h2>
+          @if (statFor(question.id); as stat) {
+            <app-question-attempt-stat [stat]="stat" />
+          }
+          <app-question-content [question]="question" />
+        </li>
+      }
+    </ol>
+  } @else {
+    <div class="notice" role="status">
+      <p>This quiz is not published yet.</p>
+      <a [routerLink]="['/quizzes', quiz.id, 'review']">Go to the review board</a>
+    </div>
+  }
+}

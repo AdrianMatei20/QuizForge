@@ -59,6 +59,17 @@ describe('App', () => {
     expect(lessonsLink()?.getAttribute('aria-current')).toBeNull();
   });
 
+  it('shows students no teacher navigation on the take-quiz page', async () => {
+    const fixture = TestBed.createComponent(App);
+    await TestBed.inject(Router).navigateByUrl('/q/quiz-1');
+    await fixture.whenStable();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.querySelector('nav[aria-label="Main"]')).toBeNull();
+    expect(compiled.querySelector('header a.brand')).toBeNull();
+    expect(compiled.querySelector('header .brand')?.textContent).toContain('QuizForge');
+  });
+
   it('redirects unknown routes to the lessons list', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/nowhere');

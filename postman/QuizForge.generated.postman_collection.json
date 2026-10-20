@@ -3175,6 +3175,247 @@
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           }
+        },
+        {
+          "name": "Students' results per question",
+          "request": {
+            "name": "Students' results per question",
+            "description": {
+              "content": "Attempts, average score, and per question the share answered correctly, flagged as possibly too easy or possibly wrong or unclear (thresholds from config, only from the minimum number of attempts).",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "quizzes",
+                ":id",
+                "attempt-stats"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) Quiz id",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "body": {},
+            "auth": null
+          },
+          "response": [
+            {
+              "name": "200",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "quizzes",
+                    ":id",
+                    "attempt-stats"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Quiz id",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"quizId\": \"0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n  \"attempts\": 18,\n  \"averageScore\": 0.68,\n  \"questions\": [\n    {\n      \"questionId\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"position\": 1,\n      \"attempts\": 18,\n      \"correct\": 13,\n      \"percentCorrect\": 0.72,\n      \"flag\": \"too_easy\"\n    },\n    {\n      \"questionId\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"position\": 1,\n      \"attempts\": 18,\n      \"correct\": 13,\n      \"percentCorrect\": 0.72,\n      \"flag\": \"too_easy\"\n    }\n  ],\n  \"thresholds\": {\n    \"tooEasyAbove\": 0.9,\n    \"possiblyWrongBelow\": 0.2,\n    \"minAttempts\": 5\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "quizzes",
+                    ":id",
+                    "attempt-stats"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Quiz id",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:quizforge:problem:quiz-published\",\n  \"title\": \"Quiz is published\",\n  \"status\": 409,\n  \"detail\": \"A published quiz and its questions can no longer be changed.\",\n  \"instance\": \"/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n  \"errors\": [\n    {\n      \"detail\": \"question 2: options 1 and 2 are identical\",\n      \"pointer\": \"#/options/3\",\n      \"parameter\": \"limit\"\n    },\n    {\n      \"detail\": \"question 2: options 1 and 2 are identical\",\n      \"pointer\": \"#/options/3\",\n      \"parameter\": \"limit\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "No such resource.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "quizzes",
+                    ":id",
+                    "attempt-stats"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Quiz id",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:quizforge:problem:quiz-published\",\n  \"title\": \"Quiz is published\",\n  \"status\": 409,\n  \"detail\": \"A published quiz and its questions can no longer be changed.\",\n  \"instance\": \"/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Unexpected error. The details are logged, never returned.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "quizzes",
+                    ":id",
+                    "attempt-stats"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Quiz id",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:quizforge:problem:quiz-published\",\n  \"title\": \"Quiz is published\",\n  \"status\": 409,\n  \"detail\": \"A published quiz and its questions can no longer be changed.\",\n  \"instance\": \"/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
         }
       ]
     },
@@ -4418,7 +4659,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"items\": [\n    {\n      \"id\": \"5832444a-62c8-7025-f698-619a8051afe7\",\n      \"promptId\": \"quiz\",\n      \"promptVersion\": 2,\n      \"model\": \"claude-haiku-5-5\",\n      \"judgeModel\": \"claude-sonnet-5-5\",\n      \"effort\": \"low\",\n      \"dryRun\": true,\n      \"lessonCount\": 10,\n      \"lessonsFailed\": 0,\n      \"reportFile\": \"evals/results/2026-10-19T151500Z-v2.md\",\n      \"createdAt\": \"1976-11-08T05:55:33.678Z\",\n      \"rulePassBeforeRepairRate\": 0.9,\n      \"repairRate\": 0.1,\n      \"quoteCopyRate\": 0.2,\n      \"answerCorrectRate\": 0.95,\n      \"testsUnderstandingRate\": 0.7,\n      \"totalCostUsd\": \"0.412300\"\n    },\n    {\n      \"id\": \"1e85d855-d3e6-245b-875b-f1f416a685be\",\n      \"promptId\": \"quiz\",\n      \"promptVersion\": 2,\n      \"model\": \"claude-haiku-5-5\",\n      \"judgeModel\": \"claude-sonnet-5-5\",\n      \"effort\": \"medium\",\n      \"dryRun\": false,\n      \"lessonCount\": 10,\n      \"lessonsFailed\": 0,\n      \"reportFile\": \"evals/results/2026-10-19T151500Z-v2.md\",\n      \"createdAt\": \"2008-07-15T16:14:24.656Z\",\n      \"rulePassBeforeRepairRate\": 0.9,\n      \"repairRate\": 0.1,\n      \"quoteCopyRate\": 0.2,\n      \"answerCorrectRate\": 0.95,\n      \"testsUnderstandingRate\": 0.7,\n      \"totalCostUsd\": \"0.412300\"\n    }\n  ]\n}",
+              "body": "{\n  \"items\": [\n    {\n      \"id\": \"afe7c704-5dd6-d920-a787-acd1e85d855d\",\n      \"promptId\": \"quiz\",\n      \"promptVersion\": 2,\n      \"model\": \"claude-haiku-5-5\",\n      \"judgeModel\": \"claude-sonnet-5-5\",\n      \"effort\": \"high\",\n      \"dryRun\": false,\n      \"lessonCount\": 10,\n      \"lessonsFailed\": 0,\n      \"reportFile\": \"evals/results/2026-10-19T151500Z-v2.md\",\n      \"createdAt\": \"1989-03-25T02:30:33.951Z\",\n      \"rulePassBeforeRepairRate\": 0.9,\n      \"repairRate\": 0.1,\n      \"quoteCopyRate\": 0.2,\n      \"answerCorrectRate\": 0.95,\n      \"testsUnderstandingRate\": 0.7,\n      \"totalCostUsd\": \"0.412300\"\n    },\n    {\n      \"id\": \"85beb154-0156-a30a-fc67-a1a54ce5cefd\",\n      \"promptId\": \"quiz\",\n      \"promptVersion\": 2,\n      \"model\": \"claude-haiku-5-5\",\n      \"judgeModel\": \"claude-sonnet-5-5\",\n      \"effort\": \"high\",\n      \"dryRun\": false,\n      \"lessonCount\": 10,\n      \"lessonsFailed\": 0,\n      \"reportFile\": \"evals/results/2026-10-19T151500Z-v2.md\",\n      \"createdAt\": \"1975-07-18T02:30:09.868Z\",\n      \"rulePassBeforeRepairRate\": 0.9,\n      \"repairRate\": 0.1,\n      \"quoteCopyRate\": 0.2,\n      \"answerCorrectRate\": 0.95,\n      \"testsUnderstandingRate\": 0.7,\n      \"totalCostUsd\": \"0.412300\"\n    }\n  ]\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
@@ -4561,7 +4802,7 @@
                     "type": "text/plain"
                   },
                   "key": "a",
-                  "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                  "value": "60aade1e-50c3-e46f-2c18-213682f50735"
                 },
                 {
                   "disabled": false,
@@ -4570,7 +4811,7 @@
                     "type": "text/plain"
                   },
                   "key": "b",
-                  "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                  "value": "60aade1e-50c3-e46f-2c18-213682f50735"
                 }
               ],
               "variable": []
@@ -4606,7 +4847,7 @@
                         "type": "text/plain"
                       },
                       "key": "a",
-                      "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                      "value": "60aade1e-50c3-e46f-2c18-213682f50735"
                     },
                     {
                       "disabled": false,
@@ -4615,7 +4856,7 @@
                         "type": "text/plain"
                       },
                       "key": "b",
-                      "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                      "value": "60aade1e-50c3-e46f-2c18-213682f50735"
                     }
                   ],
                   "variable": []
@@ -4637,7 +4878,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"a\": {\n    \"id\": \"c3ae46fd-1852-3682-5073-0aff3c83e010\",\n    \"promptId\": \"quiz\",\n    \"promptVersion\": 2,\n    \"model\": \"claude-haiku-5-5\",\n    \"judgeModel\": \"claude-sonnet-5-5\",\n    \"effort\": \"medium\",\n    \"dryRun\": true,\n    \"lessonCount\": 10,\n    \"lessonsFailed\": 0,\n    \"reportFile\": \"evals/results/2026-10-19T151500Z-v2.md\",\n    \"createdAt\": \"2022-02-21T22:32:10.100Z\",\n    \"rulePassBeforeRepairRate\": 0.9,\n    \"repairRate\": 0.1,\n    \"quoteCopyRate\": 0.2,\n    \"answerCorrectRate\": 0.95,\n    \"testsUnderstandingRate\": 0.7,\n    \"totalCostUsd\": \"0.412300\"\n  },\n  \"b\": {\n    \"id\": \"07291911-4912-bd77-c1f1-89915ab58bfa\",\n    \"promptId\": \"quiz\",\n    \"promptVersion\": 2,\n    \"model\": \"claude-haiku-5-5\",\n    \"judgeModel\": \"claude-sonnet-5-5\",\n    \"effort\": \"high\",\n    \"dryRun\": false,\n    \"lessonCount\": 10,\n    \"lessonsFailed\": 0,\n    \"reportFile\": \"evals/results/2026-10-19T151500Z-v2.md\",\n    \"createdAt\": \"1959-05-18T17:58:39.151Z\",\n    \"rulePassBeforeRepairRate\": 0.9,\n    \"repairRate\": 0.1,\n    \"quoteCopyRate\": 0.2,\n    \"answerCorrectRate\": 0.95,\n    \"testsUnderstandingRate\": 0.7,\n    \"totalCostUsd\": \"0.412300\"\n  },\n  \"metrics\": [\n    {\n      \"key\": \"quoteCopyRate\",\n      \"label\": \"Quote copy\",\n      \"format\": \"rate\",\n      \"direction\": \"neutral\",\n      \"a\": 9266.935184132308,\n      \"b\": 6654.4657573103905,\n      \"delta\": 6850.505322217941,\n      \"verdict\": \"n/a\"\n    },\n    {\n      \"key\": \"quoteCopyRate\",\n      \"label\": \"Quote copy\",\n      \"format\": \"count\",\n      \"direction\": \"lower\",\n      \"a\": 358.1771836616099,\n      \"b\": 622.5844379514456,\n      \"delta\": 1662.5202586874366,\n      \"verdict\": \"worse\"\n    }\n  ]\n}",
+              "body": "{\n  \"a\": {\n    \"id\": \"e0106da4-697b-b076-db3f-e2f072919115\",\n    \"promptId\": \"quiz\",\n    \"promptVersion\": 2,\n    \"model\": \"claude-haiku-5-5\",\n    \"judgeModel\": \"claude-sonnet-5-5\",\n    \"effort\": \"low\",\n    \"dryRun\": true,\n    \"lessonCount\": 10,\n    \"lessonsFailed\": 0,\n    \"reportFile\": \"evals/results/2026-10-19T151500Z-v2.md\",\n    \"createdAt\": \"2021-01-22T20:32:51.554Z\",\n    \"rulePassBeforeRepairRate\": 0.9,\n    \"repairRate\": 0.1,\n    \"quoteCopyRate\": 0.2,\n    \"answerCorrectRate\": 0.95,\n    \"testsUnderstandingRate\": 0.7,\n    \"totalCostUsd\": \"0.412300\"\n  },\n  \"b\": {\n    \"id\": \"8bfaecb5-75cf-1d76-6738-80f8a0ccceea\",\n    \"promptId\": \"quiz\",\n    \"promptVersion\": 2,\n    \"model\": \"claude-haiku-5-5\",\n    \"judgeModel\": \"claude-sonnet-5-5\",\n    \"effort\": \"medium\",\n    \"dryRun\": true,\n    \"lessonCount\": 10,\n    \"lessonsFailed\": 0,\n    \"reportFile\": \"evals/results/2026-10-19T151500Z-v2.md\",\n    \"createdAt\": \"1996-01-29T02:46:04.282Z\",\n    \"rulePassBeforeRepairRate\": 0.9,\n    \"repairRate\": 0.1,\n    \"quoteCopyRate\": 0.2,\n    \"answerCorrectRate\": 0.95,\n    \"testsUnderstandingRate\": 0.7,\n    \"totalCostUsd\": \"0.412300\"\n  },\n  \"metrics\": [\n    {\n      \"key\": \"quoteCopyRate\",\n      \"label\": \"Quote copy\",\n      \"format\": \"usd\",\n      \"direction\": \"lower\",\n      \"a\": 4482.016186229885,\n      \"b\": 1192.6084710285068,\n      \"delta\": 5656.036180444062,\n      \"verdict\": \"better\"\n    },\n    {\n      \"key\": \"quoteCopyRate\",\n      \"label\": \"Quote copy\",\n      \"format\": \"rate\",\n      \"direction\": \"higher\",\n      \"a\": 7403.017394244671,\n      \"b\": 7426.940673030913,\n      \"delta\": 6813.812414184213,\n      \"verdict\": \"n/a\"\n    }\n  ]\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
@@ -4661,7 +4902,7 @@
                         "type": "text/plain"
                       },
                       "key": "a",
-                      "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                      "value": "60aade1e-50c3-e46f-2c18-213682f50735"
                     },
                     {
                       "disabled": false,
@@ -4670,7 +4911,7 @@
                         "type": "text/plain"
                       },
                       "key": "b",
-                      "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                      "value": "60aade1e-50c3-e46f-2c18-213682f50735"
                     }
                   ],
                   "variable": []
@@ -4716,7 +4957,7 @@
                         "type": "text/plain"
                       },
                       "key": "a",
-                      "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                      "value": "60aade1e-50c3-e46f-2c18-213682f50735"
                     },
                     {
                       "disabled": false,
@@ -4725,7 +4966,7 @@
                         "type": "text/plain"
                       },
                       "key": "b",
-                      "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                      "value": "60aade1e-50c3-e46f-2c18-213682f50735"
                     }
                   ],
                   "variable": []
@@ -4771,7 +5012,7 @@
                         "type": "text/plain"
                       },
                       "key": "a",
-                      "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                      "value": "60aade1e-50c3-e46f-2c18-213682f50735"
                     },
                     {
                       "disabled": false,
@@ -4780,7 +5021,7 @@
                         "type": "text/plain"
                       },
                       "key": "b",
-                      "value": "a1a54ce5-fdd7-3eb0-dac0-9030b1e360aa"
+                      "value": "60aade1e-50c3-e46f-2c18-213682f50735"
                     }
                   ],
                   "variable": []
@@ -4793,6 +5034,626 @@
                 ],
                 "method": "GET",
                 "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:quizforge:problem:quiz-published\",\n  \"title\": \"Quiz is published\",\n  \"status\": 409,\n  \"detail\": \"A published quiz and its questions can no longer be changed.\",\n  \"instance\": \"/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "public",
+      "description": "",
+      "item": [
+        {
+          "name": "Read a published quiz to take it",
+          "request": {
+            "name": "Read a published quiz to take it",
+            "description": {
+              "content": "The approved questions in order, without correct answers, explanations or source quotes. A quiz that is not published is a 404.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "public",
+                "quizzes",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) Quiz id",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "body": {},
+            "auth": null
+          },
+          "response": [
+            {
+              "name": "200",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "public",
+                    "quizzes",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Quiz id",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n  \"lessonTitle\": \"Recursion\",\n  \"questions\": [\n    {\n      \"id\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"position\": 1,\n      \"type\": \"multiple_choice\",\n      \"stem\": \"What makes a recursive function stop?\",\n      \"options\": [\n        \"A loop\",\n        \"The base case\",\n        \"The call stack\",\n        \"A timeout\"\n      ]\n    },\n    {\n      \"id\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"position\": 1,\n      \"type\": \"multiple_choice\",\n      \"stem\": \"What makes a recursive function stop?\",\n      \"options\": [\n        \"A loop\",\n        \"The base case\",\n        \"The call stack\",\n        \"A timeout\"\n      ]\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "public",
+                    "quizzes",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Quiz id",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:quizforge:problem:quiz-published\",\n  \"title\": \"Quiz is published\",\n  \"status\": 409,\n  \"detail\": \"A published quiz and its questions can no longer be changed.\",\n  \"instance\": \"/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n  \"errors\": [\n    {\n      \"detail\": \"question 2: options 1 and 2 are identical\",\n      \"pointer\": \"#/options/3\",\n      \"parameter\": \"limit\"\n    },\n    {\n      \"detail\": \"question 2: options 1 and 2 are identical\",\n      \"pointer\": \"#/options/3\",\n      \"parameter\": \"limit\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "No such resource.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "public",
+                    "quizzes",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Quiz id",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:quizforge:problem:quiz-published\",\n  \"title\": \"Quiz is published\",\n  \"status\": 409,\n  \"detail\": \"A published quiz and its questions can no longer be changed.\",\n  \"instance\": \"/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Unexpected error. The details are logged, never returned.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "public",
+                    "quizzes",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Quiz id",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:quizforge:problem:quiz-published\",\n  \"title\": \"Quiz is published\",\n  \"status\": 409,\n  \"detail\": \"A published quiz and its questions can no longer be changed.\",\n  \"instance\": \"/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "name": "Submit an attempt",
+          "request": {
+            "name": "Submit an attempt",
+            "description": {
+              "content": "Every question answered exactly once. Scored on the server and stored; returns the score and, per question, whether it was right, the correct answer and the explanation.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "public",
+                "quizzes",
+                ":id",
+                "attempts"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) Quiz id",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": [\n    {\n      \"questionId\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"selectedIndex\": 1\n    },\n    {\n      \"questionId\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"selectedIndex\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            },
+            "auth": null
+          },
+          "response": [
+            {
+              "name": "201",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "public",
+                    "quizzes",
+                    ":id",
+                    "attempts"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Quiz id",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"answers\": [\n    {\n      \"questionId\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"selectedIndex\": 1\n    },\n    {\n      \"questionId\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"selectedIndex\": 1\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"attemptId\": \"55bc8bf4-a4c7-9ac4-4ba6-a0afb62c5d3c\",\n  \"score\": 4,\n  \"total\": 5,\n  \"results\": [\n    {\n      \"questionId\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"selectedIndex\": 2,\n      \"correct\": false,\n      \"correctIndex\": 1,\n      \"explanation\": \"Every recursive function needs a base case to stop.\"\n    },\n    {\n      \"questionId\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"selectedIndex\": 2,\n      \"correct\": false,\n      \"correctIndex\": 1,\n      \"explanation\": \"Every recursive function needs a base case to stop.\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "public",
+                    "quizzes",
+                    ":id",
+                    "attempts"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Quiz id",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"answers\": [\n    {\n      \"questionId\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"selectedIndex\": 1\n    },\n    {\n      \"questionId\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"selectedIndex\": 1\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:quizforge:problem:quiz-published\",\n  \"title\": \"Quiz is published\",\n  \"status\": 409,\n  \"detail\": \"A published quiz and its questions can no longer be changed.\",\n  \"instance\": \"/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\",\n  \"errors\": [\n    {\n      \"detail\": \"question 2: options 1 and 2 are identical\",\n      \"pointer\": \"#/options/3\",\n      \"parameter\": \"limit\"\n    },\n    {\n      \"detail\": \"question 2: options 1 and 2 are identical\",\n      \"pointer\": \"#/options/3\",\n      \"parameter\": \"limit\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "No such resource.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "public",
+                    "quizzes",
+                    ":id",
+                    "attempts"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Quiz id",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"answers\": [\n    {\n      \"questionId\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"selectedIndex\": 1\n    },\n    {\n      \"questionId\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"selectedIndex\": 1\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:quizforge:problem:quiz-published\",\n  \"title\": \"Quiz is published\",\n  \"status\": 409,\n  \"detail\": \"A published quiz and its questions can no longer be changed.\",\n  \"instance\": \"/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Too many attempts from this client (urn:quizforge:problem:too-many-requests), with `Retry-After`: THROTTLE_ATTEMPT_LIMIT per THROTTLE_ATTEMPT_TTL_MS, per IP.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "public",
+                    "quizzes",
+                    ":id",
+                    "attempts"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Quiz id",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"answers\": [\n    {\n      \"questionId\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"selectedIndex\": 1\n    },\n    {\n      \"questionId\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"selectedIndex\": 1\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:quizforge:problem:quiz-published\",\n  \"title\": \"Quiz is published\",\n  \"status\": 409,\n  \"detail\": \"A published quiz and its questions can no longer be changed.\",\n  \"instance\": \"/api/questions/0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Unexpected error. The details are logged, never returned.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "public",
+                    "quizzes",
+                    ":id",
+                    "attempts"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Quiz id",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"answers\": [\n    {\n      \"questionId\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"selectedIndex\": 1\n    },\n    {\n      \"questionId\": \"c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6\",\n      \"selectedIndex\": 1\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                }
               },
               "status": "Internal Server Error",
               "code": 500,

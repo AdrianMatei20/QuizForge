@@ -321,6 +321,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/quizzes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a published quiz to take it
+         * @description The approved questions in order, without correct answers, explanations or source quotes. A quiz that is not published is a 404.
+         */
+        get: operations["PublicQuizzesController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/quizzes/{id}/attempts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit an attempt
+         * @description Every question answered exactly once. Scored on the server and stored; returns the score and, per question, whether it was right, the correct answer and the explanation.
+         */
+        post: operations["PublicQuizzesController_submit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/quizzes/{id}/attempt-stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Students' results per question
+         * @description Attempts, average score, and per question the share answered correctly, flagged as possibly too easy or possibly wrong or unclear (thresholds from config, only from the minimum number of attempts).
+         */
+        get: operations["AttemptStatsController_stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1027,6 +1087,141 @@ export interface components {
             a: components["schemas"]["EvalRunSummaryResponse"];
             b: components["schemas"]["EvalRunSummaryResponse"];
             metrics: components["schemas"]["ComparedMetricResponse"][];
+        };
+        PublicQuestionResponse: {
+            /**
+             * Format: uuid
+             * @example c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6
+             */
+            id: string;
+            /**
+             * @description 1-based, in quiz order.
+             * @example 1
+             */
+            position: number;
+            /**
+             * @example multiple_choice
+             * @enum {string}
+             */
+            type: "multiple_choice" | "true_false";
+            /** @example What makes a recursive function stop? */
+            stem: string;
+            /**
+             * @example [
+             *       "A loop",
+             *       "The base case",
+             *       "The call stack",
+             *       "A timeout"
+             *     ]
+             */
+            options: string[];
+        };
+        PublicQuizResponse: {
+            /**
+             * Format: uuid
+             * @example 0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10
+             */
+            id: string;
+            /** @example Recursion */
+            lessonTitle: string;
+            /** @description The published questions, without correct answers or explanations. */
+            questions: components["schemas"]["PublicQuestionResponse"][];
+        };
+        SubmittedAnswerDto: {
+            /**
+             * Format: uuid
+             * @example c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6
+             */
+            questionId: string;
+            /**
+             * @description Zero-based index into the question options.
+             * @example 1
+             */
+            selectedIndex: number;
+        };
+        SubmitAttemptDto: {
+            /** @description Exactly one answer for every question of the quiz, in any order. */
+            answers: components["schemas"]["SubmittedAnswerDto"][];
+        };
+        AnswerResultResponse: {
+            /**
+             * Format: uuid
+             * @example c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6
+             */
+            questionId: string;
+            /** @example 2 */
+            selectedIndex: number;
+            /** @example false */
+            correct: boolean;
+            /** @example 1 */
+            correctIndex: number;
+            /** @example Every recursive function needs a base case to stop. */
+            explanation: string;
+        };
+        AttemptResultResponse: {
+            /** Format: uuid */
+            attemptId: string;
+            /**
+             * @description Questions answered correctly.
+             * @example 4
+             */
+            score: number;
+            /** @example 5 */
+            total: number;
+            /** @description In question order. */
+            results: components["schemas"]["AnswerResultResponse"][];
+        };
+        QuestionAttemptStatsResponse: {
+            /**
+             * Format: uuid
+             * @example c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6
+             */
+            questionId: string;
+            /** @example 1 */
+            position: number;
+            /**
+             * @description Attempts that answered it.
+             * @example 18
+             */
+            attempts: number;
+            /** @example 13 */
+            correct: number;
+            /**
+             * @description 0 to 1; null with no attempts.
+             * @example 0.72
+             */
+            percentCorrect: number | null;
+            /**
+             * @description too_easy above the upper threshold, possibly_wrong below the lower one, null otherwise or with fewer than the minimum attempts.
+             * @example null
+             * @enum {string|null}
+             */
+            flag: "too_easy" | "possibly_wrong" | null;
+        };
+        AttemptThresholdsResponse: {
+            /** @example 0.9 */
+            tooEasyAbove: number;
+            /** @example 0.2 */
+            possiblyWrongBelow: number;
+            /** @example 5 */
+            minAttempts: number;
+        };
+        AttemptStatsResponse: {
+            /**
+             * Format: uuid
+             * @example 0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10
+             */
+            quizId: string;
+            /** @example 18 */
+            attempts: number;
+            /**
+             * @description Mean of score / total over all attempts, 0 to 1; null with no attempts.
+             * @example 0.68
+             */
+            averageScore: number | null;
+            /** @description In question order. */
+            questions: components["schemas"]["QuestionAttemptStatsResponse"][];
+            thresholds: components["schemas"]["AttemptThresholdsResponse"];
         };
     };
     responses: never;
@@ -1936,6 +2131,166 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EvalComparisonResponse"];
+                };
+            };
+            /** @description Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblemDetailsDto"];
+                };
+            };
+            /** @description No such resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. The details are logged, never returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    PublicQuizzesController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Quiz id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicQuizResponse"];
+                };
+            };
+            /** @description Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblemDetailsDto"];
+                };
+            };
+            /** @description No such resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. The details are logged, never returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    PublicQuizzesController_submit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Quiz id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitAttemptDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttemptResultResponse"];
+                };
+            };
+            /** @description Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ValidationProblemDetailsDto"];
+                };
+            };
+            /** @description No such resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Too many attempts from this client (urn:quizforge:problem:too-many-requests), with `Retry-After`: THROTTLE_ATTEMPT_LIMIT per THROTTLE_ATTEMPT_TTL_MS, per IP. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error. The details are logged, never returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    AttemptStatsController_stats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Quiz id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttemptStatsResponse"];
                 };
             };
             /** @description Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem. */

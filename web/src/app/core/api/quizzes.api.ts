@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 import type {
+  AttemptStats,
   GenerateQuizRequest,
   QuizListItem,
   QuizResponse,
@@ -56,6 +57,11 @@ export class QuizzesApi {
 
   get(quizId: string): Observable<QuizResponse> {
     return this.http.get<QuizResponse>(`/api/quizzes/${quizId}`);
+  }
+
+  /** How students did on a published quiz, question by question. */
+  attemptStats(quizId: string): Observable<AttemptStats> {
+    return this.http.get<AttemptStats>(`/api/quizzes/${quizId}/attempt-stats`);
   }
 
   reviewStats(quizId: string): Observable<ReviewStatsResponse> {

@@ -78,6 +78,12 @@ export const PROBLEMS = {
       'Lesson content is over 20,000 characters (urn:quizforge:problem:lesson-too-large, with `maxLength`), or the JSON body is over 256 KB.',
     schema: ProblemDetailsDto,
   },
+  tooManyAttempts: {
+    status: 429,
+    description:
+      'Too many attempts from this client (urn:quizforge:problem:too-many-requests), with `Retry-After`: THROTTLE_ATTEMPT_LIMIT per THROTTLE_ATTEMPT_TTL_MS, per IP.',
+    schema: ProblemDetailsDto,
+  },
   internal: {
     status: 500,
     description: 'Unexpected error. The details are logged, never returned.',

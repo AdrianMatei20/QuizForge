@@ -15,7 +15,7 @@ export function errorMessage(error: unknown): string {
     case 'budget-exceeded':
       return "Today's AI budget is used up. Try again after midnight UTC.";
     case 'too-many-requests':
-      return "You're generating too quickly. Wait a minute and try again.";
+      return 'Too many requests in a short time. Wait a minute and try again.';
     case 'rate-limited':
       return 'The AI service is busy right now. Wait a moment and try again.';
     case 'timeout':

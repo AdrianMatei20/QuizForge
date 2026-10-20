@@ -2,7 +2,7 @@
 
 QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a teacher approves, edits, rejects or regenerates them, and an eval harness measures prompt quality.
 
-> Status: Phase 8 (eval harness). In the browser, a teacher finds earlier lessons and their quizzes, writes a lesson and watches the quiz's questions appear one by one as the model writes them, then reviews every question (approve, reject, edit, regenerate) and publishes it. LLM calls, tokens and cost are visible on a /usage page, in Prometheus and Grafana, and as OpenTelemetry traces. An eval harness measures the quality of the quiz prompt's questions, with a second model as judge, and compares prompt versions.
+> Status: Phase 9 (taking quizzes). In the browser, a teacher finds earlier lessons and their quizzes, writes a lesson and watches the quiz's questions appear one by one as the model writes them, then reviews every question (approve, reject, edit, regenerate) and publishes it; students take the published quiz from a link and get their score with explanations, and the teacher sees which questions were too easy or possibly wrong. LLM calls, tokens and cost are visible on a /usage page, in Prometheus and Grafana, and as OpenTelemetry traces. An eval harness measures the quality of the quiz prompt's questions, with a second model as judge, and compares prompt versions.
 
 ## Roadmap
 
@@ -15,6 +15,7 @@ QuizForge turns a lesson into a reviewed quiz. An LLM drafts quiz questions, a t
 - [x] Phase 6: Metrics, tracing and usage (Prometheus metrics, OpenTelemetry traces, `GET /api/usage` and a /usage page, estimated usage for aborted streams, rate limiting on generation, a Prometheus, Grafana and Tempo stack in Docker Compose)
 - [x] Phase 7: Lesson and quiz history (`GET /api/lessons` with quiz counts by status, question counts in a lesson's quiz list, a lessons list and a lesson page in the web app)
 - [x] Phase 8: Eval harness (10 eval lessons, `npm run eval` with metrics and an LLM judge, Markdown and JSON reports, `eval_runs`, run comparison, a human-agreement check, the provider effort setting, quiz prompt v2, an /evals page)
+- [x] Phase 9: Take-quiz page and attempts (a public quiz without answers, server-side scoring, stored attempts, attempt stats with flags, a /q/:id page, results on the published view)
 
 ## Repository layout
 
@@ -111,12 +112,15 @@ All feature routes are under `/api`. Interactive docs (Swagger UI) are at http:/
 | `POST /api/questions/:id/regenerate` | Generates one replacement question of the same type at the same position (201); the old one is soft-deleted |
 | `POST /api/quizzes/:id/publish` | Publishes a draft quiz with at least one approved question; returns it with only the approved questions |
 | `GET /api/quizzes/:id/review-stats` | `{ quizId, total, byStatus, regenerated, editRate, rejectRate, missRate }` |
+| `GET /api/quizzes/:id/attempt-stats` | `{ quizId, attempts, averageScore, questions: [{ questionId, position, attempts, correct, percentCorrect, flag }], thresholds }` (see [Taking a quiz](#taking-a-quiz)) |
+| `GET /api/public/quizzes/:id` | A published quiz for a student: no correct answers, explanations or source quotes. 404 unless published |
+| `POST /api/public/quizzes/:id/attempts` | `{ answers: [{ questionId, selectedIndex }] }`: every question exactly once. Scored on the server and stored; returns the score and, per question, whether it was correct, the correct option and the explanation (201) |
 | `GET /api/usage`                | `?from=YYYY-MM-DD&to=YYYY-MM-DD` (UTC days, inclusive; default the last 7 days, at most 366). LLM usage totals plus one bucket per day and feature (see [Usage](#usage)) |
 | `GET /api/evals`                | `?limit=1-200` (default 50) `&includeDryRuns=true`. Eval runs newest first, with their headline metrics; dry runs are left out by default |
 | `GET /api/evals/compare`        | `?a=<run id>&b=<run id>`: every compared metric of both runs, `b - a`, and whether that is better or worse |
 | `GET /metrics`                  | Prometheus metrics (outside `/api`, like `/health`)                            |
 
-Starting a quiz (`POST /api/lessons/:id/quizzes`) and regenerating a question share one rate limit per client IP: `THROTTLE_GENERATE_LIMIT` requests (default 10) per `THROTTLE_GENERATE_TTL_MS` (default 60,000). Over it, they return 429 problem details (`urn:quizforge:problem:too-many-requests`) with `Retry-After`. Other endpoints are not limited.
+Starting a quiz (`POST /api/lessons/:id/quizzes`) and regenerating a question share one rate limit per client IP: `THROTTLE_GENERATE_LIMIT` requests (default 10) per `THROTTLE_GENERATE_TTL_MS` (default 60,000). Over it, they return 429 problem details (`urn:quizforge:problem:too-many-requests`) with `Retry-After`. Submitting a quiz attempt has its own limit (see [Taking a quiz](#taking-a-quiz)). Other endpoints are not limited.
 
 Generated questions must pass the zod output schema and the rule checks in `api/src/quiz/rules.ts`:
 - distinct options;
@@ -174,6 +178,14 @@ curl -N http://localhost:3000/api/quizzes/<quizId>/stream
 Each question records the prompt and model that wrote it (`prompt_id`, `prompt_version`, `model`), because a regenerated question comes from a different prompt than the rest of its quiz.
 
 With `LLM_PROVIDER=fake`, only the sample lesson in `api/fixtures/lessons/recursion.md` generates successfully, because the fake always answers with the recursion questions.
+
+### Taking a quiz
+
+A published quiz can be taken by anyone with its link, `/q/<quiz id>` (the published view shows it, with a Copy button). There is no login and no LLM call.
+
+- **`GET /api/public/quizzes/:id`** returns only what a student needs: the lesson title, and each approved question's id, position, type, stem and options, in order. The correct answer, the explanation and the source quote are never in it; the e2e tests check every key and string of the response. It has its own response class, so a field added to the teacher's response cannot leak into it. A quiz that is not published is a 404 with the same message as an unknown one.
+- **`POST /api/public/quizzes/:id/attempts`** takes `{ answers: [{ questionId, selectedIndex }] }`. Every question must be answered exactly once with an option that exists; otherwise it returns 400 problem details with every problem located (`#/answers` for a missing answer, `#/answers/2/questionId` for a repeated or unknown question, `#/answers/1/selectedIndex` for an option out of range). The attempt is scored on the server and stored in `attempts` (each answer with whether it was correct), and the response gives the score and, per question, whether it was correct, the correct option and the explanation. It is rate limited per client IP: `THROTTLE_ATTEMPT_LIMIT` (default 20) per `THROTTLE_ATTEMPT_TTL_MS` (default 60,000), separately from the generation limit.
+- **`GET /api/quizzes/:id/attempt-stats`** (for the teacher) returns the number of attempts, the average score (0 to 1) and, per question, the attempts, correct answers, share correct and a flag: `too_easy` above `ATTEMPT_FLAG_TOO_EASY_ABOVE` (default 0.9), `possibly_wrong` below `ATTEMPT_FLAG_POSSIBLY_WRONG_BELOW` (default 0.2). A question is only flagged from `ATTEMPT_FLAG_MIN_ATTEMPTS` attempts (default 5): with one attempt, every question is either 0% or 100%. The percentages are shown before that, with their attempt counts.
 
 ## API docs and Postman
 
@@ -361,7 +373,8 @@ Without `LLM_LIVE_TESTS=1` it is skipped.
 | `/lessons/new` | Lesson editor with live character counters at the API's limits, and the quiz settings |
 | `/lessons/:id` | A lesson: its text (collapsed), its quizzes newest first, and Generate another quiz |
 | `/quizzes/:id/review` | Review board: one card per question, counts and edit rate in the header, Publish |
-| `/quizzes/:id/published` | The published quiz, read-only |
+| `/quizzes/:id/published` | The published quiz, read-only, with the student link (and a Copy button), the number of attempts and average score, and each question's percent correct with its flag |
+| `/q/:id` | For students, without the teacher's navigation: one question at a time with a progress bar, Back and Next, Submit once every question is answered, then the score and, per question, the verdict, the correct answer and the explanation |
 | `/usage` | LLM usage for a date range (default the last 7 UTC days): cost, calls, tokens, cache-hit and error rates, counts by status, and a daily cost-by-feature chart with a data table view |
 | `/evals` | Eval runs, newest first, with their headline metrics (dry runs hidden unless Show dry runs is ticked); select two and Compare |
 | `/evals/compare?a=&b=` | Two runs side by side: every metric, the change from A (the older run, the baseline) to B, and a worded verdict (better, worse, same) |
@@ -407,6 +420,7 @@ An invalid-output response lists the violations in `errors` but never includes t
 ## Known limitations
 
 - **`/metrics` is not authenticated.** Anyone who can reach the API can read it. The figures are counts, latencies, tokens and cost, with no lesson content, but in production it should be reachable only from the Prometheus network (or behind auth at the proxy).
+- **Anyone with the link can submit attempts, so the stats can be skewed.** The per-IP rate limit slows this down but cannot stop it (many IPs, or one student answering many times). The real fix is authenticated students or per-student links, so each attempt belongs to someone.
 - **Rate-limit counts are in memory, per instance.** With several API instances, each one counts on its own, so a client gets the limit once per instance. `@nestjs/throttler` supports a Redis storage, which would make the limit shared.
 
 - **One API instance for live streaming.** Live stream events are kept in the memory of the process that runs the generation. With several API instances behind a load balancer, a client connected to another instance would still get the replay of saved questions and the final `done` or `problem`, but not the live events in between. Fanning them out through Redis pub/sub (Redis is already part of the stack) would remove that limit.

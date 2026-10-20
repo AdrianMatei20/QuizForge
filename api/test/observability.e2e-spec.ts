@@ -6,7 +6,7 @@ import request from 'supertest';
 import { Between, type Repository } from 'typeorm';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
-import { GENERATE_THROTTLER } from '../src/common/throttling/generate-throttler.guard.js';
+import { GENERATE_THROTTLER } from '../src/common/throttling/rate-limit.guard.js';
 import { LlmCall } from '../src/llm/llm-call.entity.js';
 import type { LlmCallRecord } from '../src/llm/llm-call.store.js';
 import { loadSampleLesson } from './support/lessons.js';

@@ -1,12 +1,5 @@
-import {
-  Body,
-  Controller,
-  Param,
-  Patch,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
-import { GenerateThrottlerGuard } from '../common/throttling/generate-throttler.guard.js';
+import { Body, Controller, Param, Patch, Post } from '@nestjs/common';
+import { GenerateRateLimit } from '../common/throttling/rate-limit.guard.js';
 import { parseUuidParam } from '../common/problem-details/validation-problem.js';
 import {
   ApiCreatedResponse,
@@ -54,7 +47,7 @@ export class QuestionsController {
 
   /** 201 with the replacement question; the old one is soft-deleted. */
   @Post(':id/regenerate')
-  @UseGuards(GenerateThrottlerGuard)
+  @GenerateRateLimit()
   @ApiOperation({
     summary: 'Replace a question with a newly generated one',
     description:

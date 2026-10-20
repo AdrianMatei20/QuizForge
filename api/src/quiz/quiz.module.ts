@@ -52,5 +52,7 @@ export function quizStreamOptionsFromConfig(
       useFactory: quizStreamOptionsFromConfig,
     },
   ],
+  // For AttemptsModule: a published quiz is its approved questions (findById).
+  exports: [QuizService],
 })
 export class QuizModule {}

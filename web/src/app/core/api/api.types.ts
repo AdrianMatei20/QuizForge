@@ -34,6 +34,13 @@ export type EvalRunList = Schemas['EvalRunListResponse'];
 export type EvalComparison = Schemas['EvalComparisonResponse'];
 export type ComparedMetric = Schemas['ComparedMetricResponse'];
 
+export type PublicQuiz = Schemas['PublicQuizResponse'];
+export type PublicQuestion = Schemas['PublicQuestionResponse'];
+export type SubmitAttemptRequest = Schemas['SubmitAttemptDto'];
+export type AttemptResult = Schemas['AttemptResultResponse'];
+export type AttemptStats = Schemas['AttemptStatsResponse'];
+export type QuestionAttemptStats = Schemas['QuestionAttemptStatsResponse'];
+
 export type QuestionType = QuestionResponse['type'];
 export type QuestionStatus = QuestionResponse['status'];
 export type QuizStatus = QuizResponse['status'];

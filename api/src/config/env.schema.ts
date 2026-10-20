@@ -57,6 +57,18 @@ export const baseEnvSchema = z.object({
   // Rate limit for the LLM-backed endpoints (generate, regenerate): this many requests per window, per client IP.
   THROTTLE_GENERATE_LIMIT: z.coerce.number().int().min(1).default(10),
   THROTTLE_GENERATE_TTL_MS: z.coerce.number().int().min(1_000).default(60_000),
+  // Rate limit for submitting quiz attempts (public, no login): this many per window, per client IP.
+  THROTTLE_ATTEMPT_LIMIT: z.coerce.number().int().min(1).default(20),
+  THROTTLE_ATTEMPT_TTL_MS: z.coerce.number().int().min(1_000).default(60_000),
+  // Attempt stats: a question answered correctly by more than this share may be too easy,
+  // by less than the lower one may be wrong or unclear; flagged only from this many attempts.
+  ATTEMPT_FLAG_TOO_EASY_ABOVE: z.coerce.number().min(0).max(1).default(0.9),
+  ATTEMPT_FLAG_POSSIBLY_WRONG_BELOW: z.coerce
+    .number()
+    .min(0)
+    .max(1)
+    .default(0.2),
+  ATTEMPT_FLAG_MIN_ATTEMPTS: z.coerce.number().int().min(1).default(5),
   // Tracing: on when set (e.g. http://localhost:4318). Read by src/telemetry.ts before the app starts.
   OTEL_EXPORTER_OTLP_ENDPOINT: z.preprocess(
     (value) => (value === '' ? undefined : value),
@@ -67,20 +79,34 @@ export const baseEnvSchema = z.object({
   OTEL_SERVICE_NAME: z.string().min(1).default('quizforge-api'),
 });
 
-export const envSchema = baseEnvSchema.refine(
-  (env) => env.LLM_PROVIDER === 'fake' || env.LLM_API_KEY !== undefined,
-  {
-    path: ['LLM_API_KEY'],
-    message: 'is required unless LLM_PROVIDER is "fake"',
-    // Run even when unrelated variables are invalid, so every problem is reported at once.
-    when: (payload) =>
-      !payload.issues.some(
-        (issue) =>
-          issue.path?.[0] === 'LLM_PROVIDER' ||
-          issue.path?.[0] === 'LLM_API_KEY',
-      ),
-  },
-);
+export const envSchema = baseEnvSchema
+  .refine(
+    (env) =>
+      env.ATTEMPT_FLAG_POSSIBLY_WRONG_BELOW < env.ATTEMPT_FLAG_TOO_EASY_ABOVE,
+    {
+      path: ['ATTEMPT_FLAG_POSSIBLY_WRONG_BELOW'],
+      message: 'must be below ATTEMPT_FLAG_TOO_EASY_ABOVE',
+      // Only when both thresholds are valid numbers.
+      when: (payload) =>
+        !payload.issues.some((issue) =>
+          String(issue.path?.[0]).startsWith('ATTEMPT_FLAG_'),
+        ),
+    },
+  )
+  .refine(
+    (env) => env.LLM_PROVIDER === 'fake' || env.LLM_API_KEY !== undefined,
+    {
+      path: ['LLM_API_KEY'],
+      message: 'is required unless LLM_PROVIDER is "fake"',
+      // Run even when unrelated variables are invalid, so every problem is reported at once.
+      when: (payload) =>
+        !payload.issues.some(
+          (issue) =>
+            issue.path?.[0] === 'LLM_PROVIDER' ||
+            issue.path?.[0] === 'LLM_API_KEY',
+        ),
+    },
+  );
 
 export type Env = z.infer<typeof envSchema>;
 

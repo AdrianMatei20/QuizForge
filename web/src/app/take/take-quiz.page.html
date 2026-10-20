@@ -1,0 +1,127 @@
+@if (loading() && !quiz()) {
+  <p role="status"><span class="spinner" aria-hidden="true"></span> Loading the quiz…</p>
+}
+
+@if (notFound()) {
+  <div class="notice">
+    <h1>This quiz isn't available</h1>
+    <p>It may not be published yet. Check the link with your teacher.</p>
+  </div>
+} @else {
+  <app-error-message [error]="loadError()" [retryable]="true" (retry)="load(id())" />
+}
+
+@if (quiz(); as quiz) {
+  @if (result(); as result) {
+    <!-- Results -->
+    <h1 #focusTarget tabindex="-1">
+      You scored {{ result.score }} of {{ result.total }} ({{
+        percent(result.score, result.total)
+      }})
+    </h1>
+    <p class="lead">{{ quiz.lessonTitle }}</p>
+
+    <ol class="results">
+      @for (item of result.results; track item.questionId; let i = $index) {
+        @let question = questionOf(item.questionId);
+        <li class="card" [class.right]="item.correct" [class.wrong]="!item.correct">
+          <h2 class="card-title">
+            Question {{ i + 1 }}:
+            <span class="verdict">
+              <span aria-hidden="true">{{ item.correct ? '✓' : '✗' }}</span>
+              {{ item.correct ? 'Correct' : 'Incorrect' }}
+            </span>
+          </h2>
+          <p class="stem">{{ question?.stem }}</p>
+          <dl class="answers">
+            <dt>Your answer</dt>
+            <dd>
+              {{ letters[item.selectedIndex] }}. {{ question?.options?.[item.selectedIndex] }}
+            </dd>
+            @if (!item.correct) {
+              <dt>Correct answer</dt>
+              <dd>
+                {{ letters[item.correctIndex] }}. {{ question?.options?.[item.correctIndex] }}
+              </dd>
+            }
+          </dl>
+          <p class="explanation"><strong>Why: </strong>{{ item.explanation }}</p>
+        </li>
+      }
+    </ol>
+    <button type="button" class="button secondary" (click)="restart()">Take it again</button>
+  } @else {
+    <!-- One question at a time -->
+    <h1 class="quiz-title">{{ quiz.lessonTitle }}</h1>
+
+    @if (question(); as question) {
+      <div class="progress">
+        <p id="progress-label" class="progress-label">
+          Question {{ index() + 1 }} of {{ total() }}
+          <span class="meta">· {{ total() - unanswered().length }} answered</span>
+        </p>
+        <progress [value]="index() + 1" [max]="total()" aria-labelledby="progress-label"></progress>
+      </div>
+
+      <form class="question" novalidate (submit)="submit($event)" [attr.aria-busy]="submitting()">
+        <fieldset>
+          <legend>
+            <span #focusTarget tabindex="-1" class="stem">{{ question.stem }}</span>
+          </legend>
+          @for (option of question.options; track $index) {
+            <label class="option" [class.chosen]="selected(question.id) === $index">
+              <input
+                type="radio"
+                [name]="'answer-' + question.id"
+                [value]="$index"
+                [checked]="selected(question.id) === $index"
+                (change)="select(question.id, $index)"
+              />
+              <span class="letter" aria-hidden="true">{{ letters[$index] }}</span>
+              <span>{{ option }}</span>
+            </label>
+          }
+        </fieldset>
+
+        <app-error-message [error]="submitError()" [retryable]="true" (retry)="submit()" />
+
+        <div class="actions">
+          <button
+            type="button"
+            class="button secondary"
+            [disabled]="index() === 0"
+            (click)="goTo(index() - 1)"
+          >
+            Back
+          </button>
+          @if (!isLast()) {
+            <button type="button" class="button primary" (click)="goTo(index() + 1)">Next</button>
+          } @else {
+            <button
+              type="submit"
+              class="button primary"
+              [disabled]="unanswered().length > 0 || submitting()"
+              [attr.aria-describedby]="unanswered().length > 0 ? 'unanswered-hint' : null"
+            >
+              @if (submitting()) {
+                <span class="spinner" aria-hidden="true"></span> Submitting…
+              } @else {
+                Submit answers
+              }
+            </button>
+          }
+        </div>
+        @if (isLast() && unanswered().length > 0) {
+          <p id="unanswered-hint" class="hint">
+            Answer every question to submit. Not answered yet:
+            @for (number of unanswered(); track number; let last = $last) {
+              <button type="button" class="link-button" (click)="goTo(number - 1)">
+                question {{ number }}</button
+              >{{ last ? '.' : ',' }}
+            }
+          </p>
+        }
+      </form>
+    }
+  }
+}

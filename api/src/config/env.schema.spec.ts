@@ -123,6 +123,31 @@ describe('validateEnv', () => {
     ).toContain('OTEL_EXPORTER_OTLP_ENDPOINT');
   });
 
+  it('defaults the attempt throttle and the attempt-stat thresholds', () => {
+    const env = validateEnv(validEnv);
+
+    expect(env.THROTTLE_ATTEMPT_LIMIT).toBe(20);
+    expect(env.THROTTLE_ATTEMPT_TTL_MS).toBe(60_000);
+    expect(env.ATTEMPT_FLAG_TOO_EASY_ABOVE).toBe(0.9);
+    expect(env.ATTEMPT_FLAG_POSSIBLY_WRONG_BELOW).toBe(0.2);
+    expect(env.ATTEMPT_FLAG_MIN_ATTEMPTS).toBe(5);
+  });
+
+  it('rejects thresholds outside 0 to 1, or a lower threshold not below the upper one', () => {
+    expect(
+      errorMessageFor({ ...validEnv, ATTEMPT_FLAG_TOO_EASY_ABOVE: '1.5' }),
+    ).toContain('ATTEMPT_FLAG_TOO_EASY_ABOVE');
+    expect(
+      errorMessageFor({
+        ...validEnv,
+        ATTEMPT_FLAG_TOO_EASY_ABOVE: '0.5',
+        ATTEMPT_FLAG_POSSIBLY_WRONG_BELOW: '0.5',
+      }),
+    ).toContain(
+      'ATTEMPT_FLAG_POSSIBLY_WRONG_BELOW: must be below ATTEMPT_FLAG_TOO_EASY_ABOVE',
+    );
+  });
+
   it('rejects a timeout that is not a positive integer', () => {
     expect(errorMessageFor({ ...validEnv, LLM_TIMEOUT_MS: '0' })).toContain(
       'LLM_TIMEOUT_MS',

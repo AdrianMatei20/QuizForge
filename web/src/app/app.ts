@@ -24,6 +24,12 @@ export class App {
    * the editor and its quizzes. routerLinkActive cannot express that, since
    * "/" is a prefix of every URL.
    */
+  /**
+   * /q/:id is for students: no teacher navigation, and the brand is not a
+   * link into the teacher's pages.
+   */
+  protected readonly studentPage = computed(() => this.url().startsWith('/q/'));
+
   protected readonly lessonsActive = computed(() => {
     const path = this.url().split(/[?#]/)[0] ?? '';
     return path === '/' || path.startsWith('/lessons') || path.startsWith('/quizzes');

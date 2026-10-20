@@ -33,3 +33,33 @@ h1,
   margin: 0;
   font-size: 1rem;
 }
+
+.share-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+
+  input {
+    flex: 1 1 18rem;
+    min-width: 0;
+  }
+}
+
+.hint {
+  margin: 0;
+}
+
+.attempts {
+  display: grid;
+  gap: var(--space-2);
+
+  h2,
+  p {
+    margin: 0;
+  }
+
+  h2 {
+    font-size: 1.125rem;
+  }
+}

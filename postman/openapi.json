@@ -1299,6 +1299,221 @@
           "evals"
         ]
       }
+    },
+    "/api/public/quizzes/{id}": {
+      "get": {
+        "description": "The approved questions in order, without correct answers, explanations or source quotes. A quiz that is not published is a 404.",
+        "operationId": "PublicQuizzesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Quiz id",
+            "schema": {
+              "format": "uuid",
+              "example": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicQuizResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Read a published quiz to take it",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/api/public/quizzes/{id}/attempts": {
+      "post": {
+        "description": "Every question answered exactly once. Scored on the server and stored; returns the score and, per question, whether it was right, the correct answer and the explanation.",
+        "operationId": "PublicQuizzesController_submit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Quiz id",
+            "schema": {
+              "format": "uuid",
+              "example": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitAttemptDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptResultResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts from this client (urn:quizforge:problem:too-many-requests), with `Retry-After`: THROTTLE_ATTEMPT_LIMIT per THROTTLE_ATTEMPT_TTL_MS, per IP.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Submit an attempt",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/api/quizzes/{id}/attempt-stats": {
+      "get": {
+        "description": "Attempts, average score, and per question the share answered correctly, flagged as possibly too easy or possibly wrong or unclear (thresholds from config, only from the minimum number of attempts).",
+        "operationId": "AttemptStatsController_stats",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Quiz id",
+            "schema": {
+              "format": "uuid",
+              "example": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptStatsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: a body field (located by `pointer`), or a query or path parameter (named in `parameter`; path ids must be UUIDs). `errors` lists every problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Students' results per question",
+        "tags": [
+          "quizzes"
+        ]
+      }
     }
   },
   "info": {
@@ -2698,6 +2913,283 @@
           "a",
           "b",
           "metrics"
+        ]
+      },
+      "PublicQuestionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6"
+          },
+          "position": {
+            "type": "number",
+            "description": "1-based, in quiz order.",
+            "example": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "multiple_choice",
+              "true_false"
+            ],
+            "example": "multiple_choice"
+          },
+          "stem": {
+            "type": "string",
+            "example": "What makes a recursive function stop?"
+          },
+          "options": {
+            "example": [
+              "A loop",
+              "The base case",
+              "The call stack",
+              "A timeout"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "type",
+          "stem",
+          "options"
+        ]
+      },
+      "PublicQuizResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10"
+          },
+          "lessonTitle": {
+            "type": "string",
+            "example": "Recursion"
+          },
+          "questions": {
+            "description": "The published questions, without correct answers or explanations.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicQuestionResponse"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "lessonTitle",
+          "questions"
+        ]
+      },
+      "SubmittedAnswerDto": {
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6"
+          },
+          "selectedIndex": {
+            "type": "number",
+            "description": "Zero-based index into the question options.",
+            "minimum": 0,
+            "example": 1
+          }
+        },
+        "required": [
+          "questionId",
+          "selectedIndex"
+        ]
+      },
+      "SubmitAttemptDto": {
+        "type": "object",
+        "properties": {
+          "answers": {
+            "description": "Exactly one answer for every question of the quiz, in any order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubmittedAnswerDto"
+            }
+          }
+        },
+        "required": [
+          "answers"
+        ]
+      },
+      "AnswerResultResponse": {
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6"
+          },
+          "selectedIndex": {
+            "type": "number",
+            "example": 2
+          },
+          "correct": {
+            "type": "boolean",
+            "example": false
+          },
+          "correctIndex": {
+            "type": "number",
+            "example": 1
+          },
+          "explanation": {
+            "type": "string",
+            "example": "Every recursive function needs a base case to stop."
+          }
+        },
+        "required": [
+          "questionId",
+          "selectedIndex",
+          "correct",
+          "correctIndex",
+          "explanation"
+        ]
+      },
+      "AttemptResultResponse": {
+        "type": "object",
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "score": {
+            "type": "number",
+            "description": "Questions answered correctly.",
+            "example": 4
+          },
+          "total": {
+            "type": "number",
+            "example": 5
+          },
+          "results": {
+            "description": "In question order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnswerResultResponse"
+            }
+          }
+        },
+        "required": [
+          "attemptId",
+          "score",
+          "total",
+          "results"
+        ]
+      },
+      "QuestionAttemptStatsResponse": {
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "c2a1e0d9-8b7c-4d6e-9f50-a1b2c3d4e5f6"
+          },
+          "position": {
+            "type": "number",
+            "example": 1
+          },
+          "attempts": {
+            "type": "number",
+            "description": "Attempts that answered it.",
+            "example": 18
+          },
+          "correct": {
+            "type": "number",
+            "example": 13
+          },
+          "percentCorrect": {
+            "type": "number",
+            "nullable": true,
+            "description": "0 to 1; null with no attempts.",
+            "example": 0.72
+          },
+          "flag": {
+            "type": "string",
+            "enum": [
+              "too_easy",
+              "possibly_wrong"
+            ],
+            "nullable": true,
+            "description": "too_easy above the upper threshold, possibly_wrong below the lower one, null otherwise or with fewer than the minimum attempts.",
+            "example": null
+          }
+        },
+        "required": [
+          "questionId",
+          "position",
+          "attempts",
+          "correct",
+          "percentCorrect",
+          "flag"
+        ]
+      },
+      "AttemptThresholdsResponse": {
+        "type": "object",
+        "properties": {
+          "tooEasyAbove": {
+            "type": "number",
+            "example": 0.9
+          },
+          "possiblyWrongBelow": {
+            "type": "number",
+            "example": 0.2
+          },
+          "minAttempts": {
+            "type": "number",
+            "example": 5
+          }
+        },
+        "required": [
+          "tooEasyAbove",
+          "possiblyWrongBelow",
+          "minAttempts"
+        ]
+      },
+      "AttemptStatsResponse": {
+        "type": "object",
+        "properties": {
+          "quizId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "0b6c3c8e-1f4a-4f0e-9a3e-5d2f8c7b9a10"
+          },
+          "attempts": {
+            "type": "number",
+            "example": 18
+          },
+          "averageScore": {
+            "type": "number",
+            "nullable": true,
+            "description": "Mean of score / total over all attempts, 0 to 1; null with no attempts.",
+            "example": 0.68
+          },
+          "questions": {
+            "description": "In question order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuestionAttemptStatsResponse"
+            }
+          },
+          "thresholds": {
+            "$ref": "#/components/schemas/AttemptThresholdsResponse"
+          }
+        },
+        "required": [
+          "quizId",
+          "attempts",
+          "averageScore",
+          "questions",
+          "thresholds"
         ]
       }
     }
