@@ -75,7 +75,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read a lesson */
+        /**
+         * Read a lesson
+         * @description The lesson with its full text and content hash.
+         */
         get: operations["LessonsController_findOne"];
         put?: never;
         post?: never;
@@ -255,6 +258,26 @@ export interface paths {
          * @description Generates one question of the same type that repeats none of the quiz questions, at the same position, as a draft. The old question is soft-deleted.
          */
         post: operations["QuestionsController_regenerate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How the API runs
+         * @description Whether it is in demo mode (fake LLM provider), and which sample lessons work then. The web app shows a banner in demo mode.
+         */
+        get: operations["InfoController_info"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -906,6 +929,22 @@ export interface components {
              */
             status?: "draft" | "approved" | "rejected";
         };
+        AppInfoResponse: {
+            /**
+             * @description True when the API runs on the fake LLM provider: quizzes can then be generated from the sample lessons only.
+             * @example true
+             */
+            demoMode: boolean;
+            /**
+             * @description Titles of the sample lessons that work in demo mode.
+             * @example [
+             *       "Binary search",
+             *       "HTTP caching",
+             *       "Recursion"
+             *     ]
+             */
+            sampleLessons: string[];
+        };
         UsageStatusCounts: {
             /** @example 40 */
             ok: number;
@@ -1013,7 +1052,10 @@ export interface components {
             days: components["schemas"]["UsageDayResponse"][];
         };
         EvalRunSummaryResponse: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description The run id; also the correlation id prefix of its LLM calls.
+             */
             id: string;
             /** @example quiz */
             promptId: string;
@@ -1040,7 +1082,10 @@ export interface components {
              * @example evals/results/2026-10-19T151500Z-v2.md
              */
             reportFile: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @example 2026-10-19T15:55:44.000Z
+             */
             createdAt: string;
             /** @example 0.9 */
             rulePassBeforeRepairRate: number | null;
@@ -1067,7 +1112,10 @@ export interface components {
             key: string;
             /** @example Quote copy */
             label: string;
-            /** @enum {string} */
+            /**
+             * @description How to show a, b and delta: a 0..1 rate, a count, USD, or milliseconds.
+             * @enum {string}
+             */
             format: "rate" | "count" | "usd" | "ms";
             /**
              * @description Which way is an improvement.
@@ -1080,12 +1128,16 @@ export interface components {
             b: (number | string) | null;
             /** @description b minus a; for rates, in percentage points. */
             delta: (number | string) | null;
-            /** @enum {string} */
+            /**
+             * @description Whether b is an improvement on a; n/a for neutral metrics or when a side is missing.
+             * @enum {string}
+             */
             verdict: "better" | "worse" | "same" | "n/a";
         };
         EvalComparisonResponse: {
             a: components["schemas"]["EvalRunSummaryResponse"];
             b: components["schemas"]["EvalRunSummaryResponse"];
+            /** @description Every compared metric, in report order. */
             metrics: components["schemas"]["ComparedMetricResponse"][];
         };
         PublicQuestionResponse: {
@@ -1159,7 +1211,10 @@ export interface components {
             explanation: string;
         };
         AttemptResultResponse: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description The stored attempt.
+             */
             attemptId: string;
             /**
              * @description Questions answered correctly.
@@ -1542,13 +1597,13 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
-            /** @description The model refused the request (urn:quizforge:problem:llm-refused). The failed quiz is identified by `quizId`. */
+            /** @description The model refused the request (urn:quizforge:problem:llm-refused). The failed quiz is identified by `quizId`. Or, in demo mode (LLM_PROVIDER=fake), the lesson is not one of the sample lessons (urn:quizforge:problem:demo-mode-lesson, with `sampleLessons`); nothing is stored then. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["QuizGenerationProblemDetailsDto"];
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
             /** @description Too many generation requests from this client (urn:quizforge:problem:too-many-requests; THROTTLE_GENERATE_LIMIT per THROTTLE_GENERATE_TTL_MS), or today's AI budget (LLM_DAILY_BUDGET_USD) is used up and the provider was not called (urn:quizforge:problem:llm-budget-exceeded). The failed quiz is identified by `quizId`. */
@@ -1968,13 +2023,13 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
-            /** @description The model refused the request (urn:quizforge:problem:llm-refused). The question is left unchanged. */
+            /** @description The model refused the request (urn:quizforge:problem:llm-refused). The question is left unchanged. Or, in demo mode (LLM_PROVIDER=fake), the lesson is not one of the sample lessons (urn:quizforge:problem:demo-mode-lesson, with `sampleLessons`); nothing is stored then. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["LlmProblemDetailsDto"];
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
             /** @description Too many generation requests from this client (urn:quizforge:problem:too-many-requests; THROTTLE_GENERATE_LIMIT per THROTTLE_GENERATE_TTL_MS), or today's AI budget (LLM_DAILY_BUDGET_USD) is used up and the provider was not called (urn:quizforge:problem:llm-budget-exceeded). The question is left unchanged. */
@@ -2024,6 +2079,34 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["LlmProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    InfoController_info: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppInfoResponse"];
+                };
+            };
+            /** @description Unexpected error. The details are logged, never returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
         };

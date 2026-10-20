@@ -1,0 +1,15 @@
+{
+  "question": {
+    "type": "multiple_choice",
+    "stem": "What must be true of a list before binary search can be used on it?",
+    "options": [
+      "It must be sorted",
+      "It must have an even number of elements",
+      "It must contain no duplicates",
+      "It must be shorter than one million elements"
+    ],
+    "correctIndex": 0,
+    "explanation": "The lesson says the list must be sorted first, because binary search does not work on unsorted data.",
+    "sourceQuote": "The list must be sorted first"
+  }
+}

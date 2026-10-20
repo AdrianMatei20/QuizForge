@@ -33,6 +33,7 @@ describe('OpenAPI document', () => {
     expect(Object.keys(paths).sort()).toEqual([
       '/api/evals',
       '/api/evals/compare',
+      '/api/info',
       '/api/lessons',
       '/api/lessons/{id}',
       '/api/lessons/{lessonId}/quizzes',
@@ -69,5 +70,67 @@ describe('OpenAPI document', () => {
         }
       }
     }
+  });
+
+  /**
+   * Swagger completeness: every operation says what it does and documents
+   * its success response; every schema property has a type and is
+   * explained (a description or an example).
+   */
+  it('describes every operation, its success response and every schema property', async () => {
+    const document = await generateOpenApiDocument();
+    const problems: string[] = [];
+
+    for (const [path, item] of Object.entries(document.paths)) {
+      for (const [method, operation] of Object.entries(item ?? {})) {
+        const op = operation as {
+          summary?: string;
+          description?: string;
+          responses: Record<string, { content?: Record<string, unknown> }>;
+        };
+        const where = `${method.toUpperCase()} ${path}`;
+        if (!op.summary) problems.push(`${where}: no summary`);
+        if (!op.description) problems.push(`${where}: no description`);
+        const success = Object.entries(op.responses).filter(([status]) =>
+          status.startsWith('2'),
+        );
+        if (success.length === 0)
+          problems.push(`${where}: no success response`);
+        for (const [status, response] of success) {
+          if (!response.content) {
+            problems.push(`${where}: ${status} response has no content type`);
+          }
+        }
+      }
+    }
+
+    const schemas = (document.components?.schemas ?? {}) as Record<
+      string,
+      { properties?: Record<string, Record<string, unknown>> }
+    >;
+    for (const [name, schema] of Object.entries(schemas)) {
+      for (const [property, definition] of Object.entries(
+        schema.properties ?? {},
+      )) {
+        const typed =
+          'type' in definition ||
+          '$ref' in definition ||
+          'allOf' in definition ||
+          'oneOf' in definition ||
+          'enum' in definition;
+        if (!typed) problems.push(`${name}.${property}: no type`);
+        // A $ref points at a schema that explains itself.
+        const explained =
+          'description' in definition ||
+          'example' in definition ||
+          '$ref' in definition ||
+          'allOf' in definition;
+        if (!explained) {
+          problems.push(`${name}.${property}: no description or example`);
+        }
+      }
+    }
+
+    expect(problems).toEqual([]);
   });
 });

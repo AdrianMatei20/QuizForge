@@ -1,0 +1,8 @@
+# Never send secrets or build output to the Docker build.
+.env
+.env.*
+node_modules
+dist
+.angular
+coverage
+.git

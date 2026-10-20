@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AttemptsModule } from './attempts/attempts.module.js';
 import type { Env } from './config/env.schema.js';
+import { DemoModule } from './demo/demo.module.js';
 import { EvalsModule } from './evals/evals.module.js';
 import { HealthModule } from './health/health.module.js';
 import { LessonsModule } from './lessons/lessons.module.js';
@@ -46,6 +47,7 @@ import { UsageModule } from './usage/usage.module.js';
     UsageModule,
     EvalsModule,
     AttemptsModule,
+    DemoModule,
   ],
 })
 export class AppModule {}

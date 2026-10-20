@@ -65,17 +65,19 @@ describe('Eval harness (e2e)', () => {
   });
 
   describe('a dry run', () => {
-    it('generates and judges every lesson; with the fake only the recursion lesson passes', () => {
+    it('generates and judges every lesson; with the fake only the sample lessons it has answers for pass', () => {
       const m = first.report.metrics.overall;
 
       expect(m).toMatchObject({
         lessons: 10,
-        lessonsFailed: 9,
+        // Recursion and HTTP caching have fixtures matching their settings;
+        // binary search asks for 6 questions and its fixture has 5.
+        lessonsFailed: 8,
         schemaValidRate: 1,
-        rulePassBeforeRepairRate: 0.1,
-        repairRate: 0.9,
-        questionsSaved: 5,
-        judged: 5,
+        rulePassBeforeRepairRate: 0.2,
+        repairRate: 0.8,
+        questionsSaved: 10,
+        judged: 10,
         judgeErrors: 0,
         answerCorrectRate: 1,
         // The fake judge's canned verdict says false.
@@ -144,14 +146,14 @@ describe('Eval harness (e2e)', () => {
             !call.cacheHit,
         ),
       ).toBe(true);
-      expect(judging).toHaveLength(5);
+      expect(judging).toHaveLength(10);
       expect(judging.every((call) => call.feature === 'eval-judge')).toBe(true);
     });
 
     it('judges unchanged questions from the cache the second time', () => {
       expect(second.report.metrics.overall.judge).toMatchObject({
-        calls: 5,
-        cacheHits: 5,
+        calls: 10,
+        cacheHits: 10,
         inputTokens: 0,
         outputTokens: 0,
       });
@@ -204,8 +206,8 @@ describe('Eval harness (e2e)', () => {
       ).toMatchObject({
         promptVersion: 1,
         lessonCount: 10,
-        lessonsFailed: 9,
-        rulePassBeforeRepairRate: 0.1,
+        lessonsFailed: 8,
+        rulePassBeforeRepairRate: 0.2,
         testsUnderstandingRate: 0,
         totalCostUsd: '0.000000',
       });

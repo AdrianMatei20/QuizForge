@@ -275,8 +275,9 @@ export function renderMarkdownReport(
     parts.push(
       [
         '> [!WARNING]',
-        '> **Dry run: these numbers are meaningless.** It used the fake LLM provider, which answers every lesson with',
-        '> the same canned quiz and judges every question the same way. It only shows that the pipeline runs end to end.',
+        '> **Dry run: these numbers are meaningless.** It used the fake LLM provider, which answers with canned quizzes',
+        '> (only the sample lessons have their own) and judges every question the same way. It only shows that the',
+        '> pipeline runs end to end.',
       ].join('\n'),
     );
   }

@@ -35,6 +35,53 @@ services:
       timeout: 3s
       retries: 10
 
+  # --- The whole app: only with `docker compose --profile full up -d --build` ---
+  # A working demo with no API key: the fake LLM provider answers the sample
+  # lessons, and the API seeds them (plus a published quiz) on start. For real
+  # quizzes, set LLM_PROVIDER=anthropic, LLM_API_KEY and LLM_MODEL in your shell:
+  # the key reaches the container as an environment variable at run time only.
+
+  api:
+    build: ./api
+    image: quizforge-api
+    container_name: quizforge-api
+    profiles: [full]
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      # Its own database, created on first start, so demo data never mixes with local development.
+      DATABASE_URL: postgres://${POSTGRES_USER:-quizforge}:${POSTGRES_PASSWORD:-quizforge}@postgres:5432/quizforge_demo
+      # Redis database 2: not shared with the local dev API (0) or the tests (1).
+      REDIS_URL: redis://redis:6379/2
+      LLM_PROVIDER: ${LLM_PROVIDER:-fake}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-fake-model}
+      LLM_JUDGE_MODEL: ${LLM_JUDGE_MODEL:-fake-judge-model}
+      LLM_DAILY_BUDGET_USD: ${LLM_DAILY_BUDGET_USD:-1.00}
+      LLM_CACHE_TTL_SECONDS: "86400"
+      # The web container's nginx is the one proxy in front of the API.
+      TRUST_PROXY_HOPS: "1"
+      SEED_ON_START: "true"
+    ports:
+      # Swagger UI at http://localhost:3001/docs; the app itself is on 8080.
+      - "127.0.0.1:${API_PORT:-3001}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build: ./web
+    image: quizforge-web
+    container_name: quizforge-web
+    profiles: [full]
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+
   # --- Observability: only with `docker compose --profile observability up -d` ---
   # The API runs on the host, so Prometheus scrapes host.docker.internal:3000
   # and the API sends traces to the collector on localhost:4318.

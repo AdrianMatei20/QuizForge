@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "QuizForge happy path",
-    "description": "Runs the review flow end to end, in order: create a lesson, generate a quiz, approve a question, regenerate another, publish; then generate a second quiz in stream mode and watch its stream.\n\nEach request saves the ids the next one needs into collection variables, and its test script checks the status code. Uses the recursion sample lesson, so it also works with LLM_PROVIDER=fake (no API key, no cost).\n\nHand-maintained. The generated collection (QuizForge.generated.postman_collection.json) covers every endpoint and is rebuilt by `npm run openapi:export`.\n\nRun it with `npm run postman:happy-path` from api/, with the API running.",
+    "description": "Runs the review flow end to end, in order: create a lesson, generate a quiz, approve a question, regenerate another, publish; take the published quiz as a student (read it without answers, submit an attempt) and read the attempt stats; then generate a second quiz in stream mode and watch its stream.\n\nEach request saves the ids the next one needs into collection variables, and its test script checks the status code. Uses the recursion sample lesson, so it also works with LLM_PROVIDER=fake (no API key, no cost).\n\nHand-maintained. The generated collection (QuizForge.generated.postman_collection.json) covers every endpoint and is rebuilt by `npm run openapi:export`.\n\nRun it with `npm run postman:happy-path` from api/, with the API running.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -27,6 +27,10 @@
     },
     {
       "key": "streamQuizId",
+      "value": ""
+    },
+    {
+      "key": "publicQuestionId",
       "value": ""
     }
   ],
@@ -258,7 +262,134 @@
       }
     },
     {
-      "name": "6. Generate quiz (streamed)",
+      "name": "6. Take the quiz: read it (public)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "",
+              "const quiz = pm.response.json();",
+              "pm.test('it has the published question, without its answer or explanation', () => {",
+              "  pm.expect(quiz.questions).to.have.lengthOf(1);",
+              "  const text = pm.response.text();",
+              "  ['correctIndex', 'explanation', 'sourceQuote'].forEach((key) => pm.expect(text).to.not.include(key));",
+              "});",
+              "pm.collectionVariables.set('publicQuestionId', quiz.questions[0].id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/public/quizzes/{{quizId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "public",
+            "quizzes",
+            "{{quizId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "7. Take the quiz: submit an attempt (public)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "",
+              "const result = pm.response.json();",
+              "pm.test('it is scored on the server, with the answer and explanation', () => {",
+              "  pm.expect(result.total).to.equal(1);",
+              "  pm.expect(result.score).to.be.within(0, 1);",
+              "  pm.expect(result.results[0]).to.have.property('correctIndex');",
+              "  pm.expect(result.results[0].explanation).to.be.a('string').and.not.empty;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/public/quizzes/{{quizId}}/attempts",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "public",
+            "quizzes",
+            "{{quizId}}",
+            "attempts"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"answers\": [{ \"questionId\": \"{{publicQuestionId}}\", \"selectedIndex\": 0 }]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "8. Attempt stats",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "",
+              "const stats = pm.response.json();",
+              "pm.test('it counts the attempt', () => {",
+              "  pm.expect(stats.attempts).to.be.at.least(1);",
+              "  pm.expect(stats.questions[0].attempts).to.be.at.least(1);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/quizzes/{{quizId}}/attempt-stats",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "quizzes",
+            "{{quizId}}",
+            "attempt-stats"
+          ]
+        }
+      }
+    },
+    {
+      "name": "9. Generate quiz (streamed)",
       "event": [
         {
           "listen": "test",
@@ -304,7 +435,7 @@
       }
     },
     {
-      "name": "7. Watch the stream",
+      "name": "10. Watch the stream",
       "event": [
         {
           "listen": "test",

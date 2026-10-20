@@ -18,12 +18,23 @@ export const JSON_BODY_LIMIT = '256kb';
 export interface ConfigureAppOptions {
   /** Serve Swagger UI at /docs and the spec at /docs-json (API_DOCS_ENABLED). */
   apiDocs?: boolean;
+  /**
+   * TRUST_PROXY_HOPS. Behind a proxy every request comes from the proxy's
+   * address, so all clients would share one rate limit; trusting that many
+   * hops makes req.ip the client's address from X-Forwarded-For. Only the
+   * given number of hops is trusted, so a client cannot spoof its address
+   * by sending the header itself.
+   */
+  trustProxyHops?: number;
 }
 
 export function configureApp(
   app: NestExpressApplication,
-  { apiDocs = false }: ConfigureAppOptions = {},
+  { apiDocs = false, trustProxyHops = 0 }: ConfigureAppOptions = {},
 ): void {
+  if (trustProxyHops > 0) {
+    app.set('trust proxy', trustProxyHops);
+  }
   app.useBodyParser('json', { limit: JSON_BODY_LIMIT });
   // Feature routes live under /api; /health and /docs stay at the root.
   app.setGlobalPrefix('api', { exclude: ['health', 'metrics'] });

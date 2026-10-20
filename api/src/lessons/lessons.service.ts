@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { createHash } from 'node:crypto';
 import { In, type Repository } from 'typeorm';
 import { Quiz } from '../quiz/quiz.entity.js';
 import { QUIZ_STATUSES, type QuizStatus } from '../quiz/quiz.types.js';
-import { assertLessonContentLength } from './lesson-content.js';
+import {
+  assertLessonContentLength,
+  lessonContentHash,
+} from './lesson-content.js';
 import { Lesson } from './lesson.entity.js';
 
 export type QuizStatusCounts = Record<QuizStatus, number>;
@@ -38,7 +40,7 @@ export class LessonsService {
       this.lessons.create({
         title: input.title.trim(),
         content,
-        contentHash: createHash('sha256').update(content).digest('hex'),
+        contentHash: lessonContentHash(content),
       }),
     );
   }

@@ -22,6 +22,8 @@ export function errorMessage(error: unknown): string {
       return 'The AI service took too long to answer. Try again.';
     case 'provider-error':
       return 'The AI service had a problem. Try again in a moment.';
+    case 'demo-mode-lesson':
+      return 'Demo mode only works with the sample lessons. Open one under Lessons and generate a quiz there, or run the API with an API key to use your own lesson.';
     case 'refused':
       return 'The AI declined to write questions for this lesson. Try changing the lesson text.';
     case 'network':

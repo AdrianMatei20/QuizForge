@@ -70,6 +70,29 @@ describe('App', () => {
     expect(compiled.querySelector('header .brand')?.textContent).toContain('QuizForge');
   });
 
+  it('shows the demo-mode banner with the sample lessons when the API is in demo mode', async () => {
+    const fixture = TestBed.createComponent(App);
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/info')
+      .flush({ demoMode: true, sampleLessons: ['Binary search', 'HTTP caching', 'Recursion'] });
+    await fixture.whenStable();
+
+    const banner = (fixture.nativeElement as HTMLElement).querySelector('.demo-banner');
+    expect(banner?.textContent?.replace(/\s+/g, ' ')).toContain(
+      'sample lessons (Binary search, HTTP caching and Recursion)',
+    );
+  });
+
+  it('shows no banner outside demo mode', async () => {
+    const fixture = TestBed.createComponent(App);
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/info')
+      .flush({ demoMode: false, sampleLessons: [] });
+    await fixture.whenStable();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.demo-banner')).toBeNull();
+  });
+
   it('redirects unknown routes to the lessons list', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/nowhere');

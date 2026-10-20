@@ -41,6 +41,8 @@ export type AttemptResult = Schemas['AttemptResultResponse'];
 export type AttemptStats = Schemas['AttemptStatsResponse'];
 export type QuestionAttemptStats = Schemas['QuestionAttemptStatsResponse'];
 
+export type AppInfo = Schemas['AppInfoResponse'];
+
 export type QuestionType = QuestionResponse['type'];
 export type QuestionStatus = QuestionResponse['status'];
 export type QuizStatus = QuizResponse['status'];

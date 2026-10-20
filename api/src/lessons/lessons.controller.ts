@@ -143,7 +143,10 @@ export class LessonsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Read a lesson' })
+  @ApiOperation({
+    summary: 'Read a lesson',
+    description: 'The lesson with its full text and content hash.',
+  })
   @ApiParam({
     name: 'id',
     format: 'uuid',

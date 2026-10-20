@@ -1,5 +1,6 @@
 import type { Env } from '../config/env.schema.js';
 import { AnthropicLlmClient } from './anthropic-llm.client.js';
+import { loadSampleLessons } from '../lessons/sample-lessons.js';
 import { FakeLlmClient } from './fake-llm.client.js';
 import type { LlmClient } from './llm-client.js';
 
@@ -17,6 +18,14 @@ export function createLlmClient(
       }
       return new AnthropicLlmClient({ apiKey: env.LLM_API_KEY });
     case 'fake':
-      return new FakeLlmClient();
+      // Answers each sample lesson with its own fixtures (the demo mode).
+      return new FakeLlmClient({
+        sampleLessons: new Map(
+          loadSampleLessons().map((lesson) => [
+            lesson.contentHash,
+            lesson.name,
+          ]),
+        ),
+      });
   }
 }

@@ -229,6 +229,7 @@
     },
     "/api/lessons/{id}": {
       "get": {
+        "description": "The lesson with its full text and content hash.",
         "operationId": "LessonsController_findOne",
         "parameters": [
           {
@@ -359,11 +360,11 @@
             }
           },
           "422": {
-            "description": "The model refused the request (urn:quizforge:problem:llm-refused). The failed quiz is identified by `quizId`.",
+            "description": "The model refused the request (urn:quizforge:problem:llm-refused). The failed quiz is identified by `quizId`. Or, in demo mode (LLM_PROVIDER=fake), the lesson is not one of the sample lessons (urn:quizforge:problem:demo-mode-lesson, with `sampleLessons`); nothing is stored then.",
             "content": {
               "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QuizGenerationProblemDetailsDto"
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
                 }
               }
             }
@@ -1013,11 +1014,11 @@
             }
           },
           "422": {
-            "description": "The model refused the request (urn:quizforge:problem:llm-refused). The question is left unchanged.",
+            "description": "The model refused the request (urn:quizforge:problem:llm-refused). The question is left unchanged. Or, in demo mode (LLM_PROVIDER=fake), the lesson is not one of the sample lessons (urn:quizforge:problem:demo-mode-lesson, with `sampleLessons`); nothing is stored then.",
             "content": {
               "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LlmProblemDetailsDto"
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
                 }
               }
             }
@@ -1094,6 +1095,39 @@
         "summary": "Replace a question with a newly generated one",
         "tags": [
           "questions"
+        ]
+      }
+    },
+    "/api/info": {
+      "get": {
+        "description": "Whether it is in demo mode (fake LLM provider), and which sample lessons work then. The web app shows a banner in demo mode.",
+        "operationId": "InfoController_info",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppInfoResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The details are logged, never returned.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "How the API runs",
+        "tags": [
+          "health"
         ]
       }
     },
@@ -2458,6 +2492,32 @@
           }
         }
       },
+      "AppInfoResponse": {
+        "type": "object",
+        "properties": {
+          "demoMode": {
+            "type": "boolean",
+            "description": "True when the API runs on the fake LLM provider: quizzes can then be generated from the sample lessons only.",
+            "example": true
+          },
+          "sampleLessons": {
+            "description": "Titles of the sample lessons that work in demo mode.",
+            "example": [
+              "Binary search",
+              "HTTP caching",
+              "Recursion"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "demoMode",
+          "sampleLessons"
+        ]
+      },
       "UsageStatusCounts": {
         "type": "object",
         "properties": {
@@ -2691,7 +2751,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "The run id; also the correlation id prefix of its LLM calls."
           },
           "promptId": {
             "type": "string",
@@ -2739,7 +2800,8 @@
           },
           "createdAt": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "example": "2026-10-19T15:55:44.000Z"
           },
           "rulePassBeforeRepairRate": {
             "type": "number",
@@ -2825,7 +2887,8 @@
               "count",
               "usd",
               "ms"
-            ]
+            ],
+            "description": "How to show a, b and delta: a 0..1 rate, a count, USD, or milliseconds."
           },
           "direction": {
             "type": "string",
@@ -2879,7 +2942,8 @@
               "worse",
               "same",
               "n/a"
-            ]
+            ],
+            "description": "Whether b is an improvement on a; n/a for neutral metrics or when a side is missing."
           }
         },
         "required": [
@@ -2903,6 +2967,7 @@
             "$ref": "#/components/schemas/EvalRunSummaryResponse"
           },
           "metrics": {
+            "description": "Every compared metric, in report order.",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ComparedMetricResponse"
@@ -3060,7 +3125,8 @@
         "properties": {
           "attemptId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "The stored attempt."
           },
           "score": {
             "type": "number",

@@ -16,6 +16,7 @@
     "start:prod": "node --experimental-loader=@opentelemetry/instrumentation/hook.mjs --import ./dist/telemetry.js dist/main.js",
     "start:traced": "nest build && npm run start:prod",
     "openapi:export": "nest build && node dist/docs/export-openapi.js && tsx scripts/openapi-to-postman.ts",
+    "seed": "nest build && node dist/database/seed.js",
     "eval": "nest build && node dist/evals/cli/eval.js",
     "eval:compare": "nest build && node dist/evals/cli/compare.js",
     "eval:sample": "nest build && node dist/evals/cli/sample.js",

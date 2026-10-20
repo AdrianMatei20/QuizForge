@@ -115,3 +115,60 @@ describe('quiz-regenerate fixtures', () => {
     ]);
   });
 });
+
+/**
+ * Demo mode: with LLM_PROVIDER=fake, each sample lesson is answered with its
+ * own fixtures (FakeLlmClient picks them by the lesson's content hash), so
+ * every flow works for every sample lesson.
+ */
+describe('per-lesson demo fixtures', () => {
+  const read = (promptId: string, name: string) =>
+    readFileSync(join(DEFAULT_FIXTURES_DIR, promptId, `${name}.txt`), 'utf8');
+  const settings = {
+    count: 5,
+    difficulty: 'medium' as const,
+    types: ['multiple_choice' as const, 'true_false' as const],
+  };
+
+  it.each(SAMPLE_LESSONS)(
+    '%s: the stream fixture is the quiz fixture, one question per line',
+    (name) => {
+      const quiz = quizOutputSchema.parse(JSON.parse(read('quiz', name)));
+      const stream = name === 'recursion' ? 'default' : name;
+      const lines = read('quiz-stream', stream).trim().split('\n');
+
+      expect(lines.map((line) => JSON.parse(line) as unknown)).toEqual(
+        quiz.questions,
+      );
+    },
+  );
+
+  it.each(SAMPLE_LESSONS)(
+    '%s: the regenerate fixture is a valid, new replacement for the first multiple-choice question',
+    (name) => {
+      const quiz = quizOutputSchema.parse(JSON.parse(read('quiz', name)));
+      const replaced = quiz.questions.findIndex(
+        (question) => question.type === 'multiple_choice',
+      );
+      const rules = regeneratedQuestionRules({
+        lessonContent: loadSampleLesson(name).content,
+        settings,
+        minQuoteWords: 5,
+        type: 'multiple_choice',
+        replacedStem: quiz.questions[replaced]?.stem ?? '',
+        others: quiz.questions
+          .map((question, index) => ({
+            position: index + 1,
+            stem: question.stem,
+          }))
+          .filter((_, index) => index !== replaced),
+      });
+      const fixture = name === 'recursion' ? 'default' : name;
+      const { question } = regeneratedQuestionSchema.parse(
+        JSON.parse(read('quiz-regenerate', fixture)),
+      );
+
+      expect(rules(question)).toEqual([]);
+    },
+  );
+});

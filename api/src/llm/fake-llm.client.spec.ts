@@ -1,4 +1,9 @@
-import { FakeLlmClient } from './fake-llm.client.js';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { wrapUntrusted } from './prompt-registry.js';
+import { lessonContentHash } from '../lessons/lesson-content.js';
+import { loadSampleLessons } from '../lessons/sample-lessons.js';
+import { DEFAULT_FIXTURES_DIR, FakeLlmClient } from './fake-llm.client.js';
 import {
   LlmProviderError,
   type LlmRequest,
@@ -23,6 +28,65 @@ async function collect(events: AsyncIterable<LlmStreamEvent>) {
 }
 
 describe('FakeLlmClient', () => {
+  describe('demo mode: fixtures per sample lesson', () => {
+    const samples = new Map(
+      loadSampleLessons().map((lesson) => [lesson.contentHash, lesson.name]),
+    );
+    const fixture = (promptId: string, name: string) =>
+      readFileSync(join(DEFAULT_FIXTURES_DIR, promptId, `${name}.txt`), 'utf8');
+    const quizRequest = (lesson: string): LlmRequest => ({
+      ...request,
+      promptId: 'quiz',
+      messages: [
+        {
+          role: 'user',
+          content: `Write 5 questions.
+
+${wrapUntrusted('lesson', lesson)}`,
+        },
+      ],
+    });
+    const binarySearch = loadSampleLessons().find(
+      (l) => l.name === 'binary-search',
+    );
+    if (!binarySearch) throw new Error('binary-search sample missing');
+
+    it('answers a sample lesson with its own fixture, found by content hash', async () => {
+      const client = new FakeLlmClient({ sampleLessons: samples });
+
+      const response = await client.generate(quizRequest(binarySearch.content));
+
+      expect(lessonContentHash(binarySearch.content)).toBe(
+        binarySearch.contentHash,
+      );
+      expect(response.text).toBe(fixture('quiz', 'binary-search'));
+    });
+
+    it('falls back to default.txt for another lesson, or a prompt without a fixture for the sample', async () => {
+      const client = new FakeLlmClient({ sampleLessons: samples });
+
+      const other = await client.generate(
+        quizRequest('A lesson nobody has seen.'),
+      );
+      const judge = await client.generate({
+        ...quizRequest(binarySearch.content),
+        promptId: 'judge',
+      });
+
+      expect(other.text).toBe(fixture('quiz', 'default'));
+      expect(judge.text).toBe(fixture('judge', 'default'));
+    });
+
+    it('still lets a queued fixture win', async () => {
+      const client = new FakeLlmClient({ sampleLessons: samples });
+      client.respondWithFixture('http-caching');
+
+      const response = await client.generate(quizRequest(binarySearch.content));
+
+      expect(response.text).toBe(fixture('quiz', 'http-caching'));
+    });
+  });
+
   it('answers with the default fixture of the prompt', async () => {
     const response = await new FakeLlmClient().generate(request);
 

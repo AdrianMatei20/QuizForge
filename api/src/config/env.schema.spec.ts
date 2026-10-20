@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { parseEnv as parseEnvFile } from 'node:util';
 import { validateEnv } from './env.schema.js';
 
 const validEnv = {
@@ -146,6 +149,32 @@ describe('validateEnv', () => {
     ).toContain(
       'ATTEMPT_FLAG_POSSIBLY_WRONG_BELOW: must be below ATTEMPT_FLAG_TOO_EASY_ABOVE',
     );
+  });
+
+  it('defaults to demo mode restrictions on and no trusted proxy', () => {
+    const env = validateEnv(validEnv);
+
+    expect(env.FAKE_LLM_SAMPLE_LESSONS_ONLY).toBe(true);
+    expect(env.TRUST_PROXY_HOPS).toBe(0);
+    expect(
+      validateEnv({ ...validEnv, FAKE_LLM_SAMPLE_LESSONS_ONLY: 'false' })
+        .FAKE_LLM_SAMPLE_LESSONS_ONLY,
+    ).toBe(false);
+    expect(errorMessageFor({ ...validEnv, TRUST_PROXY_HOPS: '-1' })).toContain(
+      'TRUST_PROXY_HOPS',
+    );
+  });
+
+  it('accepts .env.example as it is, so `cp .env.example .env` gives a working config', () => {
+    const example = parseEnvFile(
+      readFileSync(
+        join(import.meta.dirname, '..', '..', '.env.example'),
+        'utf8',
+      ),
+    );
+
+    expect(() => validateEnv(example)).not.toThrow();
+    expect(validateEnv(example).LLM_PROVIDER).toBe('fake');
   });
 
   it('rejects a timeout that is not a positive integer', () => {

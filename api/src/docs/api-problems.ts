@@ -27,8 +27,11 @@ const LLM_ERRORS = (schema: Type, suffix: string) =>
   ({
     refused: {
       status: 422,
-      description: `The model refused the request (urn:quizforge:problem:llm-refused).${suffix}`,
-      schema,
+      description:
+        `The model refused the request (urn:quizforge:problem:llm-refused).${suffix} ` +
+        'Or, in demo mode (LLM_PROVIDER=fake), the lesson is not one of the sample lessons (urn:quizforge:problem:demo-mode-lesson, with `sampleLessons`); nothing is stored then.',
+      // The demo-mode 422 comes before any quiz exists, so not every 422 has a quizId.
+      schema: ProblemDetailsDto,
     },
     budgetExceeded: {
       status: 429,

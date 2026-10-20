@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import type { Env } from '../config/env.schema.js';
+import { DemoModule } from '../demo/demo.module.js';
 import { LessonsModule } from '../lessons/lessons.module.js';
 import { LlmModule } from '../llm/llm.module.js';
 import { ActiveGenerations } from './active-generations.js';
@@ -37,6 +38,7 @@ export function quizStreamOptionsFromConfig(
     TypeOrmModule.forFeature([Quiz, Question]),
     LessonsModule,
     LlmModule,
+    DemoModule,
   ],
   controllers: [QuizzesController, QuestionsController],
   providers: [

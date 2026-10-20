@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import type { DataSource, Repository } from 'typeorm';
 import type { Env } from '../config/env.schema.js';
+import { DemoMode } from '../demo/demo-mode.js';
 import { LessonsService } from '../lessons/lessons.service.js';
 import type { LlmUsageTotals } from '../llm/llm-call.store.js';
 import { LlmService } from '../llm/llm.service.js';
@@ -34,6 +35,7 @@ export class QuizService {
     @Inject(QUIZ_RANDOM) private readonly random: Random,
     private readonly streams: QuizStreamService,
     private readonly active: ActiveGenerations,
+    private readonly demo: DemoMode,
   ) {}
 
   /**
@@ -50,6 +52,8 @@ export class QuizService {
    */
   async generate(lessonId: string, settings: QuizSettings): Promise<Quiz> {
     const lesson = await this.lessons.findById(lessonId);
+    // Before the quiz row exists: in demo mode nothing is stored for it.
+    this.demo.assertSupported(lesson.content);
     // Passed explicitly, so the quiz row names the model before the call.
     const model = this.config.get('LLM_MODEL', { infer: true });
     const quiz = await this.createGenerating(lessonId, settings, QUIZ_PROMPT);
@@ -110,6 +114,7 @@ export class QuizService {
     settings: QuizSettings,
   ): Promise<string> {
     const lesson = await this.lessons.findById(lessonId);
+    this.demo.assertSupported(lesson.content);
     const quiz = await this.createGenerating(
       lessonId,
       settings,

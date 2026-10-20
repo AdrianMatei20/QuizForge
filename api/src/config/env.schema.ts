@@ -16,6 +16,9 @@ export const baseEnvSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   // Swagger UI at /docs and the spec at /docs-json. "true"/"false" (also 1/0, yes/no).
   API_DOCS_ENABLED: z.stringbool().default(true),
+  // Reverse proxies in front of the API (e.g. 1 behind the web container's nginx). The client IP,
+  // which rate limits are counted by, then comes from X-Forwarded-For. 0: trust no proxy.
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
   DATABASE_URL: z.url({
     protocol: /^postgres(ql)?$/,
     error: 'must be a postgres:// URL',
@@ -40,6 +43,8 @@ export const baseEnvSchema = z.object({
   LLM_RETRY_MAX_DELAY_MS: z.coerce.number().int().min(0).default(8_000),
   // Relative paths resolve against the working directory (api/ for npm scripts).
   LLM_PRICING_FILE: z.string().min(1).default('config/llm-pricing.json'),
+  // With LLM_PROVIDER=fake (demo mode), refuse lessons other than the samples with a 422.
+  FAKE_LLM_SAMPLE_LESSONS_ONLY: z.stringbool().default(true),
   // A generated question's sourceQuote must have at least this many words.
   QUIZ_SOURCE_QUOTE_MIN_WORDS: z.coerce.number().int().min(1).default(5),
   // A streamed quiz's whole generation, repair included. The provider stream is aborted after this.

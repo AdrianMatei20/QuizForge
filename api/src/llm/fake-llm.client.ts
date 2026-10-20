@@ -1,5 +1,6 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { lessonContentHash } from '../lessons/lesson-content.js';
 import {
   type LlmClient,
   LlmProviderError,
@@ -53,12 +54,17 @@ const FAILURES: Record<
     new LlmProviderError('client', 'Fake 400', { status: 400 }),
 };
 
+/** The lesson inside a prompt's <lesson> delimiters (see wrapUntrusted). */
+const LESSON_IN_PROMPT = /<lesson>\n([\s\S]*?)\n<\/lesson>/;
+
 /**
  * A deterministic, offline LlmClient used by every test and by
- * LLM_PROVIDER=fake. By default it answers with the fixture
- * <fixturesDir>/<promptId>/default.txt. Tests queue one-off behaviour for the
- * next calls (failures, specific text, other fixtures); each queued step is
- * used by exactly one call, in order.
+ * LLM_PROVIDER=fake. Unless a test queued something, it answers with
+ * <fixturesDir>/<promptId>/<sample>.txt when the prompt's lesson is a known
+ * sample lesson (by content hash) and that fixture exists, otherwise with
+ * <promptId>/default.txt. Tests queue one-off behaviour for the next calls
+ * (failures, specific text, other fixtures); each queued step is used by
+ * exactly one call, in order.
  */
 export class FakeLlmClient implements LlmClient {
   /** Every request received, in order, for assertions. */
@@ -67,7 +73,12 @@ export class FakeLlmClient implements LlmClient {
   private streamChunkSize: number | undefined;
 
   constructor(
-    private readonly options: { fixturesDir?: string; chunkSize?: number } = {},
+    private readonly options: {
+      fixturesDir?: string;
+      chunkSize?: number;
+      /** Sample lesson content hash -> fixture name, e.g. "binary-search". */
+      sampleLessons?: ReadonlyMap<string, string>;
+    } = {},
   ) {}
 
   /**
@@ -180,7 +191,10 @@ export class FakeLlmClient implements LlmClient {
 
   private answer(request: LlmRequest): LlmResponse {
     request.signal?.throwIfAborted();
-    const step = this.steps.shift() ?? { kind: 'fixture', name: 'default' };
+    const step = this.steps.shift() ?? {
+      kind: 'fixture',
+      name: this.defaultFixture(request),
+    };
     if (step.kind === 'fail') {
       throw FAILURES[step.failure](
         step.retryAfterSeconds === undefined
@@ -200,12 +214,31 @@ export class FakeLlmClient implements LlmClient {
     return { text, usage, stopReason };
   }
 
-  private readFixture(promptId: string, name: string): string {
-    const path = join(
+  /** The sample lesson's own fixture for this prompt if there is one, else "default". */
+  private defaultFixture(request: LlmRequest): string {
+    const lesson = LESSON_IN_PROMPT.exec(
+      request.messages[0]?.content ?? '',
+    )?.[1];
+    const sample =
+      lesson === undefined
+        ? undefined
+        : this.options.sampleLessons?.get(lessonContentHash(lesson));
+    return sample !== undefined &&
+      existsSync(this.fixturePath(request.promptId, sample))
+      ? sample
+      : 'default';
+  }
+
+  private fixturePath(promptId: string, name: string): string {
+    return join(
       this.options.fixturesDir ?? DEFAULT_FIXTURES_DIR,
       promptId,
       `${name}.txt`,
     );
+  }
+
+  private readFixture(promptId: string, name: string): string {
+    const path = this.fixturePath(promptId, name);
     try {
       return readFileSync(path, 'utf8');
     } catch (error) {

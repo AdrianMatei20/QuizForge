@@ -8,6 +8,7 @@ export type AppErrorKind =
   | 'conflict'
   | 'too-large'
   | 'refused'
+  | 'demo-mode-lesson'
   | 'budget-exceeded'
   | 'too-many-requests'
   | 'rate-limited'
@@ -25,6 +26,8 @@ const KIND_BY_TYPE: Readonly<Record<string, AppErrorKind>> = {
   [`${PREFIX}validation-error`]: 'validation',
   [`${PREFIX}lesson-too-large`]: 'too-large',
   [`${PREFIX}llm-refused`]: 'refused',
+  // Demo mode (fake provider): only the sample lessons work.
+  [`${PREFIX}demo-mode-lesson`]: 'demo-mode-lesson',
   [`${PREFIX}llm-budget-exceeded`]: 'budget-exceeded',
   // Our own rate limit on generate/regenerate (not the AI provider's).
   [`${PREFIX}too-many-requests`]: 'too-many-requests',

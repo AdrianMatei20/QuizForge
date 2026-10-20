@@ -1,8 +1,14 @@
 import { HttpStatus } from '@nestjs/common';
+import { createHash } from 'node:crypto';
 import {
   PROBLEM_TYPES,
   ProblemException,
 } from '../common/problem-details/problem-details.js';
+
+/** sha256 (hex) of the content as stored: trimmed. Sample lessons are recognised by it. */
+export function lessonContentHash(content: string): string {
+  return createHash('sha256').update(content.trim()).digest('hex');
+}
 
 export const LESSON_CONTENT_MIN = 200;
 export const LESSON_CONTENT_MAX = 20_000;

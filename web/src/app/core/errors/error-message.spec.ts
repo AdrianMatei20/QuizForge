@@ -20,6 +20,12 @@ describe('errorMessage', () => {
     ).toBe('Too many requests in a short time. Wait a minute and try again.');
   });
 
+  it('points to the sample lessons when demo mode refuses a lesson', () => {
+    expect(errorMessage(new AppError('demo-mode-lesson', 422, 'demo mode supports...'))).toBe(
+      'Demo mode only works with the sample lessons. Open one under Lessons and generate a quiz there, or run the API with an API key to use your own lesson.',
+    );
+  });
+
   it("uses the API's own detail for conflicts and validation", () => {
     expect(
       errorMessage(

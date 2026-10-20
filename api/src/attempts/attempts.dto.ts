@@ -87,7 +87,8 @@ export class AnswerResultResponse {
 }
 
 export class AttemptResultResponse {
-  @ApiProperty({ format: 'uuid' }) attemptId!: string;
+  @ApiProperty({ format: 'uuid', description: 'The stored attempt.' })
+  attemptId!: string;
   @ApiProperty({ description: 'Questions answered correctly.', example: 4 })
   score!: number;
   @ApiProperty({ example: 5 }) total!: number;

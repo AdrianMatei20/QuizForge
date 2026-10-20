@@ -10,6 +10,7 @@ async function bootstrap() {
   const config: ConfigService<Env, true> = app.get(ConfigService);
   configureApp(app, {
     apiDocs: config.get('API_DOCS_ENABLED', { infer: true }),
+    trustProxyHops: config.get('TRUST_PROXY_HOPS', { infer: true }),
   });
   app.enableShutdownHooks();
 

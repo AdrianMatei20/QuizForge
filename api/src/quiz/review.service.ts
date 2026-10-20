@@ -11,6 +11,7 @@ import {
 import type { ProblemFieldError } from '../common/problem-details/problem-details.js';
 import { jsonPointer } from '../common/problem-details/validation-problem.js';
 import type { Env } from '../config/env.schema.js';
+import { DemoMode } from '../demo/demo-mode.js';
 import { LessonsService } from '../lessons/lessons.service.js';
 import { LlmService } from '../llm/llm.service.js';
 import { Question } from './question.entity.js';
@@ -55,6 +56,7 @@ export class ReviewService {
     private readonly llm: LlmService,
     private readonly config: ConfigService<Env, true>,
     @Inject(QUIZ_RANDOM) private readonly random: Random,
+    private readonly demo: DemoMode,
   ) {}
 
   /**
@@ -122,6 +124,7 @@ export class ReviewService {
       throw quizPublishedProblem(quiz.id);
     }
     const lesson = await this.lessons.findById(quiz.lessonId);
+    this.demo.assertSupported(lesson.content);
     const others = await this.questions.find({
       where: { quizId: quiz.id, id: Not(id) },
       select: { position: true, stem: true },

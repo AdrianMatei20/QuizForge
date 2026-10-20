@@ -47,6 +47,7 @@ describe('Attempts (e2e)', () => {
   async function createApp(
     customize: (builder: TestingModuleBuilder) => TestingModuleBuilder = (b) =>
       b,
+    trustProxyHops = 0,
   ): Promise<NestExpressApplication> {
     const moduleRef = await customize(
       Test.createTestingModule({ imports: [AppModule] })
@@ -56,7 +57,7 @@ describe('Attempts (e2e)', () => {
     const created = moduleRef.createNestApplication<NestExpressApplication>({
       logger: false,
     });
-    configureApp(created);
+    configureApp(created, { trustProxyHops });
     await created.init();
     return created;
   }
@@ -408,6 +409,33 @@ describe('Attempts (e2e)', () => {
       await request(limited.getHttpServer())
         .get(`/api/public/quizzes/${id}`)
         .expect(404);
+    });
+
+    it('behind a trusted proxy, counts each client by X-Forwarded-For, not the proxy address', async () => {
+      const proxied = await createApp(
+        (builder) =>
+          builder.overrideProvider(getOptionsToken()).useValue({
+            throttlers: [
+              { name: GENERATE_THROTTLER, limit: 1000, ttl: 60_000 },
+              { name: ATTEMPT_THROTTLER, limit: 1, ttl: 60_000 },
+            ],
+          }),
+        1,
+      );
+      const id = '00000000-0000-4000-8000-000000000000';
+      const post = (clientIp: string) =>
+        request(proxied.getHttpServer())
+          .post(`/api/public/quizzes/${id}/attempts`)
+          .set('X-Forwarded-For', clientIp)
+          .send({ answers: [] });
+
+      try {
+        await post('203.0.113.1').expect(404);
+        await post('203.0.113.2').expect(404);
+        await post('203.0.113.1').expect(429);
+      } finally {
+        await proxied.close();
+      }
     });
   });
 });

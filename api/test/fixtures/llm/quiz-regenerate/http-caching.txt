@@ -1,0 +1,15 @@
+{
+  "question": {
+    "type": "multiple_choice",
+    "stem": "What does the browser do with a response while it is still fresh?",
+    "options": [
+      "It uses its cached copy without contacting the server",
+      "It always downloads the response again",
+      "It sends the ETag in an If-None-Match header",
+      "It deletes the cached copy"
+    ],
+    "correctIndex": 0,
+    "explanation": "The lesson says a fresh response is served from the cache without contacting the server.",
+    "sourceQuote": "While a response is fresh, the browser uses its cached copy without contacting the server."
+  }
+}

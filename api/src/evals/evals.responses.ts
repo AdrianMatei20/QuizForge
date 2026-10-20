@@ -63,7 +63,11 @@ export class CompareEvalRunsQueryDto {
 }
 
 export class EvalRunSummaryResponse {
-  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({
+    format: 'uuid',
+    description: 'The run id; also the correlation id prefix of its LLM calls.',
+  })
+  id!: string;
   @ApiProperty({ example: 'quiz' }) promptId!: string;
   @ApiProperty({ example: 2 }) promptVersion!: number;
   @ApiProperty({ example: 'claude-haiku-5-5' }) model!: string;
@@ -91,7 +95,8 @@ export class EvalRunSummaryResponse {
   })
   reportFile!: string;
 
-  @ApiProperty({ format: 'date-time' }) createdAt!: string;
+  @ApiProperty({ format: 'date-time', example: '2026-10-19T15:55:44.000Z' })
+  createdAt!: string;
 
   // Headline metrics: rates are 0..1, or null when there was nothing to divide by.
   @ApiProperty({ type: Number, nullable: true, example: 0.9 })
@@ -147,7 +152,12 @@ const NUMBER_OR_DECIMAL = {
 export class ComparedMetricResponse implements ComparedMetric {
   @ApiProperty({ example: 'quoteCopyRate' }) key!: string;
   @ApiProperty({ example: 'Quote copy' }) label!: string;
-  @ApiProperty({ enum: ['rate', 'count', 'usd', 'ms'] }) format!: MetricFormat;
+  @ApiProperty({
+    enum: ['rate', 'count', 'usd', 'ms'],
+    description:
+      'How to show a, b and delta: a 0..1 rate, a count, USD, or milliseconds.',
+  })
+  format!: MetricFormat;
 
   @ApiProperty({
     enum: ['higher', 'lower', 'neutral'],
@@ -164,12 +174,20 @@ export class ComparedMetricResponse implements ComparedMetric {
   })
   delta!: number | string | null;
 
-  @ApiProperty({ enum: ['better', 'worse', 'same', 'n/a'] }) verdict!: Verdict;
+  @ApiProperty({
+    enum: ['better', 'worse', 'same', 'n/a'],
+    description:
+      'Whether b is an improvement on a; n/a for neutral metrics or when a side is missing.',
+  })
+  verdict!: Verdict;
 }
 
 export class EvalComparisonResponse {
   @ApiProperty({ type: EvalRunSummaryResponse }) a!: EvalRunSummaryResponse;
   @ApiProperty({ type: EvalRunSummaryResponse }) b!: EvalRunSummaryResponse;
-  @ApiProperty({ type: [ComparedMetricResponse] })
+  @ApiProperty({
+    type: [ComparedMetricResponse],
+    description: 'Every compared metric, in report order.',
+  })
   metrics!: ComparedMetricResponse[];
 }

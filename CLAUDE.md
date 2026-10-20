@@ -16,6 +16,7 @@ Keep this section accurate whenever scripts change.
 Infrastructure (repo root):
 - `docker compose up -d`: start PostgreSQL and Redis (a fresh volume also creates the `quizforge_test` database)
 - `docker compose down`: stop them (add `-v` to delete the data volumes)
+- `docker compose --profile full up -d --build`: the whole app (web on http://localhost:8080, API on http://localhost:3001) in demo mode (fake provider, seeded sample lessons, database `quizforge_demo`); add `LLM_PROVIDER=anthropic LLM_API_KEY=... LLM_MODEL=...` in the shell for real quizzes. `docker compose --profile full down` stops it
 - `docker compose --profile observability up -d`: also start Prometheus (9090), Grafana (3030), the OTel Collector (OTLP/HTTP on 4318) and Tempo; `docker compose --profile observability stop` stops them
 
 api/ (run from `api/`; copy `.env.example` to `.env` first):
@@ -23,8 +24,9 @@ api/ (run from `api/`; copy `.env.example` to `.env` first):
 - `npm run build` / `npm run start:prod`: compile to `dist/` / run the compiled app (with the OpenTelemetry loader; tracing stays off unless `OTEL_EXPORTER_OTLP_ENDPOINT` is set)
 - `npm run start:traced`: build, then `start:prod`; with `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318` it exports traces to the observability profile
 - `npm test`: unit tests (`src/**/*.spec.ts`); the Nest logger is silenced, set `DEBUG=1` to see it
-- `npm run test:e2e`: e2e tests (`test/**/*.e2e-spec.ts`); needs docker compose running, reads `.env.test`, migrates the test database first
+- `npm run test:e2e`: e2e tests (`test/**/*.e2e-spec.ts`); needs docker compose running (fails fast if not), reads `.env.test`, drops the test database schema and runs every migration first, and empties Redis database 1
 - `LLM_LIVE_TESTS=1 npm run test:live`: live tests against the real provider (`test/**/*.live-spec.ts`, costs money): a smoke test, and one quiz per sample lesson with a printed report. Reads `LLM_API_KEY` and `LLM_MODEL` from the environment, then `.env.live.local` (see `.env.live.example`), then `.env`; skipped without the flag. Add a path (e.g. `test/quiz.live-spec.ts`) to run one file
+- `npm run seed`: build, then add the sample lessons and one published quiz to the database in `.env` (safe to run twice)
 - `npm run eval -- --prompt v1 [--model X] [--judge-model Y] [--effort low|medium|high] [--limit N] [--dry-run]`: build, then run the eval harness on `evals/lessons/*.md`; writes `evals/results/<time>-v<n>.md` and `.json` and an `eval_runs` row. Costs money unless `--dry-run` (fake provider, forced through the environment; reports go to the gitignored `evals/results/dry-run/`). Refuses `LLM_PROVIDER=fake` without `--dry-run`
 - `npm run eval:compare -- <runA> <runB>`: print two eval runs side by side (run ids or unique prefixes of 6+ characters)
 - `npm run eval:sample -- <run>`: write 20 random judged questions to `evals/samples/<run id>-sample.csv` with an empty `my_verdict` column
@@ -45,6 +47,13 @@ web/ (run from `web/`):
 - `npm run build`: production build to `dist/web`
 - `npm run format`: Prettier
 - `npm run api:types`: regenerate `src/app/core/api/openapi.generated.ts` from `../postman/openapi.json` (run after `npm run openapi:export` in api/; commit the result)
+
+e2e/ (run from `e2e/`, against `docker compose --profile full up -d --build --wait`):
+- `npm install`, then `npx playwright install chromium` once
+- `npm test`: the Playwright browser test of the whole flow (BASE_URL overrides http://localhost:8080)
+- `npm run typecheck`: `tsc --noEmit` over the test and config
+
+CI: `.github/workflows/ci.yml` (lint, tests, builds, spec and API-types drift, then the full stack with Playwright and Newman). Check it with `docker run --rm -v <repo>:/repo --workdir /repo rhysd/actionlint:1.7.7` (from Git Bash, prefix `MSYS_NO_PATHCONV=1`).
 
 ## Architecture rules
 - All LLM access goes through LlmModule in api/src/llm. No other module imports a provider SDK.
